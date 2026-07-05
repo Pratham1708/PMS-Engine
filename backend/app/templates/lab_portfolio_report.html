@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8"/>
+<title>Quant Lab — Portfolio Strategy Report</title>
+<style type="text/css">
+    @page {
+        size: A4;
+        margin: 1.5cm 1.8cm 2cm 1.8cm;
+    }
+
+    body {
+        font-family: Arial, Helvetica, sans-serif;
+        font-size: 9.5pt;
+        color: #1a1a2e;
+        line-height: 1.45;
+        margin: 0;
+        padding: 0;
+        background-color: #ffffff;
+    }
+
+    h1, h2, h3, h4 {
+        font-family: Georgia, "Times New Roman", serif;
+        color: #0c1c33;
+        margin-top: 0;
+    }
+
+    h2 { font-size: 15pt; margin-bottom: 8px; border-bottom: 2px solid #047857; padding-bottom: 4px; }
+    h3 { font-size: 12pt; margin-bottom: 6px; }
+
+    .cover-page {
+        background-color: #064e3b;
+        color: #ffffff;
+        padding: 50px 30px;
+        text-align: center;
+        page-break-after: always;
+    }
+    .cover-brand {
+        font-family: Georgia, "Times New Roman", serif;
+        font-size: 13pt;
+        color: #34d399;
+        letter-spacing: 5px;
+        text-transform: uppercase;
+        margin-bottom: 8px;
+    }
+    .cover-divider {
+        width: 100px;
+        height: 2px;
+        background-color: #34d399;
+        margin: 12px auto;
+    }
+    .cover-subtitle {
+        font-size: 9pt;
+        color: #a7f3d0;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        margin-bottom: 60px;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 12px;
+    }
+
+    .data-table th {
+        background-color: #064e3b;
+        color: #34d399;
+        font-size: 8.5pt;
+        font-weight: bold;
+        padding: 6px 8px;
+        text-align: left;
+        border-bottom: 2px solid #34d399;
+    }
+    .data-table td {
+        padding: 5px 8px;
+        font-size: 8.5pt;
+        border-bottom: 1px solid #e2e8f0;
+    }
+    .data-table tr:nth-child(even) td {
+        background-color: #f0fdf4;
+    }
+
+    .metric-card {
+        background-color: #f0fdf4;
+        border: 1px solid #d1fae5;
+        padding: 8px;
+        text-align: center;
+        vertical-align: top;
+    }
+    .metric-label {
+        font-size: 7pt;
+        color: #047857;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 2px;
+    }
+    .metric-value {
+        font-family: Georgia, "Times New Roman", serif;
+        font-size: 15pt;
+        font-weight: bold;
+        color: #064e3b;
+    }
+
+    .section {
+        margin-bottom: 16px;
+    }
+    .section-header {
+        background-color: #064e3b;
+        color: #34d399;
+        padding: 5px 12px;
+        font-family: Georgia, "Times New Roman", serif;
+        font-size: 12pt;
+        font-weight: bold;
+        margin-bottom: 10px;
+    }
+
+    .insight-box {
+        background-color: #ecfdf5;
+        border-left: 4px solid #059669;
+        padding: 10px 14px;
+        margin: 10px 0;
+        font-size: 9pt;
+        color: #064e3b;
+    }
+
+    .page-footer {
+        font-size: 7pt;
+        color: #059669;
+        text-align: center;
+        border-top: 1px solid #d1fae5;
+        padding-top: 8px;
+        margin-top: 25px;
+    }
+    .page-break {
+        page-break-before: always;
+    }
+    .confidential-label {
+        font-size: 7pt;
+        color: #059669;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        text-align: right;
+        margin-bottom: 4px;
+    }
+</style>
+</head>
+<body>
+
+<!-- COVER PAGE -->
+<div class="cover-page">
+    <div style="padding-top: 60px;">
+        <div class="cover-brand">PMS QUANT LAB</div>
+        <div class="cover-divider"></div>
+        <div class="cover-subtitle">Institutional Portfolio Backtesting</div>
+    </div>
+    <div style="padding-top: 40px;">
+        <div style="font-family: Georgia, serif; font-size: 24pt; color: #ffffff; margin-bottom: 16px;">
+            {{ experiment.name }}
+        </div>
+        <div style="font-size: 12pt; color: #34d399; margin-bottom: 8px;">
+            Strategy: {{ experiment.params.strategy | upper }}
+        </div>
+        <div style="font-size: 10pt; color: #a7f3d0; margin-bottom: 30px;">
+            Rebalance Period: Monthly &nbsp;|&nbsp; Capital: ₹{{ experiment.params.initial_capital }}
+        </div>
+    </div>
+    <div style="font-size: 9pt; color: #a7f3d0; margin-top: 80px;">Report Date: {{ generated_at }}</div>
+    <div style="font-size: 8pt; color: #047857; margin-top: 6px;">Report ID: {{ report_id }} &nbsp;|&nbsp; Exp ID: {{ experiment.experiment_id }}</div>
+    <div style="font-size: 7pt; color: #047857; margin-top: 80px;">
+        Strictly Confidential — For Authorized Institutional Use Only
+    </div>
+</div>
+
+<div class="confidential-label">QUANT LABORATORY — PORTFOLIO BACKTEST</div>
+
+<h2>Portfolio Performance Summary</h2>
+
+<table style="width: 100%; margin-bottom: 16px;">
+    <tr>
+        <td class="metric-card" style="width: 24%;">
+            <div class="metric-label">Total Return</div>
+            <div class="metric-value">{{ experiment.metrics.total_return_pct | pct }}</div>
+        </td>
+        <td style="width: 1%;"></td>
+        <td class="metric-card" style="width: 24%;">
+            <div class="metric-label">Annualized Return (CAGR)</div>
+            <div class="metric-value">{{ experiment.metrics.cagr_pct | pct }}</div>
+        </td>
+        <td style="width: 1%;"></td>
+        <td class="metric-card" style="width: 24%;">
+            <div class="metric-label">Sharpe Ratio</div>
+            <div class="metric-value">{{ experiment.metrics.sharpe_ratio | decimal(2) }}</div>
+        </td>
+        <td style="width: 1%;"></td>
+        <td class="metric-card" style="width: 24%;">
+            <div class="metric-label">Max Drawdown</div>
+            <div class="metric-value" style="color: #ef4444;">{{ experiment.metrics.max_drawdown_pct | pct }}</div>
+        </td>
+    </tr>
+</table>
+
+<table style="width: 100%; margin-bottom: 16px;">
+    <tr>
+        <td class="metric-card" style="width: 24%;">
+            <div class="metric-label">Win Rate (Trades)</div>
+            <div class="metric-value">{{ experiment.metrics.win_rate_pct | pct }}</div>
+        </td>
+        <td style="width: 1%;"></td>
+        <td class="metric-card" style="width: 24%;">
+            <div class="metric-label">Sortino Ratio</div>
+            <div class="metric-value">{{ experiment.metrics.sortino_ratio | decimal(2) }}</div>
+        </td>
+        <td style="width: 1%;"></td>
+        <td class="metric-card" style="width: 24%;">
+            <div class="metric-label">Annualized Volatility</div>
+            <div class="metric-value">{{ experiment.metrics.annualized_volatility_pct | pct }}</div>
+        </td>
+        <td style="width: 1%;"></td>
+        <td class="metric-card" style="width: 24%;">
+            <div class="metric-label">Calmar Ratio</div>
+            <div class="metric-value">{{ experiment.metrics.calmar_ratio | decimal(2) }}</div>
+        </td>
+    </tr>
+</table>
+
+<div class="section">
+    <div class="section-header">Strategy Configuration</div>
+    <table class="data-table">
+        <tr>
+            <th>Setting</th>
+            <th>Value</th>
+        </tr>
+        <tr>
+            <td><strong>Strategy Module</strong></td>
+            <td>{{ experiment.params.strategy }}</td>
+        </tr>
+        <tr>
+            <td><strong>Target Position Count (N)</strong></td>
+            <td>{{ experiment.params.n }}</td>
+        </tr>
+        <tr>
+            <td><strong>Backtest Period</strong></td>
+            <td>{{ experiment.params.period }}</td>
+        </tr>
+        <tr>
+            <td><strong>Starting Capital</strong></td>
+            <td>₹{{ experiment.params.initial_capital }}</td>
+        </tr>
+    </table>
+</div>
+
+<div class="insight-box">
+    <strong>Backtest Review:</strong> Portfolio Strategy simulation completed over {{ experiment.params.period }}.
+    The strategy generated an annualized CAGR of {{ experiment.metrics.cagr_pct | pct }} with a Sharpe of {{ experiment.metrics.sharpe_ratio | decimal(2) }}.
+    Maximum drawdown observed was {{ experiment.metrics.max_drawdown_pct | pct }}.
+</div>
+
+<!-- FOOTER -->
+<div class="page-footer">
+    <p>
+        <strong>DISCLAIMER:</strong> This report is generated by the PMS Engine Quant Laboratory research framework.
+        Past performance is not indicative of future returns. For institutional research purposes only.
+    </p>
+    <p>
+        Report ID: {{ report_id }} &nbsp;|&nbsp; PMS Engine Quant Lab
+    </p>
+</div>
+
+</body>
+</html>

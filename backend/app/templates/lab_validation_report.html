@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8"/>
+<title>Quant Lab — Recommendation Validation Audit Report</title>
+<style type="text/css">
+    @page {
+        size: A4;
+        margin: 1.5cm 1.8cm 2cm 1.8cm;
+    }
+
+    body {
+        font-family: Arial, Helvetica, sans-serif;
+        font-size: 9.5pt;
+        color: #1a1a2e;
+        line-height: 1.45;
+        margin: 0;
+        padding: 0;
+        background-color: #ffffff;
+    }
+
+    h1, h2, h3, h4 {
+        font-family: Georgia, "Times New Roman", serif;
+        color: #0d1e36;
+        margin-top: 0;
+    }
+
+    h2 { font-size: 15pt; margin-bottom: 8px; border-bottom: 2px solid #6b21a8; padding-bottom: 4px; }
+    h3 { font-size: 12pt; margin-bottom: 6px; }
+
+    .cover-page {
+        background-color: #3b0764;
+        color: #ffffff;
+        padding: 50px 30px;
+        text-align: center;
+        page-break-after: always;
+    }
+    .cover-brand {
+        font-family: Georgia, "Times New Roman", serif;
+        font-size: 13pt;
+        color: #c084fc;
+        letter-spacing: 5px;
+        text-transform: uppercase;
+        margin-bottom: 8px;
+    }
+    .cover-divider {
+        width: 100px;
+        height: 2px;
+        background-color: #c084fc;
+        margin: 12px auto;
+    }
+    .cover-subtitle {
+        font-size: 9pt;
+        color: #e9d5ff;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        margin-bottom: 60px;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 12px;
+    }
+
+    .data-table th {
+        background-color: #3b0764;
+        color: #c084fc;
+        font-size: 8.5pt;
+        font-weight: bold;
+        padding: 6px 8px;
+        text-align: left;
+        border-bottom: 2px solid #c084fc;
+    }
+    .data-table td {
+        padding: 5px 8px;
+        font-size: 8.5pt;
+        border-bottom: 1px solid #e2e8f0;
+    }
+    .data-table tr:nth-child(even) td {
+        background-color: #faf5ff;
+    }
+
+    .metric-card {
+        background-color: #faf5ff;
+        border: 1px solid #f3e8ff;
+        padding: 8px;
+        text-align: center;
+        vertical-align: top;
+    }
+    .metric-label {
+        font-size: 7pt;
+        color: #6b21a8;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 2px;
+    }
+    .metric-value {
+        font-family: Georgia, "Times New Roman", serif;
+        font-size: 15pt;
+        font-weight: bold;
+        color: #3b0764;
+    }
+
+    .section {
+        margin-bottom: 16px;
+    }
+    .section-header {
+        background-color: #3b0764;
+        color: #c084fc;
+        padding: 5px 12px;
+        font-family: Georgia, "Times New Roman", serif;
+        font-size: 12pt;
+        font-weight: bold;
+        margin-bottom: 10px;
+    }
+
+    .insight-box {
+        background-color: #faf5ff;
+        border-left: 4px solid #7c3aed;
+        padding: 10px 14px;
+        margin: 10px 0;
+        font-size: 9pt;
+        color: #3b0764;
+    }
+
+    .page-footer {
+        font-size: 7pt;
+        color: #7c3aed;
+        text-align: center;
+        border-top: 1px solid #f3e8ff;
+        padding-top: 8px;
+        margin-top: 25px;
+    }
+    .page-break {
+        page-break-before: always;
+    }
+    .confidential-label {
+        font-size: 7pt;
+        color: #7c3aed;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        text-align: right;
+        margin-bottom: 4px;
+    }
+</style>
+</head>
+<body>
+
+<!-- COVER PAGE -->
+<div class="cover-page">
+    <div style="padding-top: 60px;">
+        <div class="cover-brand">PMS QUANT LAB</div>
+        <div class="cover-divider"></div>
+        <div class="cover-subtitle">Recommendation Validation Audit</div>
+    </div>
+    <div style="padding-top: 40px;">
+        <div style="font-family: Georgia, serif; font-size: 24pt; color: #ffffff; margin-bottom: 16px;">
+            Recommendation Accuracy Report
+        </div>
+        <div style="font-size: 12pt; color: #c084fc; margin-bottom: 8px;">
+            Audit of Historical BUY, HOLD & SELL Recommendations
+        </div>
+        <div style="font-size: 10pt; color: #e9d5ff; margin-bottom: 30px;">
+            Total Validated Signals: {{ audit_dashboard.total_validated }}
+        </div>
+    </div>
+    <div style="font-size: 9pt; color: #e9d5ff; margin-top: 80px;">Report Date: {{ generated_at }}</div>
+    <div style="font-size: 8pt; color: #7c3aed; margin-top: 6px;">Report ID: {{ report_id }}</div>
+    <div style="font-size: 7pt; color: #7c3aed; margin-top: 80px;">
+        Strictly Confidential — For Authorized Institutional Use Only
+    </div>
+</div>
+
+<div class="confidential-label">QUANT LABORATORY — RECOMMENDATION AUDIT</div>
+
+<h2>Audit Performance Summary</h2>
+
+<table style="width: 100%; margin-bottom: 16px;">
+    <tr>
+        <td class="metric-card" style="width: 49%;">
+            <div class="metric-label">Total Audit Records Validated</div>
+            <div class="metric-value">{{ audit_dashboard.total_validated }}</div>
+        </td>
+        <td style="width: 2%;"></td>
+        <td class="metric-card" style="width: 49%;">
+            <div class="metric-label">Audit Scope</div>
+            <div class="metric-value">1D to 365D Forward Horizons</div>
+        </td>
+    </tr>
+</table>
+
+<h2>Accuracy By Rating × Horizon Matrix</h2>
+
+<table class="data-table">
+    <tr>
+        <th>Rating</th>
+        <th style="text-align: center;">1D</th>
+        <th style="text-align: center;">5D</th>
+        <th style="text-align: center;">10D</th>
+        <th style="text-align: center;">20D</th>
+        <th style="text-align: center;">30D</th>
+        <th style="text-align: center;">90D</th>
+        <th style="text-align: center;">180D</th>
+        <th style="text-align: center;">365D</th>
+    </tr>
+    {% for rating in ["STRONG BUY", "BUY", "HOLD", "SELL", "STRONG SELL"] %}
+    <tr>
+        <td><strong>{{ rating }}</strong></td>
+        {% for h in ["1", "5", "10", "20", "30", "90", "180", "365"] %}
+        <td style="text-align: center;">
+            {% set cell = audit_dashboard.by_rating.get(rating, {}).get(h) %}
+            {% if cell and cell.accuracy_pct is not none %}
+              {{ cell.accuracy_pct | decimal(1) }}%
+            {% else %}
+              —
+            {% endif %}
+        </td>
+        {% endfor %}
+    </tr>
+    {% endfor %}
+</table>
+
+<div class="insight-box">
+    <strong>Validation Methodology:</strong>
+    <ul>
+        <li><strong>BUY / STRONG BUY</strong>: Correct if stock return over horizon was positive (> 0%).</li>
+        <li><strong>SELL / STRONG SELL</strong>: Correct if stock return over horizon was negative (< 0%).</li>
+        <li><strong>HOLD</strong>: Correct if stock return was flat (within ±3% absolute return).</li>
+    </ul>
+</div>
+
+<!-- FOOTER -->
+<div class="page-footer">
+    <p>
+        <strong>DISCLAIMER:</strong> This report is generated by the PMS Engine Quant Laboratory research framework.
+        Past performance is not indicative of future returns. For institutional research purposes only.
+    </p>
+    <p>
+        Report ID: {{ report_id }} &nbsp;|&nbsp; PMS Engine Quant Lab
+    </p>
+</div>
+
+</body>
+</html>

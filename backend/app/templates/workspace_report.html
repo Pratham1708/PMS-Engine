@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8"/>
+<title>PMS Engine — Research Workspace Report</title>
+<style type="text/css">
+    @page {
+        size: A4;
+        margin: 1.5cm 1.8cm 2cm 1.8cm;
+    }
+
+    body {
+        font-family: Arial, Helvetica, sans-serif;
+        font-size: 10pt;
+        color: #1a1a2e;
+        line-height: 1.5;
+        margin: 0;
+        padding: 0;
+        background-color: #ffffff;
+    }
+
+    h1, h2, h3, h4 {
+        font-family: Georgia, "Times New Roman", serif;
+        color: #0a1628;
+        margin-top: 0;
+    }
+
+    h2 { font-size: 16pt; margin-bottom: 8px; border-bottom: 2px solid #d4a843; padding-bottom: 4px; }
+    h3 { font-size: 13pt; margin-bottom: 6px; }
+
+    p { margin: 4px 0 8px 0; }
+
+    .cover-page {
+        background-color: #0a1628;
+        color: #ffffff;
+        padding: 40px 30px;
+        text-align: center;
+        height: 100%;
+        page-break-after: always;
+    }
+    .cover-brand {
+        font-family: Georgia, "Times New Roman", serif;
+        font-size: 14pt;
+        color: #d4a843;
+        letter-spacing: 6px;
+        text-transform: uppercase;
+        margin-bottom: 8px;
+    }
+    .cover-divider {
+        width: 120px;
+        height: 2px;
+        background-color: #d4a843;
+        margin: 12px auto;
+    }
+    .cover-subtitle {
+        font-size: 10pt;
+        color: #8899aa;
+        letter-spacing: 3px;
+        text-transform: uppercase;
+        margin-bottom: 50px;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 12px;
+    }
+
+    .data-table th {
+        background-color: #0a1628;
+        color: #d4a843;
+        font-size: 9pt;
+        font-weight: bold;
+        padding: 6px 10px;
+        text-align: left;
+        border-bottom: 2px solid #d4a843;
+    }
+    .data-table td {
+        padding: 5px 10px;
+        font-size: 9pt;
+        border-bottom: 1px solid #e5e7eb;
+        vertical-align: middle;
+    }
+    .data-table tr:nth-child(even) td {
+        background-color: #f8f9fa;
+    }
+
+    .metric-card {
+        background-color: #f8f9fa;
+        border: 1px solid #e5e7eb;
+        padding: 10px;
+        text-align: center;
+        vertical-align: top;
+    }
+    .metric-label {
+        font-size: 7.5pt;
+        color: #6b7280;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 2px;
+    }
+    .metric-value {
+        font-family: Georgia, "Times New Roman", serif;
+        font-size: 18pt;
+        font-weight: bold;
+        color: #0a1628;
+    }
+    .metric-value-small {
+        font-family: Georgia, "Times New Roman", serif;
+        font-size: 14pt;
+        font-weight: bold;
+        color: #0a1628;
+    }
+
+    .section {
+        margin-bottom: 16px;
+    }
+    .section-header {
+        background-color: #0a1628;
+        color: #d4a843;
+        padding: 6px 14px;
+        font-family: Georgia, "Times New Roman", serif;
+        font-size: 13pt;
+        font-weight: bold;
+        margin-bottom: 10px;
+    }
+
+    .insight-box {
+        background-color: #f0f4f8;
+        border-left: 4px solid #0a1628;
+        padding: 12px 16px;
+        margin: 10px 0;
+        font-size: 9.5pt;
+        line-height: 1.6;
+        color: #1a1a2e;
+    }
+
+    .score-bar-outer {
+        width: 100%;
+        height: 14px;
+        background-color: #e5e7eb;
+        border: 1px solid #d1d5db;
+    }
+    .score-bar-inner {
+        height: 14px;
+    }
+    .bar-green { background-color: #1b8a4a; }
+    .bar-blue { background-color: #3b82f6; }
+
+    .page-footer {
+        font-size: 7pt;
+        color: #9ca3af;
+        text-align: center;
+        border-top: 1px solid #e5e7eb;
+        padding-top: 8px;
+        margin-top: 20px;
+    }
+    .page-break {
+        page-break-before: always;
+    }
+    .confidential-label {
+        font-size: 7pt;
+        color: #c0392b;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        text-align: right;
+        margin-bottom: 4px;
+    }
+
+    .spacer-cell {
+        padding: 0;
+        margin: 0;
+    }
+
+    .rating-strong-buy { color: #1b8a4a; font-weight: bold; }
+    .rating-buy { color: #22c55e; font-weight: bold; }
+    .rating-hold { color: #d4a843; font-weight: bold; }
+    .rating-sell { color: #f97316; font-weight: bold; }
+    .rating-strong-sell { color: #c0392b; font-weight: bold; }
+</style>
+</head>
+<body>
+
+<!-- ═══════ COVER PAGE ═══════ -->
+<div class="cover-page">
+    <div style="padding-top: 80px;">
+        <div class="cover-brand">PMS ENGINE</div>
+        <div class="cover-divider"></div>
+        <div class="cover-subtitle">Institutional Research Division</div>
+    </div>
+    <div style="padding-top: 30px;">
+        <div style="font-size: 10pt; color: #8899aa; margin-bottom: 10px;">RESEARCH WORKSPACE REPORT</div>
+        <div style="font-family: Georgia, serif; font-size: 34pt; color: #ffffff; margin-bottom: 16px;">
+            Personal Research Workspace
+        </div>
+        <div style="font-size: 12pt; color: #d4a843; margin-bottom: 8px;">
+            Universe Coverage Analysis &amp; Saved Ideas
+        </div>
+        <div style="font-size: 10pt; color: #8899aa; margin-bottom: 30px;">
+            Tracked: {{ tracked_count }} Stocks &nbsp;|&nbsp; Coverage Ratio: {{ "{:.1f}".format(coverage_ratio) }}%
+        </div>
+        <div style="margin-top: 12px;">
+            <span style="font-size: 10pt; color: #aabbcc;">Analyzed Stocks: </span>
+            <span style="font-size: 16pt; color: #d4a843; font-weight: bold;">{{ analyzed_count }}</span>
+            <span style="font-size: 10pt; color: #aabbcc;"> &nbsp;|&nbsp; Avg Workspace Score: </span>
+            <span style="font-size: 16pt; color: #d4a843; font-weight: bold;">{% if avg_composite %}{{ "{:.2f}".format(avg_composite) }}{% else %}N/A{% endif %}</span>
+        </div>
+    </div>
+    <div style="font-size: 10pt; color: #8899aa; margin-top: 40px;">Report Date: {{ report_date }}</div>
+    <div style="font-size: 8pt; color: #556677; margin-top: 6px;">Report ID: {{ report_id }}</div>
+    <div style="font-size: 7pt; color: #556677; margin-top: 60px;">
+        This report is generated by PMS Engine's AI-driven institutional analytics platform.<br/>
+        For authorized recipients only. Not for public distribution.
+    </div>
+</div>
+
+<!-- ═══════ WORKSPACE OVERVIEW ═══════ -->
+<div class="confidential-label">CONFIDENTIAL — FOR INSTITUTIONAL USE ONLY</div>
+
+<h2>Workspace Summary</h2>
+
+<table style="width: 100%; margin-bottom: 16px;">
+    <tr>
+        <td class="metric-card" style="width: 24%;">
+            <div class="metric-label">Tracked Stocks</div>
+            <div class="metric-value">{{ tracked_count }}</div>
+        </td>
+        <td class="spacer-cell" style="width: 1%;"></td>
+        <td class="metric-card" style="width: 24%;">
+            <div class="metric-label">Universe Coverage</div>
+            <div class="metric-value">{{ "{:.1f}".format(coverage_ratio) }}%</div>
+        </td>
+        <td class="spacer-cell" style="width: 1%;"></td>
+        <td class="metric-card" style="width: 24%;">
+            <div class="metric-label">Avg Confidence</div>
+            <div class="metric-value">{% if avg_confidence %}{{ "{:.1f}".format(avg_confidence) }}%{% else %}N/A{% endif %}</div>
+        </td>
+        <td class="spacer-cell" style="width: 1%;"></td>
+        <td class="metric-card" style="width: 24%;">
+            <div class="metric-label">Avg Composite</div>
+            <div class="metric-value">{% if avg_composite %}{{ "{:.2f}".format(avg_composite) }}{% else %}N/A{% endif %}</div>
+        </td>
+    </tr>
+</table>
+
+<!-- Research Summary Cards -->
+<div class="section">
+    <div class="section-header">Research Highlights</div>
+    <table style="width: 100%; margin-bottom: 12px;">
+        <tr>
+            <td class="metric-card" style="width: 24%;">
+                <div class="metric-label">Most Bullish</div>
+                <div class="metric-value-small">{{ most_bullish_symbol or "N/A" }}</div>
+                <div style="font-size: 7.5pt; color: #6b7280;">Score: {% if most_bullish_score %}{{ "{:.2f}".format(most_bullish_score) }}{% else %}N/A{% endif %}</div>
+            </td>
+            <td class="spacer-cell" style="width: 1%;"></td>
+            <td class="metric-card" style="width: 24%;">
+                <div class="metric-label">Most Bearish</div>
+                <div class="metric-value-small">{{ most_bearish_symbol or "N/A" }}</div>
+                <div style="font-size: 7.5pt; color: #6b7280;">Score: {% if most_bearish_score %}{{ "{:.2f}".format(most_bearish_score) }}{% else %}N/A{% endif %}</div>
+            </td>
+            <td class="spacer-cell" style="width: 1%;"></td>
+            <td class="metric-card" style="width: 24%;">
+                <div class="metric-label">Highest Conviction</div>
+                <div class="metric-value-small">{{ highest_conviction_symbol or "N/A" }}</div>
+                <div style="font-size: 7.5pt; color: #6b7280;">Confidence: {% if highest_conviction_confidence %}{{ "{:.1f}".format(highest_conviction_confidence) }}%{% else %}N/A{% endif %}</div>
+            </td>
+            <td class="spacer-cell" style="width: 1%;"></td>
+            <td class="metric-card" style="width: 24%;">
+                <div class="metric-label">Latest Analyzed</div>
+                <div class="metric-value-small">{{ latest_analyzed_symbol or "N/A" }}</div>
+                <div style="font-size: 7.5pt; color: #6b7280;">{{ latest_analyzed_time or "N/A" }}</div>
+            </td>
+        </tr>
+    </table>
+
+    <div class="insight-box">
+        <strong>Workspace Coverage Insight:</strong> You are currently tracking {{ tracked_count }} stocks out of {{ total_universe }} available stocks in the scanner universe.
+        This represents an institutional coverage ratio of {{ "{:.1f}".format(coverage_ratio) }}%.
+        {{ workspace_insight }}
+    </div>
+</div>
+
+<!-- ═══════ MY TRACKED STOCKS ═══════ -->
+<div class="page-break"></div>
+<div class="confidential-label">CONFIDENTIAL — FOR INSTITUTIONAL USE ONLY</div>
+
+<h2>Tracked Stocks Coverage</h2>
+<table class="data-table">
+    <tr>
+        <th style="width: 5%; text-align: center;">#</th>
+        <th style="width: 20%;">Symbol</th>
+        <th style="width: 25%;">Sector</th>
+        <th style="width: 15%; text-align: center;">Rating</th>
+        <th style="width: 15%; text-align: center;">Confidence</th>
+        <th style="width: 20%; text-align: center;">Composite Score</th>
+    </tr>
+    {% if my_stocks %}
+        {% for stock in my_stocks %}
+        <tr>
+            <td style="text-align: center; font-weight: bold;">{{ loop.index }}</td>
+            <td><strong>{{ stock.symbol }}</strong></td>
+            <td>{{ stock.sector }}</td>
+            <td style="text-align: center;">
+                <span class="rating-{{ stock.last_rating|lower|replace(' ', '-') }}">{{ stock.last_rating }}</span>
+            </td>
+            <td style="text-align: center;">{% if stock.last_confidence is not none %}{{ "{:.1f}".format(stock.last_confidence) }}%{% else %}—{% endif %}</td>
+            <td style="text-align: center; font-weight: bold;">{% if stock.last_composite is not none %}{{ "{:.2f}".format(stock.last_composite) }}{% else %}—{% endif %}</td>
+        </tr>
+        {% endfor %}
+    {% else %}
+        <tr>
+            <td colspan="6" style="text-align: center; color: #6b7280; padding: 20px;">No stocks currently added to your research workspace.</td>
+        </tr>
+    {% endif %}
+</table>
+
+<!-- ═══════ RECENT ANALYSIS RUNS ═══════ -->
+<h2>Recent Analysis History</h2>
+<table class="data-table">
+    <tr>
+        <th style="width: 5%; text-align: center;">#</th>
+        <th style="width: 20%;">Symbol</th>
+        <th style="width: 15%; text-align: center;">Rating</th>
+        <th style="width: 15%; text-align: center;">Confidence</th>
+        <th style="width: 15%; text-align: center;">Composite Score</th>
+        <th style="width: 30%;">Analysis Timestamp</th>
+    </tr>
+    {% if recent_analysis %}
+        {% for run in recent_analysis %}
+        <tr>
+            <td style="text-align: center; font-weight: bold;">{{ loop.index }}</td>
+            <td><strong>{{ run.symbol }}</strong></td>
+            <td style="text-align: center;">
+                <span class="rating-{{ run.rating|lower|replace(' ', '-') }}">{{ run.rating }}</span>
+            </td>
+            <td style="text-align: center;">{{ "{:.1f}".format(run.confidence) }}%</td>
+            <td style="text-align: center; font-weight: bold;">{{ "{:.2f}".format(run.composite_score) }}</td>
+            <td>{{ run.analyzed_at }}</td>
+        </tr>
+        {% endfor %}
+    {% else %}
+        <tr>
+            <td colspan="6" style="text-align: center; color: #6b7280; padding: 20px;">No analysis history found. Run Stock Analysis to populate this table.</td>
+        </tr>
+    {% endif %}
+</table>
+
+<!-- ═══════ FOOTER ═══════ -->
+<div class="page-footer">
+    <p style="font-size: 7pt; color: #9ca3af; text-align: justify; margin-bottom: 8px;">
+        <strong>DISCLAIMER:</strong> This research workspace report is compiled from active portfolios and historical search indicators on the PMS Engine platform. All ratings and scores are generated by quantitative models and do not constitute direct investment recommendations. Past outcomes are not guarantees of future performance.
+    </p>
+    <p style="font-size: 7pt; color: #aabbcc;">
+        Report ID: {{ report_id }} &nbsp;|&nbsp; Generated: {{ report_date }} &nbsp;|&nbsp; PMS Engine v2.0 — Institutional Research Division
+    </p>
+    <p style="font-size: 7pt; color: #c0392b; letter-spacing: 1px;">
+        CONFIDENTIAL — FOR AUTHORIZED INSTITUTIONAL USE ONLY
+    </p>
+</div>
+
+</body>
+</html>

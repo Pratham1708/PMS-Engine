@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8"/>
+<title>PMS Engine — {{ symbol }} Research Report</title>
+<style type="text/css">
+    /* ── Page & Print Settings ────────────────────────────────── */
+    @page {
+        size: A4;
+        margin: 1.5cm 1.8cm 2cm 1.8cm;
+    }
+
+    /* ── Base Typography ──────────────────────────────────────── */
+    body {
+        font-family: Arial, Helvetica, sans-serif;
+        font-size: 10pt;
+        color: #1a1a2e;
+        line-height: 1.5;
+        margin: 0;
+        padding: 0;
+        background-color: #ffffff;
+    }
+
+    h1, h2, h3, h4 {
+        font-family: Georgia, "Times New Roman", serif;
+        color: #0a1628;
+        margin-top: 0;
+    }
+
+    h1 { font-size: 26pt; margin-bottom: 4px; }
+    h2 { font-size: 16pt; margin-bottom: 8px; border-bottom: 2px solid #d4a843; padding-bottom: 4px; }
+    h3 { font-size: 13pt; margin-bottom: 6px; }
+    h4 { font-size: 11pt; margin-bottom: 4px; }
+
+    p { margin: 4px 0 8px 0; }
+
+    /* ── Color Palette ────────────────────────────────────────── */
+    .navy { color: #0a1628; }
+    .gold { color: #d4a843; }
+    .green { color: #1b8a4a; }
+    .red { color: #c0392b; }
+    .gray { color: #6b7280; }
+
+    .bg-navy { background-color: #0a1628; }
+    .bg-gold { background-color: #d4a843; }
+
+    /* ── Cover Page ───────────────────────────────────────────── */
+    .cover-page {
+        background-color: #0a1628;
+        color: #ffffff;
+        padding: 40px 30px;
+        text-align: center;
+        height: 100%;
+        page-break-after: always;
+    }
+
+    .cover-brand {
+        font-family: Georgia, "Times New Roman", serif;
+        font-size: 14pt;
+        color: #d4a843;
+        letter-spacing: 6px;
+        text-transform: uppercase;
+        margin-bottom: 8px;
+    }
+
+    .cover-divider {
+        width: 120px;
+        height: 2px;
+        background-color: #d4a843;
+        margin: 12px auto;
+    }
+
+    .cover-subtitle {
+        font-size: 10pt;
+        color: #8899aa;
+        letter-spacing: 3px;
+        text-transform: uppercase;
+        margin-bottom: 50px;
+    }
+
+    .cover-symbol {
+        font-family: Georgia, "Times New Roman", serif;
+        font-size: 42pt;
+        color: #ffffff;
+        letter-spacing: 4px;
+        margin-bottom: 12px;
+    }
+
+    .cover-rating-badge {
+        display: inline-block;
+        font-size: 14pt;
+        font-weight: bold;
+        padding: 8px 28px;
+        border: 2px solid #d4a843;
+        color: #d4a843;
+        letter-spacing: 2px;
+        margin-bottom: 20px;
+    }
+
+    .cover-date {
+        font-size: 10pt;
+        color: #8899aa;
+        margin-top: 40px;
+    }
+
+    .cover-reportid {
+        font-size: 8pt;
+        color: #556677;
+        margin-top: 6px;
+    }
+
+    .cover-footer {
+        font-size: 7pt;
+        color: #556677;
+        margin-top: 60px;
+    }
+
+    /* ── Section Containers ───────────────────────────────────── */
+    .section {
+        margin-bottom: 16px;
+        padding: 0;
+    }
+
+    .section-header {
+        background-color: #0a1628;
+        color: #d4a843;
+        padding: 6px 14px;
+        font-family: Georgia, "Times New Roman", serif;
+        font-size: 13pt;
+        font-weight: bold;
+        margin-bottom: 10px;
+    }
+
+    /* ── Data Tables ──────────────────────────────────────────── */
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 12px;
+    }
+
+    .data-table th {
+        background-color: #0a1628;
+        color: #d4a843;
+        font-size: 9pt;
+        font-weight: bold;
+        padding: 6px 10px;
+        text-align: left;
+        border-bottom: 2px solid #d4a843;
+    }
+
+    .data-table td {
+        padding: 5px 10px;
+        font-size: 9pt;
+        border-bottom: 1px solid #e5e7eb;
+        vertical-align: middle;
+    }
+
+    .data-table tr:nth-child(even) td {
+        background-color: #f8f9fa;
+    }
+
+    /* ── Score Bar Visualization ──────────────────────────────── */
+    .score-bar-outer {
+        width: 100%;
+        height: 14px;
+        background-color: #e5e7eb;
+        border: 1px solid #d1d5db;
+    }
+
+    .score-bar-inner {
+        height: 14px;
+    }
+
+    .bar-positive { background-color: #1b8a4a; }
+    .bar-neutral { background-color: #d4a843; }
+    .bar-negative { background-color: #c0392b; }
+
+    /* ── Impact Badges ────────────────────────────────────────── */
+    .impact-positive {
+        color: #1b8a4a;
+        font-weight: bold;
+        font-size: 9pt;
+    }
+    .impact-negative {
+        color: #c0392b;
+        font-weight: bold;
+        font-size: 9pt;
+    }
+    .impact-neutral {
+        color: #d4a843;
+        font-weight: bold;
+        font-size: 9pt;
+    }
+
+    /* ── Factor Lists ─────────────────────────────────────────── */
+    .factor-table td {
+        padding: 4px 8px;
+        font-size: 9pt;
+        vertical-align: top;
+    }
+
+    .factor-table td.factor-positive-bar {
+        width: 4px;
+        background-color: #1b8a4a;
+        padding: 0 !important;
+        margin: 0;
+    }
+
+    .factor-table td.factor-negative-bar {
+        width: 4px;
+        background-color: #c0392b;
+        padding: 0 !important;
+        margin: 0;
+    }
+
+    .spacer-cell {
+        padding: 0 !important;
+        margin: 0;
+    }
+
+    /* ── Insight Box ──────────────────────────────────────────── */
+    .insight-box {
+        background-color: #f0f4f8;
+        border-left: 4px solid #0a1628;
+        padding: 12px 16px;
+        margin: 10px 0;
+        font-size: 9.5pt;
+        line-height: 1.6;
+        color: #1a1a2e;
+    }
+
+    /* ── Metric Cards (Table-based) ──────────────────────────── */
+    .metric-card {
+        background-color: #f8f9fa;
+        border: 1px solid #e5e7eb;
+        padding: 10px;
+        text-align: center;
+        vertical-align: top;
+    }
+
+    .metric-label {
+        font-size: 7.5pt;
+        color: #6b7280;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 2px;
+    }
+
+    .metric-value {
+        font-family: Georgia, "Times New Roman", serif;
+        font-size: 18pt;
+        font-weight: bold;
+        color: #0a1628;
+    }
+
+    .metric-value-small {
+        font-family: Georgia, "Times New Roman", serif;
+        font-size: 14pt;
+        font-weight: bold;
+        color: #0a1628;
+    }
+
+    /* ── Footer ───────────────────────────────────────────────── */
+    .page-footer {
+        font-size: 7pt;
+        color: #9ca3af;
+        text-align: center;
+        border-top: 1px solid #e5e7eb;
+        padding-top: 8px;
+        margin-top: 20px;
+    }
+
+    /* ── Page Break Utility ────────────────────────────────────── */
+    .page-break {
+        page-break-before: always;
+    }
+
+    /* ── Confidence Color Helper ──────────────────────────────── */
+    .conf-high { color: #1b8a4a; }
+    .conf-med { color: #d4a843; }
+    .conf-low { color: #c0392b; }
+
+    /* ── Watermark-style label ────────────────────────────────── */
+    .confidential-label {
+        font-size: 7pt;
+        color: #c0392b;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        text-align: right;
+        margin-bottom: 4px;
+    }
+</style>
+</head>
+<body>
+
+<!-- ════════════════════════════════════════════════════════════════
+     COVER PAGE
+     ════════════════════════════════════════════════════════════ -->
+<div class="cover-page">
+    <div style="padding-top: 80px;">
+        <div class="cover-brand">PMS ENGINE</div>
+        <div class="cover-divider"></div>
+        <div class="cover-subtitle">Institutional Research Division</div>
+    </div>
+    <div style="padding-top: 30px;">
+        <div style="font-size: 10pt; color: #8899aa; margin-bottom: 10px;">EQUITY RESEARCH REPORT</div>
+        <div class="cover-symbol">{{ symbol }}</div>
+        {% if sector and sector != '—' %}
+        <div style="font-size: 10pt; color: #8899aa; margin-bottom: 16px;">{{ sector }}</div>
+        {% endif %}
+        <div class="cover-rating-badge">{{ final_rating }}</div>
+        <div style="margin-top: 12px;">
+            <span style="font-size: 10pt; color: #aabbcc;">Composite Score: </span>
+            <span style="font-size: 16pt; color: #d4a843; font-weight: bold;">{{ "%.2f"|format(composite_score) }}</span>
+            <span style="font-size: 10pt; color: #aabbcc;"> &nbsp;|&nbsp; Confidence: </span>
+            <span style="font-size: 16pt; color: #d4a843; font-weight: bold;">{{ "%.1f"|format(confidence) }}%</span>
+        </div>
+    </div>
+    <div class="cover-date">Report Date: {{ report_date }}</div>
+    <div class="cover-reportid">Report ID: {{ report_id }}</div>
+    <div class="cover-footer">
+        This report is generated by PMS Engine's AI-driven institutional analytics platform.<br/>
+        For authorized recipients only. Not for public distribution.
+    </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════
+     PAGE 2: EXECUTIVE SUMMARY & SCORES
+     ════════════════════════════════════════════════════════════ -->
+
+<div class="confidential-label">CONFIDENTIAL — FOR INSTITUTIONAL USE ONLY</div>
+
+<h2>Executive Summary</h2>
+
+<!-- Key Metrics Row -->
+<table style="width: 100%; margin-bottom: 16px;">
+    <tr>
+        <td class="metric-card" style="width: 20%;">
+            <div class="metric-label">Rating</div>
+            <div class="metric-value-small" style="color: {% if final_rating in ['STRONG BUY', 'BUY'] %}#1b8a4a{% elif final_rating in ['SELL', 'STRONG SELL'] %}#c0392b{% else %}#d4a843{% endif %};">{{ final_rating }}</div>
+        </td>
+        <td class="spacer-cell" style="width: 1%;"></td>
+        <td class="metric-card" style="width: 18%;">
+            <div class="metric-label">Composite</div>
+            <div class="metric-value">{{ "%.2f"|format(composite_score) }}</div>
+        </td>
+        <td class="spacer-cell" style="width: 1%;"></td>
+        <td class="metric-card" style="width: 18%;">
+            <div class="metric-label">Confidence</div>
+            <div class="metric-value">{{ "%.1f"|format(confidence) }}%</div>
+        </td>
+        <td class="spacer-cell" style="width: 1%;"></td>
+        <td class="metric-card" style="width: 18%;">
+            <div class="metric-label">Rank</div>
+            <div class="metric-value">#{{ rank }}</div>
+        </td>
+        <td class="spacer-cell" style="width: 1%;"></td>
+        <td class="metric-card" style="width: 18%;">
+            <div class="metric-label">Percentile</div>
+            <div class="metric-value">{{ "%.1f"|format(percentile) }}%</div>
+        </td>
+    </tr>
+</table>
+
+<!-- Additional Info Row -->
+<table style="width: 100%; margin-bottom: 16px;">
+    <tr>
+        <td class="metric-card" style="width: 24%;">
+            <div class="metric-label">Universe Position</div>
+            <div class="metric-value-small">{{ universe_position }}</div>
+        </td>
+        <td class="spacer-cell" style="width: 1%;"></td>
+        <td class="metric-card" style="width: 24%;">
+            <div class="metric-label">Conviction Level</div>
+            <div class="metric-value-small">{{ conviction_level }}</div>
+        </td>
+        <td class="spacer-cell" style="width: 1%;"></td>
+        <td class="metric-card" style="width: 24%;">
+            <div class="metric-label">Portfolio Eligible</div>
+            <div class="metric-value-small" style="color: {% if portfolio_eligible %}#1b8a4a{% else %}#c0392b{% endif %};">{% if portfolio_eligible %}YES{% else %}NO{% endif %}</div>
+        </td>
+        <td class="spacer-cell" style="width: 1%;"></td>
+        <td class="metric-card" style="width: 24%;">
+            <div class="metric-label">Current Price</div>
+            <div class="metric-value-small">{% if current_price %}₹{{ "%.2f"|format(current_price) }}{% else %}N/A{% endif %}</div>
+        </td>
+    </tr>
+</table>
+
+{% if current_price %}
+<!-- Market Data Row -->
+<table style="width: 100%; margin-bottom: 16px;">
+    <tr>
+        <td class="metric-card" style="width: 32%;">
+            <div class="metric-label">Daily Change</div>
+            <div class="metric-value-small" style="color: {% if daily_change_pct and daily_change_pct >= 0 %}#1b8a4a{% else %}#c0392b{% endif %};">{% if daily_change_pct %}{{ "%.2f"|format(daily_change_pct) }}%{% else %}N/A{% endif %}</div>
+        </td>
+        <td class="spacer-cell" style="width: 2%;"></td>
+        <td class="metric-card" style="width: 32%;">
+            <div class="metric-label">Volume</div>
+            <div class="metric-value-small">{% if volume %}{{ "{:,}".format(volume) }}{% else %}N/A{% endif %}</div>
+        </td>
+        <td class="spacer-cell" style="width: 2%;"></td>
+        <td class="metric-card" style="width: 32%;">
+            <div class="metric-label">Reliability Score</div>
+            <div class="metric-value-small">{{ "%.2f"|format(reliability_score) }}/100</div>
+        </td>
+    </tr>
+</table>
+{% endif %}
+
+<!-- ── Rating Explanation ──────────────────────────────────────── -->
+<div class="section">
+    <div class="section-header">Rating Rationale</div>
+    <div class="insight-box">
+        {{ rating_reason }}
+    </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════
+     SCORE BREAKDOWN
+     ════════════════════════════════════════════════════════════ -->
+
+<div class="section">
+    <div class="section-header">Model Score Breakdown</div>
+
+    <table class="data-table">
+        <tr>
+            <th style="width: 22%;">Model Engine</th>
+            <th style="width: 12%; text-align: center;">Score</th>
+            <th style="width: 66%;">Score Visualization</th>
+        </tr>
+
+        <!-- Technical Score -->
+        {% set tech_pct = [[(technical_score + 100) / 2, 100]|min, 0]|max %}
+        <tr>
+            <td><strong>Technical Score</strong></td>
+            <td style="text-align: center; font-weight: bold;">{{ "%.2f"|format(technical_score) }}</td>
+            <td>
+                <div class="score-bar-outer">
+                    <div class="score-bar-inner {% if technical_score > 10 %}bar-positive{% elif technical_score < -10 %}bar-negative{% else %}bar-neutral{% endif %}" style="width: {{ "%.0f"|format(tech_pct) }}%;"></div>
+                </div>
+            </td>
+        </tr>
+
+        <!-- ML Score -->
+        {% set ml_pct = [[(ml_score + 50) / 1, 100]|min, 0]|max %}
+        <tr>
+            <td><strong>ML Ensemble Score</strong></td>
+            <td style="text-align: center; font-weight: bold;">{{ "%.2f"|format(ml_score) }}</td>
+            <td>
+                <div class="score-bar-outer">
+                    <div class="score-bar-inner {% if ml_score > 5 %}bar-positive{% elif ml_score < -5 %}bar-negative{% else %}bar-neutral{% endif %}" style="width: {{ "%.0f"|format(ml_pct) }}%;"></div>
+                </div>
+            </td>
+        </tr>
+
+        <!-- GRU Score -->
+        {% set gru_pct = [[(gru_score + 50) / 1, 100]|min, 0]|max %}
+        <tr>
+            <td><strong>GRU Deep Learning</strong></td>
+            <td style="text-align: center; font-weight: bold;">{{ "%.2f"|format(gru_score) }}</td>
+            <td>
+                <div class="score-bar-outer">
+                    <div class="score-bar-inner {% if gru_score > 5 %}bar-positive{% elif gru_score < -5 %}bar-negative{% else %}bar-neutral{% endif %}" style="width: {{ "%.0f"|format(gru_pct) }}%;"></div>
+                </div>
+            </td>
+        </tr>
+
+        <!-- Return Score -->
+        {% if return_score is not none %}
+        {% set ret_pct = [[(return_score + 50) / 1, 100]|min, 0]|max %}
+        <tr>
+            <td><strong>Expected Return</strong></td>
+            <td style="text-align: center; font-weight: bold;">{{ "%.2f"|format(return_score) }}</td>
+            <td>
+                <div class="score-bar-outer">
+                    <div class="score-bar-inner {% if return_score > 10 %}bar-positive{% elif return_score < -10 %}bar-negative{% else %}bar-neutral{% endif %}" style="width: {{ "%.0f"|format(ret_pct) }}%;"></div>
+                </div>
+            </td>
+        </tr>
+        {% endif %}
+
+        <!-- Reliability Score -->
+        <tr>
+            <td><strong>Reliability</strong></td>
+            <td style="text-align: center; font-weight: bold;">{{ "%.2f"|format(reliability_score) }}</td>
+            <td>
+                <div class="score-bar-outer">
+                    <div class="score-bar-inner {% if reliability_score >= 70 %}bar-positive{% elif reliability_score < 60 %}bar-negative{% else %}bar-neutral{% endif %}" style="width: {{ "%.0f"|format(reliability_score) }}%;"></div>
+                </div>
+            </td>
+        </tr>
+    </table>
+</div>
+
+<!-- GRU Probability Breakdown -->
+{% if gru_long is not none and gru_short is not none and gru_hold is not none %}
+<div class="section">
+    <div class="section-header">GRU Neural Network Probability Distribution</div>
+    <table style="width: 100%; margin-bottom: 8px;">
+        <tr>
+            <td class="metric-card" style="width: 32%;">
+                <div class="metric-label">Long Probability</div>
+                <div class="metric-value-small" style="color: #1b8a4a;">{{ "%.2f"|format(gru_long) }}%</div>
+            </td>
+            <td class="spacer-cell" style="width: 2%;"></td>
+            <td class="metric-card" style="width: 32%;">
+                <div class="metric-label">Hold Probability</div>
+                <div class="metric-value-small" style="color: #d4a843;">{{ "%.2f"|format(gru_hold) }}%</div>
+            </td>
+            <td class="spacer-cell" style="width: 2%;"></td>
+            <td class="metric-card" style="width: 32%;">
+                <div class="metric-label">Short Probability</div>
+                <div class="metric-value-small" style="color: #c0392b;">{{ "%.2f"|format(gru_short) }}%</div>
+            </td>
+        </tr>
+    </table>
+</div>
+{% endif %}
+
+<!-- ════════════════════════════════════════════════════════════════
+     PAGE 3: RATING DRIVERS & FACTORS
+     ════════════════════════════════════════════════════════════ -->
+<div class="page-break"></div>
+<div class="confidential-label">CONFIDENTIAL — FOR INSTITUTIONAL USE ONLY</div>
+
+<h2>Rating Drivers Analysis</h2>
+
+<p style="color: #6b7280; font-size: 9pt; margin-bottom: 10px;">
+    The following table decomposes the factors driving {{ symbol }}'s current rating assignment,
+    ranked by absolute contribution magnitude.
+</p>
+
+<table class="data-table">
+    <tr>
+        <th style="width: 22%;">Driver</th>
+        <th style="width: 10%; text-align: center;">Value</th>
+        <th style="width: 14%; text-align: center;">Contribution</th>
+        <th style="width: 10%; text-align: center;">Impact</th>
+        <th style="width: 44%;">Description</th>
+    </tr>
+    {% for driver in rating_drivers %}
+    <tr>
+        <td><strong>{{ driver.name }}</strong></td>
+        <td style="text-align: center; font-weight: bold;">{{ "%.2f"|format(driver.value) }}</td>
+        <td style="text-align: center;">{{ driver.contribution }}</td>
+        <td style="text-align: center;">
+            <span class="impact-{{ driver.impact }}">
+                {% if driver.impact == 'positive' %}▲ POSITIVE{% elif driver.impact == 'negative' %}▼ NEGATIVE{% else %}◆ NEUTRAL{% endif %}
+            </span>
+        </td>
+        <td style="font-size: 8.5pt; color: #4b5563;">{{ driver.description }}</td>
+    </tr>
+    {% endfor %}
+</table>
+
+<!-- ── Model Explanations ──────────────────────────────────────── -->
+<div class="section">
+    <div class="section-header">Model-Level Explanations</div>
+
+    <h4 style="color: #0a1628; margin-top: 10px;">Technical Score Analysis</h4>
+    <p style="font-size: 9pt; color: #374151;">{{ technical_reason }}</p>
+
+    <h4 style="color: #0a1628;">ML Ensemble Analysis</h4>
+    <p style="font-size: 9pt; color: #374151;">{{ ml_reason }}</p>
+
+    <h4 style="color: #0a1628;">GRU Deep Learning Analysis</h4>
+    <p style="font-size: 9pt; color: #374151;">{{ gru_reason }}</p>
+
+    <h4 style="color: #0a1628;">Expected Return Analysis</h4>
+    <p style="font-size: 9pt; color: #374151;">{{ return_reason }}</p>
+</div>
+
+<!-- ── Positive & Negative Factors ─────────────────────────────── -->
+<div class="section">
+    <div class="section-header">Key Investment Factors</div>
+
+    <table style="width: 100%;">
+        <tr>
+            <!-- Positive Factors -->
+            <td style="width: 49%; vertical-align: top;">
+                <h4 style="color: #1b8a4a;">▲ Positive Factors</h4>
+                <table class="factor-table" style="width: 100%;">
+                    {% for factor in positive_factors %}
+                    <tr>
+                        <td class="factor-positive-bar" style="padding: 0; margin: 0; width: 4px;"></td>
+                        <td style="padding-left: 8px;">{{ factor }}</td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            </td>
+            <td class="spacer-cell" style="width: 2%;"></td>
+            <!-- Negative Factors -->
+            <td style="width: 49%; vertical-align: top;">
+                <h4 style="color: #c0392b;">▼ Negative Factors / Risk Considerations</h4>
+                <table class="factor-table" style="width: 100%;">
+                    {% for factor in negative_factors %}
+                    <tr>
+                        <td class="factor-negative-bar" style="padding: 0; margin: 0; width: 4px;"></td>
+                        <td style="padding-left: 8px;">{{ factor }}</td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            </td>
+        </tr>
+    </table>
+</div>
+
+<!-- ── Institutional Insight ───────────────────────────────────── -->
+<div class="section">
+    <div class="section-header">PMS Engine Research Desk Insight</div>
+    <div class="insight-box">
+        {{ institutional_insight }}
+    </div>
+</div>
+
+<!-- ── Legal Disclaimer & Footer ───────────────────────────────── -->
+<div class="page-footer">
+    <p style="font-size: 7pt; color: #9ca3af; text-align: justify; margin-bottom: 8px;">
+        <strong>DISCLAIMER:</strong> This report is produced by PMS Engine's automated AI research platform for
+        informational and analytical purposes only. It does not constitute investment advice, a recommendation,
+        or an offer to buy or sell any security. All ratings, scores, and projections are generated by quantitative
+        models and may not reflect all market conditions, risks, or developments. Past performance and model outputs
+        are not indicative of future results. Investors should conduct their own due diligence and consult with
+        qualified financial advisors before making investment decisions. PMS Engine, its operators, and affiliates
+        accept no liability for any losses arising from the use of this report.
+    </p>
+    <p style="font-size: 7pt; color: #aabbcc;">
+        Report ID: {{ report_id }} &nbsp;|&nbsp; Generated: {{ report_date }} &nbsp;|&nbsp; PMS Engine v2.0 — Institutional Research Division
+    </p>
+    <p style="font-size: 7pt; color: #c0392b; letter-spacing: 1px;">
+        CONFIDENTIAL — FOR AUTHORIZED INSTITUTIONAL USE ONLY
+    </p>
+</div>
+
+</body>
+</html>

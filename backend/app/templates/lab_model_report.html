@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8"/>
+<title>Quant Lab — ML Model Evaluation Report</title>
+<style type="text/css">
+    @page {
+        size: A4;
+        margin: 1.5cm 1.8cm 2cm 1.8cm;
+    }
+
+    body {
+        font-family: Arial, Helvetica, sans-serif;
+        font-size: 9.5pt;
+        color: #1a1a2e;
+        line-height: 1.45;
+        margin: 0;
+        padding: 0;
+        background-color: #ffffff;
+    }
+
+    h1, h2, h3, h4 {
+        font-family: Georgia, "Times New Roman", serif;
+        color: #0b1e36;
+        margin-top: 0;
+    }
+
+    h2 { font-size: 15pt; margin-bottom: 8px; border-bottom: 2px solid #2563eb; padding-bottom: 4px; }
+    h3 { font-size: 12pt; margin-bottom: 6px; }
+
+    .cover-page {
+        background-color: #0f172a;
+        color: #ffffff;
+        padding: 50px 30px;
+        text-align: center;
+        page-break-after: always;
+    }
+    .cover-brand {
+        font-family: Georgia, "Times New Roman", serif;
+        font-size: 13pt;
+        color: #3b82f6;
+        letter-spacing: 5px;
+        text-transform: uppercase;
+        margin-bottom: 8px;
+    }
+    .cover-divider {
+        width: 100px;
+        height: 2px;
+        background-color: #3b82f6;
+        margin: 12px auto;
+    }
+    .cover-subtitle {
+        font-size: 9pt;
+        color: #94a3b8;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        margin-bottom: 60px;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 12px;
+    }
+
+    .data-table th {
+        background-color: #0f172a;
+        color: #3b82f6;
+        font-size: 8.5pt;
+        font-weight: bold;
+        padding: 6px 8px;
+        text-align: left;
+        border-bottom: 2px solid #3b82f6;
+    }
+    .data-table td {
+        padding: 5px 8px;
+        font-size: 8.5pt;
+        border-bottom: 1px solid #e2e8f0;
+    }
+    .data-table tr:nth-child(even) td {
+        background-color: #f8fafc;
+    }
+
+    .metric-card {
+        background-color: #f8fafc;
+        border: 1px solid #e2e8f0;
+        padding: 8px;
+        text-align: center;
+        vertical-align: top;
+    }
+    .metric-label {
+        font-size: 7pt;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 2px;
+    }
+    .metric-value {
+        font-family: Georgia, "Times New Roman", serif;
+        font-size: 15pt;
+        font-weight: bold;
+        color: #0f172a;
+    }
+
+    .section {
+        margin-bottom: 16px;
+    }
+    .section-header {
+        background-color: #0f172a;
+        color: #3b82f6;
+        padding: 5px 12px;
+        font-family: Georgia, "Times New Roman", serif;
+        font-size: 12pt;
+        font-weight: bold;
+        margin-bottom: 10px;
+    }
+
+    .insight-box {
+        background-color: #f1f5f9;
+        border-left: 4px solid #3b82f6;
+        padding: 10px 14px;
+        margin: 10px 0;
+        font-size: 9pt;
+        color: #1e293b;
+    }
+
+    .page-footer {
+        font-size: 7pt;
+        color: #94a3b8;
+        text-align: center;
+        border-top: 1px solid #e2e8f0;
+        padding-top: 8px;
+        margin-top: 25px;
+    }
+    .page-break {
+        page-break-before: always;
+    }
+    .confidential-label {
+        font-size: 7pt;
+        color: #3b82f6;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        text-align: right;
+        margin-bottom: 4px;
+    }
+</style>
+</head>
+<body>
+
+<!-- COVER PAGE -->
+<div class="cover-page">
+    <div style="padding-top: 60px;">
+        <div class="cover-brand">PMS QUANT LAB</div>
+        <div class="cover-divider"></div>
+        <div class="cover-subtitle">Model Research & Evaluation Laboratory</div>
+    </div>
+    <div style="padding-top: 40px;">
+        <div style="font-family: Georgia, serif; font-size: 24pt; color: #ffffff; margin-bottom: 16px;">
+            ML & Deep Learning Model Comparison
+        </div>
+        <div style="font-size: 12pt; color: #3b82f6; margin-bottom: 8px;">
+            Side-by-Side Validation Analysis
+        </div>
+        <div style="font-size: 10pt; color: #94a3b8; margin-bottom: 30px;">
+            Horizon: {{ experiment.params.horizon_bars }} Bars &nbsp;|&nbsp; Universe: Nifty 50 + Security Master
+        </div>
+    </div>
+    <div style="font-size: 9pt; color: #94a3b8; margin-top: 80px;">Report Date: {{ generated_at }}</div>
+    <div style="font-size: 8pt; color: #475569; margin-top: 6px;">Report ID: {{ report_id }} &nbsp;|&nbsp; Exp ID: {{ experiment.experiment_id }}</div>
+    <div style="font-size: 7pt; color: #475569; margin-top: 80px;">
+        Strictly Confidential — For Authorized Institutional Use Only
+    </div>
+</div>
+
+<div class="confidential-label">QUANT LABORATORY — MODEL RESEARCH</div>
+
+<h2>Model Comparison Matrix</h2>
+
+<table class="data-table">
+    <tr>
+        <th>Model Label</th>
+        <th>Category</th>
+        <th style="text-align: center;">Information Coeff. (IC)</th>
+        <th style="text-align: center;">Hit Rate</th>
+        <th style="text-align: center;">t-statistic</th>
+        <th style="text-align: center;">Significant</th>
+        <th style="text-align: center;">Score Mean</th>
+        <th style="text-align: center;">Score Std</th>
+    </tr>
+    {% for model_key, model_val in experiment.metrics.items() %}
+      {% if model_key.endswith('_ic') %}
+        {% set mname = model_key.replace('_ic', '') %}
+        <tr>
+            <td><strong>{{ mname | upper }}</strong></td>
+            <td>
+              {% if mname == 'gru' %}Deep Learning{% elif mname == 'ml_ensemble' %}Ensemble{% elif mname == 'technical' %}Rule-Based{% else %}Statistical{% endif %}
+            </td>
+            <td style="text-align: center; font-weight: bold;">
+                {{ experiment.metrics[mname ~ '_ic'] | decimal(4) }}
+            </td>
+            <td style="text-align: center;">
+                {{ experiment.metrics[mname ~ '_hit_rate'] | pct }}
+            </td>
+            <td style="text-align: center;">
+                {{ experiment.metrics[mname ~ '_t_stat'] | decimal(2) }}
+            </td>
+            <td style="text-align: center;">
+                {% if experiment.metrics[mname ~ '_significant'] == 1 %}Yes{% else %}No{% endif %}
+            </td>
+            <td style="text-align: center;">
+                {{ experiment.metrics[mname ~ '_mean'] | decimal(2) }}
+            </td>
+            <td style="text-align: center;">
+                {{ experiment.metrics[mname ~ '_std'] | decimal(2) }}
+            </td>
+        </tr>
+      {% endif %}
+    {% endfor %}
+</table>
+
+<div class="insight-box">
+    <strong>Key Findings:</strong> Model evaluations are based on Spearman rank correlation between predictions and forward returns.
+    High IC indicates high predictive accuracy. Statistical significance is determined with t-statistics (> 1.96).
+</div>
+
+<div class="page-break"></div>
+<div class="confidential-label">QUANT LABORATORY — FEATURE IMPORTANCE</div>
+
+<h2>Permutation Feature Importance</h2>
+<p>Shuffling each feature 10× to measure rank correlation degradation on CompositeScoreV2.</p>
+
+<table class="data-table">
+    <tr>
+        <th>Feature Score</th>
+        <th style="text-align: right;">Permutation Importance</th>
+    </tr>
+    {% for feature, importance_val in experiment.charts.feature_importance %}
+    <tr>
+        <td><strong>{{ feature }}</strong></td>
+        <td style="text-align: right; font-weight: bold;">{{ importance_val | decimal(4) }}</td>
+    </tr>
+    {% endfor %}
+</table>
+
+<!-- FOOTER -->
+<div class="page-footer">
+    <p>
+        <strong>DISCLAIMER:</strong> This report is generated by the PMS Engine Quant Laboratory research framework.
+        Past performance is not indicative of future returns. For institutional research purposes only.
+    </p>
+    <p>
+        Report ID: {{ report_id }} &nbsp;|&nbsp; PMS Engine Quant Lab
+    </p>
+</div>
+
+</body>
+</html>

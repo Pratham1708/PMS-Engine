@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8"/>
+<title>PMS Engine — Portfolio Research Report</title>
+<style type="text/css">
+    @page {
+        size: A4;
+        margin: 1.5cm 1.8cm 2cm 1.8cm;
+    }
+
+    body {
+        font-family: Arial, Helvetica, sans-serif;
+        font-size: 10pt;
+        color: #1a1a2e;
+        line-height: 1.5;
+        margin: 0;
+        padding: 0;
+        background-color: #ffffff;
+    }
+
+    h1, h2, h3, h4 {
+        font-family: Georgia, "Times New Roman", serif;
+        color: #0a1628;
+        margin-top: 0;
+    }
+
+    h2 { font-size: 16pt; margin-bottom: 8px; border-bottom: 2px solid #d4a843; padding-bottom: 4px; }
+    h3 { font-size: 13pt; margin-bottom: 6px; }
+
+    p { margin: 4px 0 8px 0; }
+
+    .cover-page {
+        background-color: #0a1628;
+        color: #ffffff;
+        padding: 40px 30px;
+        text-align: center;
+        height: 100%;
+        page-break-after: always;
+    }
+    .cover-brand {
+        font-family: Georgia, "Times New Roman", serif;
+        font-size: 14pt;
+        color: #d4a843;
+        letter-spacing: 6px;
+        text-transform: uppercase;
+        margin-bottom: 8px;
+    }
+    .cover-divider {
+        width: 120px;
+        height: 2px;
+        background-color: #d4a843;
+        margin: 12px auto;
+    }
+    .cover-subtitle {
+        font-size: 10pt;
+        color: #8899aa;
+        letter-spacing: 3px;
+        text-transform: uppercase;
+        margin-bottom: 50px;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 12px;
+    }
+
+    .data-table th {
+        background-color: #0a1628;
+        color: #d4a843;
+        font-size: 9pt;
+        font-weight: bold;
+        padding: 6px 10px;
+        text-align: left;
+        border-bottom: 2px solid #d4a843;
+    }
+    .data-table td {
+        padding: 5px 10px;
+        font-size: 9pt;
+        border-bottom: 1px solid #e5e7eb;
+        vertical-align: middle;
+    }
+    .data-table tr:nth-child(even) td {
+        background-color: #f8f9fa;
+    }
+
+    .metric-card {
+        background-color: #f8f9fa;
+        border: 1px solid #e5e7eb;
+        padding: 10px;
+        text-align: center;
+        vertical-align: top;
+    }
+    .metric-label {
+        font-size: 7.5pt;
+        color: #6b7280;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 2px;
+    }
+    .metric-value {
+        font-family: Georgia, "Times New Roman", serif;
+        font-size: 18pt;
+        font-weight: bold;
+        color: #0a1628;
+    }
+    .metric-value-small {
+        font-family: Georgia, "Times New Roman", serif;
+        font-size: 14pt;
+        font-weight: bold;
+        color: #0a1628;
+    }
+
+    .section {
+        margin-bottom: 16px;
+    }
+    .section-header {
+        background-color: #0a1628;
+        color: #d4a843;
+        padding: 6px 14px;
+        font-family: Georgia, "Times New Roman", serif;
+        font-size: 13pt;
+        font-weight: bold;
+        margin-bottom: 10px;
+    }
+
+    .insight-box {
+        background-color: #f0f4f8;
+        border-left: 4px solid #0a1628;
+        padding: 12px 16px;
+        margin: 10px 0;
+        font-size: 9.5pt;
+        line-height: 1.6;
+        color: #1a1a2e;
+    }
+
+    .score-bar-outer {
+        width: 100%;
+        height: 14px;
+        background-color: #e5e7eb;
+        border: 1px solid #d1d5db;
+    }
+    .score-bar-inner {
+        height: 14px;
+    }
+    .bar-green { background-color: #1b8a4a; }
+    .bar-blue { background-color: #3b82f6; }
+
+    .page-footer {
+        font-size: 7pt;
+        color: #9ca3af;
+        text-align: center;
+        border-top: 1px solid #e5e7eb;
+        padding-top: 8px;
+        margin-top: 20px;
+    }
+    .page-break {
+        page-break-before: always;
+    }
+    .confidential-label {
+        font-size: 7pt;
+        color: #c0392b;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        text-align: right;
+        margin-bottom: 4px;
+    }
+
+    .rating-strong-buy { color: #1b8a4a; font-weight: bold; }
+    .rating-buy { color: #22c55e; font-weight: bold; }
+    .rating-hold { color: #d4a843; font-weight: bold; }
+    .rating-sell { color: #f97316; font-weight: bold; }
+    .rating-strong-sell { color: #c0392b; font-weight: bold; }
+</style>
+</head>
+<body>
+
+<!-- ═══════ COVER PAGE ═══════ -->
+<div class="cover-page">
+    <div style="padding-top: 80px;">
+        <div class="cover-brand">PMS ENGINE</div>
+        <div class="cover-divider"></div>
+        <div class="cover-subtitle">Institutional Research Division</div>
+    </div>
+    <div style="padding-top: 30px;">
+        <div style="font-size: 10pt; color: #8899aa; margin-bottom: 10px;">PORTFOLIO RESEARCH REPORT</div>
+        <div style="font-family: Georgia, serif; font-size: 36pt; color: #ffffff; margin-bottom: 16px;">
+            Conviction Portfolio
+        </div>
+        <div style="font-size: 12pt; color: #d4a843; margin-bottom: 8px;">
+            ₹{{ "{:,.0f}"|format(capital) }} Capital Allocation
+        </div>
+        <div style="font-size: 10pt; color: #8899aa; margin-bottom: 30px;">
+            {{ total_stocks }} Holdings &nbsp;|&nbsp; STRONG BUY + BUY Universe
+        </div>
+        <div style="margin-top: 12px;">
+            <span style="font-size: 10pt; color: #aabbcc;">Avg Confidence: </span>
+            <span style="font-size: 16pt; color: #d4a843; font-weight: bold;">{{ "%.1f"|format(avg_confidence) }}%</span>
+            <span style="font-size: 10pt; color: #aabbcc;"> &nbsp;|&nbsp; Avg Composite: </span>
+            <span style="font-size: 16pt; color: #d4a843; font-weight: bold;">{{ "%.2f"|format(avg_composite) }}</span>
+        </div>
+    </div>
+    <div style="font-size: 10pt; color: #8899aa; margin-top: 40px;">Report Date: {{ report_date }}</div>
+    <div style="font-size: 8pt; color: #556677; margin-top: 6px;">Report ID: {{ report_id }}</div>
+    <div style="font-size: 7pt; color: #556677; margin-top: 60px;">
+        This report is generated by PMS Engine's AI-driven institutional analytics platform.<br/>
+        For authorized recipients only. Not for public distribution.
+    </div>
+</div>
+
+<!-- ═══════ PORTFOLIO SUMMARY ═══════ -->
+<div class="confidential-label">CONFIDENTIAL — FOR INSTITUTIONAL USE ONLY</div>
+
+<h2>Portfolio Summary</h2>
+
+<table style="width: 100%; margin-bottom: 16px;">
+    <tr>
+        <td class="metric-card" style="width: 19%;">
+            <div class="metric-label">Total Capital</div>
+            <div class="metric-value-small">₹{{ "{:,.0f}"|format(capital) }}</div>
+        </td>
+        <td style="width: 1%;"></td>
+        <td class="metric-card" style="width: 19%;">
+            <div class="metric-label">Holdings</div>
+            <div class="metric-value">{{ total_stocks }}</div>
+        </td>
+        <td style="width: 1%;"></td>
+        <td class="metric-card" style="width: 19%;">
+            <div class="metric-label">Avg Confidence</div>
+            <div class="metric-value">{{ "%.1f"|format(avg_confidence) }}%</div>
+        </td>
+        <td style="width: 1%;"></td>
+        <td class="metric-card" style="width: 19%;">
+            <div class="metric-label">Avg Composite</div>
+            <div class="metric-value">{{ "%.2f"|format(avg_composite) }}</div>
+        </td>
+        <td style="width: 1%;"></td>
+        <td class="metric-card" style="width: 19%;">
+            <div class="metric-label">Strong Buy</div>
+            <div class="metric-value" style="color: #1b8a4a;">{{ total_strong_buy }}</div>
+        </td>
+    </tr>
+</table>
+
+<!-- Concentration Metrics -->
+<div class="section">
+    <div class="section-header">Concentration Analysis</div>
+    <table style="width: 100%; margin-bottom: 12px;">
+        <tr>
+            <td class="metric-card" style="width: 24%;">
+                <div class="metric-label">Top Holding</div>
+                <div class="metric-value-small">{{ top_holding_symbol }}</div>
+                <div style="font-size: 8pt; color: #6b7280;">{{ "%.2f"|format(top_holding_weight) }}% weight</div>
+            </td>
+            <td style="width: 1%;"></td>
+            <td class="metric-card" style="width: 24%;">
+                <div class="metric-label">Top 3 Concentration</div>
+                <div class="metric-value-small">{{ "%.1f"|format(concentration_top3) }}%</div>
+            </td>
+            <td style="width: 1%;"></td>
+            <td class="metric-card" style="width: 24%;">
+                <div class="metric-label">Top 5 Concentration</div>
+                <div class="metric-value-small">{{ "%.1f"|format(concentration_top5) }}%</div>
+            </td>
+            <td style="width: 1%;"></td>
+            <td class="metric-card" style="width: 24%;">
+                <div class="metric-label">Buy Holdings</div>
+                <div class="metric-value-small" style="color: #22c55e;">{{ total_buy }}</div>
+            </td>
+        </tr>
+    </table>
+
+    {% if concentration_top3 > 50 %}
+    <div class="insight-box" style="border-left-color: #c0392b;">
+        <strong>⚠ Concentration Alert:</strong> The top 3 holdings represent {{ "%.1f"|format(concentration_top3) }}%
+        of the portfolio, exceeding the 50% concentration threshold. Consider diversification adjustments.
+    </div>
+    {% elif concentration_top3 > 35 %}
+    <div class="insight-box" style="border-left-color: #d4a843;">
+        <strong>Note:</strong> Top 3 holdings represent {{ "%.1f"|format(concentration_top3) }}% of the portfolio.
+        Concentration is moderate. Monitor position sizing.
+    </div>
+    {% else %}
+    <div class="insight-box">
+        Portfolio concentration is well-distributed. Top 3 holdings at {{ "%.1f"|format(concentration_top3) }}%
+        indicates diversified allocation.
+    </div>
+    {% endif %}
+</div>
+
+<!-- ═══════ HOLDINGS TABLE ═══════ -->
+<div class="page-break"></div>
+<div class="confidential-label">CONFIDENTIAL — FOR INSTITUTIONAL USE ONLY</div>
+
+<h2>Holdings Breakdown</h2>
+
+<table class="data-table">
+    <tr>
+        <th style="width: 5%; text-align: center;">#</th>
+        <th style="width: 18%;">Symbol</th>
+        <th style="width: 12%; text-align: center;">Rating</th>
+        <th style="width: 12%; text-align: center;">Confidence</th>
+        <th style="width: 12%; text-align: center;">Composite</th>
+        <th style="width: 10%; text-align: center;">Weight</th>
+        <th style="width: 15%; text-align: right;">Amount (₹)</th>
+        <th style="width: 16%;">Weight Bar</th>
+    </tr>
+    {% for stock in stocks %}
+    <tr>
+        <td style="text-align: center; font-weight: bold;">{{ loop.index }}</td>
+        <td><strong>{{ stock.Symbol }}</strong></td>
+        <td style="text-align: center;">
+            <span class="rating-{{ stock.FinalRating|lower|replace(' ', '-') }}">{{ stock.FinalRating }}</span>
+        </td>
+        <td style="text-align: center;">{{ "%.1f"|format(stock.Confidence) }}%</td>
+        <td style="text-align: center; font-weight: bold;">{{ "%.2f"|format(stock.CompositeScoreV2) }}</td>
+        <td style="text-align: center; font-weight: bold;">{{ "%.2f"|format(stock.Weight) }}%</td>
+        <td style="text-align: right;">₹{{ "{:,.0f}"|format(stock.Amount) }}</td>
+        <td>
+            <div class="score-bar-outer">
+                <div class="score-bar-inner bar-green" style="width: {{ "%.0f"|format(stock.Weight * 2) }}%;"></div>
+            </div>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+
+<!-- ═══════ RISK COMMENTARY ═══════ -->
+<div class="section">
+    <div class="section-header">Risk Commentary</div>
+    <div class="insight-box">
+        {% if total_stocks <= 5 %}
+        The portfolio holds {{ total_stocks }} positions concentrated in the highest conviction names.
+        While this maximizes alpha potential from the PMS Engine's top-rated stocks, the concentrated
+        nature introduces higher single-stock risk. The average confidence of {{ "%.1f"|format(avg_confidence) }}%
+        provides a moderate-to-high conviction backing for these allocations.
+        {% elif total_stocks <= 15 %}
+        With {{ total_stocks }} holdings, the portfolio achieves a balanced construction between conviction
+        concentration and diversification. The average composite score of {{ "%.2f"|format(avg_composite) }}
+        reflects the screening filter of STRONG BUY and BUY-only eligibility. Risk is distributed across
+        multiple names while maintaining meaningful position sizes.
+        {% else %}
+        The portfolio contains {{ total_stocks }} holdings, providing broad diversification across the
+        investable universe. While this reduces single-stock risk, position sizes may be diluted.
+        The conviction-weighted allocation ensures top-rated stocks still receive meaningful capital.
+        {% endif %}
+    </div>
+</div>
+
+<!-- ═══════ PORTFOLIO CONCLUSION ═══════ -->
+<div class="section">
+    <div class="section-header">Portfolio Conclusion</div>
+    <div class="insight-box">
+        The PMS Engine Conviction Portfolio allocates ₹{{ "{:,.0f}"|format(capital) }} across {{ total_stocks }}
+        holdings selected from the STRONG BUY and BUY universe. The portfolio is constructed using
+        conviction-weighted allocation, where each stock's weight is proportional to its CompositeScoreV2.
+        With an average confidence of {{ "%.1f"|format(avg_confidence) }}% and {{ total_strong_buy }} STRONG BUY
+        positions, the portfolio exhibits a {{ "strong" if avg_confidence >= 75 else "moderate" }} institutional-grade
+        conviction profile. Regular rebalancing is recommended following scanner refresh cycles.
+    </div>
+</div>
+
+<!-- ═══════ FOOTER ═══════ -->
+<div class="page-footer">
+    <p style="font-size: 7pt; color: #9ca3af; text-align: justify; margin-bottom: 8px;">
+        <strong>DISCLAIMER:</strong> This portfolio report is produced by PMS Engine's automated AI research platform for
+        informational and analytical purposes only. It does not constitute investment advice, a recommendation,
+        or an offer to buy or sell any security. All allocations are generated by quantitative models.
+        Investors should conduct their own due diligence before making investment decisions.
+    </p>
+    <p style="font-size: 7pt; color: #aabbcc;">
+        Report ID: {{ report_id }} &nbsp;|&nbsp; Generated: {{ report_date }} &nbsp;|&nbsp; PMS Engine v2.0 — Institutional Research Division
+    </p>
+    <p style="font-size: 7pt; color: #c0392b; letter-spacing: 1px;">
+        CONFIDENTIAL — FOR AUTHORIZED INSTITUTIONAL USE ONLY
+    </p>
+</div>
+
+</body>
+</html>
