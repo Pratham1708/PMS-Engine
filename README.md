@@ -406,6 +406,44 @@ Outputs:
 
 ---
 
+## Phase 11 — Production Migration
+
+Objective:
+
+Migrate the backend from prototyping scripts to a robust production API.
+
+Implemented:
+
+* FastAPI Backend
+* PostgreSQL Database
+* API Architecture
+
+Output:
+
+Production API server
+
+---
+
+## Phase 12 — React Frontend
+
+Objective:
+
+Develop an interactive web client for portfolio construction and analysis.
+
+Implemented:
+
+* React Frontend
+* Screener
+* Dashboard
+* Portfolio Builder
+* Stock Detail Pages
+
+Output:
+
+Interactive institutional dashboard
+
+---
+
 # Final Model Architecture
 
 Technical Engine
@@ -613,25 +651,6 @@ Future Environment:
 ---
 
 # Future Roadmap
-
-## Phase 11 (Completed)
-
-Production Migration
-
-* FastAPI Backend
-* PostgreSQL Database
-* API Architecture
-
-## Phase 12 (Completed)
-
-React Frontend
-
-Features:
-
-* Screener
-* Dashboard
-* Portfolio Builder
-* Stock Detail Pages
 
 ## Phase 13
 
