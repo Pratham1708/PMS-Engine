@@ -446,27 +446,41 @@ Interactive institutional dashboard
 
 # Final Model Architecture
 
-Technical Engine
-↓
-Random Forest
-↓
-XGBoost
-↓
-LightGBM
-↓
-GRU Deep Learning
-↓
-HybridMLScore
-↓
-CompositeScoreV2
-↓
-Five-Level Rating Engine
-↓
-Confidence Engine
-↓
-Portfolio Construction Engine
+```mermaid
+flowchart TB
 
----
+    subgraph Feature_Engineering
+        A[Technical Engine]
+    end
+
+    subgraph Machine_Learning_Models
+        B[Random Forest]
+        C[XGBoost]
+        D[LightGBM]
+        E[GRU Deep Learning]
+    end
+
+    subgraph Ensemble_&_Scoring
+        F[Hybrid ML Score]
+        G[Composite Score V2]
+        H[Five-Level Rating Engine]
+        I[Confidence Engine]
+    end
+
+    subgraph Portfolio_Output
+        J[Portfolio Construction Engine]
+    end
+
+    A --> B
+    B --> C
+    C --> D
+    D --> E
+    E --> F
+    F --> G
+    G --> H
+    H --> I
+    I --> J
+```
 
 # Current Production Output
 
@@ -684,7 +698,7 @@ All investment decisions should be independently evaluated before capital deploy
 
 Pratham Jindal
 
-B.Tech Student | Actuarial Science Candidate | AI & Quantitative Finance Enthusiast
+B.Tech Graduate | Actuarial Science Candidate | AI & Quantitative Finance Enthusiast
 
 Project Status:
 
