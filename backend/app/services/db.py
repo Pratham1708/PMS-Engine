@@ -1258,9 +1258,7 @@ def list_snapshot_dates(official_only: bool = True, limit: int = 365) -> List[Di
     conn = get_db_connection()
     try:
         query = """
-            SELECT snapshot_id, snapshot_date, market_date, generated_at,
-                   status, stocks_processed, stocks_failed, validation_score,
-                   pipeline_duration_sec, is_official
+            SELECT *
             FROM snapshots
             WHERE status IN ('completed', 'completed_with_warnings')
         """
@@ -1450,8 +1448,7 @@ def get_snapshot_status_summary() -> Dict[str, Any]:
     try:
         latest = conn.execute(
             """
-            SELECT snapshot_id, snapshot_date, generated_at, status,
-                   stocks_processed, stocks_failed, pipeline_duration_sec, validation_score
+            SELECT *
             FROM snapshots
             WHERE is_official = 1
             AND status IN ('completed', 'completed_with_warnings')
