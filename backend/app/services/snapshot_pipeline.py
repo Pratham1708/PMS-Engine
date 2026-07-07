@@ -562,8 +562,8 @@ def _stage_generate_recommendations(ctx: PipelineContext) -> StageResult:
         try:
             # XAI drivers
             drivers = xai_service.generate_rating_drivers(row)
-            primary = drivers[0] if drivers else None
-            secondary = drivers[1] if len(drivers) > 1 else None
+            primary = drivers[0].description if drivers else None
+            secondary = drivers[1].description if len(drivers) > 1 else None
 
             sm = sector_map.get(symbol.upper(), {})
             composite = float(row.get("CompositeScoreV2", 0) or 0)
@@ -938,9 +938,22 @@ def _stage_generate_reports(ctx: PipelineContext) -> StageResult:
 
 
 def _stage_run_validation(ctx: PipelineContext) -> StageResult:
-    """Stage 21: Run pre-publish validation checks."""
+    """Stage 21: Run pre-publish validation checks (persists draft records to SQLite first)."""
     t0 = time.monotonic()
     try:
+        # Save temporary draft records to SQLite so validation checks can query DB correctly
+        db.save_snapshot_stocks(ctx.snapshot_id, ctx.stock_records)
+        db.save_snapshot_indicators(ctx.snapshot_id, ctx.indicator_records)
+        db.save_snapshot_scores(ctx.snapshot_id, ctx.score_records)
+        if ctx.sector_records:
+            db.save_snapshot_sector(ctx.snapshot_id, ctx.sector_records)
+        if ctx.market_record:
+            db.save_snapshot_market(ctx.snapshot_id, ctx.market_record)
+        if ctx.watchlist_records:
+            db.save_snapshot_watchlists(ctx.snapshot_id, ctx.watchlist_records)
+        if ctx.change_records:
+            db.save_snapshot_changes(ctx.snapshot_id, ctx.change_records)
+
         final_status, quality_score, check_results = run_validation(ctx.snapshot_id)
         passed = sum(1 for c in check_results if c["status"] == "pass")
         failed = sum(1 for c in check_results if c["status"] == "fail")
@@ -961,29 +974,15 @@ def _stage_run_validation(ctx: PipelineContext) -> StageResult:
 
 
 def _stage_publish_snapshot(ctx: PipelineContext) -> StageResult:
-    """Stage 22: Persist all computed data to DB and mark snapshot as official."""
+    """Stage 22: Mark snapshot as official/published in database."""
     t0 = time.monotonic()
     try:
-        # Bulk insert all computed records
-        db.save_snapshot_stocks(ctx.snapshot_id, ctx.stock_records)
-        db.save_snapshot_indicators(ctx.snapshot_id, ctx.indicator_records)
-        db.save_snapshot_scores(ctx.snapshot_id, ctx.score_records)
-        if ctx.sector_records:
-            db.save_snapshot_sector(ctx.snapshot_id, ctx.sector_records)
-        if ctx.market_record:
-            db.save_snapshot_market(ctx.snapshot_id, ctx.market_record)
-        if ctx.watchlist_records:
-            db.save_snapshot_watchlists(ctx.snapshot_id, ctx.watchlist_records)
-        if ctx.change_records:
-            db.save_snapshot_changes(ctx.snapshot_id, ctx.change_records)
         if ctx.is_official:
             db.publish_snapshot(ctx.snapshot_id)
         return StageResult(
             "22_publish_snapshot", "done",
             stocks_ok=len(ctx.stock_records),
-            log_summary=f"Published {len(ctx.stock_records)} stocks, "
-                        f"{len(ctx.sector_records)} sectors, "
-                        f"{len(ctx.watchlist_records)} watchlist entries",
+            log_summary=f"Published {len(ctx.stock_records)} stocks snapshot as official",
             duration_sec=round(time.monotonic() - t0, 2),
         )
     except Exception as e:
