@@ -23,7 +23,7 @@ backend/data/cache/
 backend/data/price_cache/
 backend/data/company_cache/
 backend/data/reports/
-models/
+/models/
 
 # IDEs and System files
 .vscode/
