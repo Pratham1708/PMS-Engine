@@ -24,7 +24,6 @@ import BenchmarkComparison from './pages/QuantLab/BenchmarkComparison';
 import ExperimentHistory from './pages/QuantLab/ExperimentHistory';
 import LabReports from './pages/QuantLab/LabReports';
 
-// New Extensions Page Imports
 import CrossIndicatorLab from './pages/QuantLab/CrossIndicatorLab';
 import EnsembleLab from './pages/QuantLab/EnsembleLab';
 import HyperoptLab from './pages/QuantLab/HyperoptLab';
@@ -37,14 +36,33 @@ import MarketBreadthLab from './pages/QuantLab/MarketBreadthLab';
 import LiquidityLab from './pages/QuantLab/LiquidityLab';
 import DriftMonitorLab from './pages/QuantLab/DriftMonitorLab';
 
+// Snapshot Publishing Platform Components
+import SnapshotBanner from './components/common/SnapshotBanner';
+import SnapshotDashboard from './pages/SnapshotDashboard';
+import Watchlists from './pages/Watchlists';
+import WhatsChanged from './pages/WhatsChanged';
+import SectorSnapshot from './pages/SectorSnapshot';
+import MarketBreadth from './pages/MarketBreadth';
+import HistoricalSnapshots from './pages/HistoricalSnapshots';
+import DataQuality from './pages/DataQuality';
+
+
 
 const PAGE_TITLES = {
-  '/': 'Research Workspace',
+  '/': 'Daily Research Snapshot Terminal',
+  '/workspace': 'Institutional Research Workspace',
+  '/watchlists': 'Smart Watchlists',
+  '/changes': 'Daily Recommendation Changes',
+  '/sectors': 'Sector Averages Snapshot',
+  '/breadth': 'Market Breadth Indicators',
+  '/archive': 'Historical Snapshot Archive',
+  '/data-quality': 'Data Quality & Diagnostics',
   '/dashboard': 'Dashboard Signals Cache',
   '/search': 'Stock Search',
   '/market': 'Market Overview',
   '/reports': 'Research Reports',
   '/lab': 'Quant Research Laboratory',
+
   '/lab/indicators': 'Indicator Lab',
   '/lab/engine': 'Engine Score Validation',
   '/lab/models': 'Model Research Lab',
@@ -125,14 +143,23 @@ function AppContent() {
         }}
       >
         <Header title={title} onToggleMobileSidebar={toggleMobileSidebar} />
+        <SnapshotBanner />
         <main className="main-content">
           <Routes>
-            <Route path="/" element={<ResearchWorkspace />} />
+            <Route path="/" element={<SnapshotDashboard />} />
+            <Route path="/workspace" element={<ResearchWorkspace />} />
+            <Route path="/watchlists" element={<Watchlists />} />
+            <Route path="/changes" element={<WhatsChanged />} />
+            <Route path="/sectors" element={<SectorSnapshot />} />
+            <Route path="/breadth" element={<MarketBreadth />} />
+            <Route path="/archive" element={<HistoricalSnapshots />} />
+            <Route path="/data-quality" element={<DataQuality />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/search" element={<StockSearch />} />
             <Route path="/stock/:symbol" element={<StockDetail />} />
             <Route path="/market" element={<MarketOverview />} />
             <Route path="/reports" element={<Reports />} />
+
             
             {/* Quant Lab Routes */}
             <Route path="/lab" element={<QuantLabHome />} />

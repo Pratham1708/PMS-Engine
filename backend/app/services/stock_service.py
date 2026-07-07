@@ -1,9 +1,9 @@
 """
 Stock Service — Core business logic for stock data queries.
-All data is sourced from the in-memory cached DataFrame.
+All data is sourced from the SQLite snapshot database when available, falling back to cached CSV.
 """
 
-from typing import List, Optional
+from typing import List, Optional, Any, Dict
 import pandas as pd
 
 from app.data.loader import data_loader
@@ -15,7 +15,66 @@ from app.models.schemas import (
     ScannerSummary,
     XaiExplanation,
 )
-from app.services import xai_service
+from app.services import xai_service, db
+
+
+def _get_snapshot_df(snapshot_id: str) -> pd.DataFrame:
+    """Load all stock records for a snapshot from SQLite."""
+    conn = db.get_db_connection()
+    try:
+        query = """
+        SELECT
+            ss.symbol AS Symbol,
+            ss.final_rating AS FinalRating,
+            ss.confidence AS Confidence,
+            ss.composite_score AS CompositeScoreV2,
+            ss.technical_score AS TechnicalScore,
+            ss.ml_score AS MLScore,
+            ss.gru_score AS GRUScore,
+            ss.reliability_score AS ReliabilityScore,
+            ss.sector AS Sector,
+            ss.open AS Open,
+            ss.high AS High,
+            ss.low AS Low,
+            ss.close AS CurrentPrice,
+            ss.volume AS Volume,
+            ss.prev_close AS PreviousClose,
+            ss.daily_chg_pct AS DailyChangePct,
+            ss.daily_chg_amt AS DailyChangeAmount,
+            ss.rank AS Rank,
+            ss.percentile AS Percentile,
+            ss.universe_position AS UniversePosition,
+            ss.portfolio_eligible AS PortfolioEligible,
+            ss.conviction_level AS ConvictionLevel,
+            sc.gru_hold AS GRU_HOLD,
+            sc.gru_long AS GRU_LONG,
+            sc.gru_short AS GRU_SHORT,
+            sc.return_score AS ReturnScore,
+            sc.trend_component,
+            sc.momentum_component,
+            sc.volatility_component,
+            sc.volume_component,
+            sc.primary_driver,
+            sc.secondary_driver
+        FROM snapshot_stock ss
+        LEFT JOIN snapshot_score sc ON sc.snapshot_id = ss.snapshot_id AND sc.symbol = ss.symbol
+        WHERE ss.snapshot_id = ?
+        """
+        return pd.read_sql_query(query, conn, params=(snapshot_id,))
+    finally:
+        conn.close()
+
+
+def _get_active_df() -> pd.DataFrame:
+    """Return latest snapshot DataFrame or fall back to DataLoader."""
+    try:
+        latest = db.get_latest_snapshot()
+        if latest:
+            return _get_snapshot_df(latest["snapshot_id"])
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).warning(f"Error loading snapshot DataFrame: {e}")
+    return data_loader.get_df()
 
 
 def _df_to_stock_detail(row: pd.Series) -> StockDetail:
@@ -23,6 +82,7 @@ def _df_to_stock_detail(row: pd.Series) -> StockDetail:
     rank = int(row.get("Rank", 0))
     percentile = float(row.get("Percentile", 0.0))
     universe_pos = row.get("UniversePosition", "—")
+
     portfolio_eligible = bool(row.get("PortfolioEligible", False))
     conviction_level = row.get("ConvictionLevel", "Medium Conviction")
 
@@ -99,7 +159,7 @@ def _df_to_stock_summary(row: pd.Series) -> StockSummary:
         FinalRating=row["FinalRating"],
         Confidence=round(row["Confidence"], 2),
         CompositeScoreV2=round(row["CompositeScoreV2"], 2),
-        Sector=row.get("Sector", "\u2014"),
+        Sector=row.get("Sector", "—"),
         # Live market fields
         CurrentPrice=float(row["CurrentPrice"]) if pd.notna(row.get("CurrentPrice")) else None,
         DailyChangePct=float(row["DailyChangePct"]) if pd.notna(row.get("DailyChangePct")) else None,
@@ -116,13 +176,14 @@ def get_all_stocks(
     """
     Return all stocks with optional sorting, filtering, and search.
 
+
     Args:
         sort_by: Column name to sort by.
         order: 'asc' or 'desc'.
         rating: Filter by FinalRating value.
         search: Search substring in Symbol (case-insensitive).
     """
-    df = data_loader.get_df()
+    df = _get_active_df()
 
     if df.empty:
         return []
@@ -145,7 +206,7 @@ def get_all_stocks(
 
 def get_stock(symbol: str) -> Optional[StockDetail]:
     """Return a single stock by symbol, or None if not found."""
-    df = data_loader.get_df()
+    df = _get_active_df()
     match = df[df["Symbol"] == symbol]
     if match.empty:
         # Try case-insensitive match
@@ -157,7 +218,7 @@ def get_stock(symbol: str) -> Optional[StockDetail]:
 
 def get_top_buys(limit: int = 10) -> List[StockSummary]:
     """Return top BUY and STRONG BUY stocks sorted by CompositeScoreV2 desc."""
-    df = data_loader.get_df()
+    df = _get_active_df()
     buys = df[df["FinalRating"].isin(["STRONG BUY", "BUY"])]
     buys = buys.sort_values("CompositeScoreV2", ascending=False).head(limit)
     return [_df_to_stock_summary(row) for _, row in buys.iterrows()]
@@ -165,7 +226,7 @@ def get_top_buys(limit: int = 10) -> List[StockSummary]:
 
 def get_top_sells(limit: int = 10) -> List[StockSummary]:
     """Return top SELL and STRONG SELL stocks sorted by CompositeScoreV2 asc."""
-    df = data_loader.get_df()
+    df = _get_active_df()
     sells = df[df["FinalRating"].isin(["SELL", "STRONG SELL"])]
     sells = sells.sort_values("CompositeScoreV2", ascending=True).head(limit)
     return [_df_to_stock_summary(row) for _, row in sells.iterrows()]
@@ -173,7 +234,7 @@ def get_top_sells(limit: int = 10) -> List[StockSummary]:
 
 def get_dashboard() -> DashboardData:
     """Build aggregated dashboard data."""
-    df = data_loader.get_df()
+    df = _get_active_df()
 
     rating_counts = df["FinalRating"].value_counts()
 
@@ -193,7 +254,7 @@ def get_dashboard() -> DashboardData:
 
 def get_ratings_distribution() -> RatingDistribution:
     """Return count of stocks per rating level."""
-    df = data_loader.get_df()
+    df = _get_active_df()
     counts = df["FinalRating"].value_counts()
 
     return RatingDistribution(
@@ -207,7 +268,7 @@ def get_ratings_distribution() -> RatingDistribution:
 
 def get_scanner_summary() -> ScannerSummary:
     """Return universe-wide summary statistics."""
-    df = data_loader.get_df()
+    df = _get_active_df()
 
     return ScannerSummary(
         total_stocks=len(df),
@@ -220,3 +281,4 @@ def get_scanner_summary() -> ScannerSummary:
         avg_gru=round(df["GRUScore"].mean(), 2),
         avg_reliability=round(df["ReliabilityScore"].mean(), 2),
     )
+

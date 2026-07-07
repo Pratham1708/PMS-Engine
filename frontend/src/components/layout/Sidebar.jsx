@@ -1,13 +1,19 @@
 import { Link, useLocation } from 'react-router-dom';
 
 const navItems = [
-  { path: '/', label: 'Research Workspace', icon: '🏠' },
-  { path: '/dashboard', label: 'Dashboard', icon: '📊' },
+  { path: '/', label: 'Daily Snapshot', icon: '⚡' },
+  { path: '/workspace', label: 'Research Workspace', icon: '🏠' },
+  { path: '/watchlists', label: 'Smart Watchlists', icon: '📋' },
+  { path: '/changes', label: 'What\'s Changed', icon: '🔄' },
+  { path: '/sectors', label: 'Sector Snapshot', icon: '🏢' },
+  { path: '/breadth', label: 'Market Breadth', icon: '📈' },
+  { path: '/archive', label: 'Archive & Compare', icon: '📚' },
+  { path: '/data-quality', label: 'Data Quality', icon: '🛡️' },
   { path: '/search', label: 'Stock Search', icon: '🔍' },
-  { path: '/market', label: 'Market Overview', icon: '📈' },
   { path: '/reports', label: 'Research Reports', icon: '📄' },
   { path: '/lab', label: 'Quant Laboratory', icon: '🔬' },
 ];
+
 
 export default function Sidebar({ isCollapsed, toggleSidebar, closeMobileSidebar }) {
   const location = useLocation();

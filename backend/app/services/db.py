@@ -325,7 +325,295 @@ def init_db() -> None:
             )
         """)
 
+        # ── Phase 13 Daily Research snapshot & publishing platform tables ────
+
+        # Table 12: snapshots (Master snapshot registry)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS snapshots (
+                snapshot_id           TEXT PRIMARY KEY,
+                snapshot_date         TEXT NOT NULL,
+                market_date           TEXT NOT NULL,
+                generated_at          TEXT NOT NULL,
+                is_official           INTEGER DEFAULT 1,
+                status                TEXT DEFAULT 'generating',
+                stocks_processed      INTEGER DEFAULT 0,
+                stocks_failed         INTEGER DEFAULT 0,
+                universe_version      TEXT,
+                engine_version        TEXT,
+                indicator_version     TEXT,
+                scoring_version       TEXT,
+                ml_model_version      TEXT,
+                feature_version       TEXT,
+                software_build        TEXT,
+                pipeline_started_at   TEXT,
+                pipeline_ended_at     TEXT,
+                pipeline_duration_sec REAL,
+                validation_passed     INTEGER DEFAULT 0,
+                validation_score      REAL,
+                published_at          TEXT,
+                notes                 TEXT
+            )
+        """)
+
+        # Table 13: snapshot_stock (Per-stock price + scores + rating)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS snapshot_stock (
+                id                 INTEGER PRIMARY KEY AUTOINCREMENT,
+                snapshot_id        TEXT NOT NULL,
+                symbol             TEXT NOT NULL,
+                company_name       TEXT,
+                sector             TEXT,
+                industry           TEXT,
+                open               REAL,
+                high               REAL,
+                low                REAL,
+                close              REAL,
+                volume             INTEGER,
+                prev_close         REAL,
+                daily_chg_pct      REAL,
+                daily_chg_amt      REAL,
+                week52_high        REAL,
+                week52_low         REAL,
+                technical_score    REAL,
+                ml_score           REAL,
+                gru_score          REAL,
+                risk_score         REAL,
+                momentum_score     REAL,
+                trend_score        REAL,
+                confidence         REAL,
+                composite_score    REAL,
+                reliability_score  REAL,
+                final_rating       TEXT,
+                portfolio_eligible INTEGER,
+                conviction_level   TEXT,
+                rank               INTEGER,
+                percentile         REAL,
+                universe_position  TEXT,
+                data_source        TEXT,
+                download_status    TEXT,
+                data_warnings      TEXT,
+                UNIQUE(snapshot_id, symbol),
+                FOREIGN KEY (snapshot_id) REFERENCES snapshots(snapshot_id) ON DELETE CASCADE
+            )
+        """)
+
+        # Table 14: snapshot_indicator (Derived indicator values)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS snapshot_indicator (
+                id            INTEGER PRIMARY KEY AUTOINCREMENT,
+                snapshot_id   TEXT NOT NULL,
+                symbol        TEXT NOT NULL,
+                rsi_14        REAL,
+                ema_20        REAL,
+                ema_50        REAL,
+                ema_200       REAL,
+                macd          REAL,
+                macd_signal   REAL,
+                bb_upper      REAL,
+                bb_lower      REAL,
+                atr_14        REAL,
+                stoch_k       REAL,
+                adx_14        REAL,
+                obv           REAL,
+                vwap          REAL,
+                above_ema20   INTEGER,
+                above_ema50   INTEGER,
+                above_ema200  INTEGER,
+                near_52w_high INTEGER,
+                near_52w_low  INTEGER,
+                UNIQUE(snapshot_id, symbol),
+                FOREIGN KEY (snapshot_id) REFERENCES snapshots(snapshot_id) ON DELETE CASCADE
+            )
+        """)
+
+        # Table 15: snapshot_score (Attributed score weights & details)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS snapshot_score (
+                id                   INTEGER PRIMARY KEY AUTOINCREMENT,
+                snapshot_id          TEXT NOT NULL,
+                symbol               TEXT NOT NULL,
+                trend_component      REAL,
+                momentum_component   REAL,
+                volatility_component REAL,
+                volume_component     REAL,
+                lgbm_signal          REAL,
+                rf_signal            REAL,
+                xgb_signal           REAL,
+                gru_hold             REAL,
+                gru_long             REAL,
+                gru_short            REAL,
+                return_score         REAL,
+                primary_driver       TEXT,
+                secondary_driver     TEXT,
+                w_technical          REAL,
+                w_ml                 REAL,
+                w_gru                REAL,
+                w_reliability        REAL,
+                UNIQUE(snapshot_id, symbol),
+                FOREIGN KEY (snapshot_id) REFERENCES snapshots(snapshot_id) ON DELETE CASCADE
+            )
+        """)
+
+        # Table 16: snapshot_sector (Aggregated sector performance stats)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS snapshot_sector (
+                id                  INTEGER PRIMARY KEY AUTOINCREMENT,
+                snapshot_id         TEXT NOT NULL,
+                sector              TEXT NOT NULL,
+                stock_count         INTEGER,
+                avg_composite       REAL,
+                avg_confidence      REAL,
+                avg_technical       REAL,
+                avg_momentum        REAL,
+                avg_trend           REAL,
+                avg_risk            REAL,
+                strong_buy_count    INTEGER,
+                buy_count           INTEGER,
+                hold_count          INTEGER,
+                sell_count          INTEGER,
+                strong_sell_count   INTEGER,
+                bullish_pct         REAL,
+                bearish_pct         REAL,
+                sector_rank         INTEGER,
+                top_stock           TEXT,
+                weakest_stock       TEXT,
+                avg_daily_chg_pct   REAL,
+                UNIQUE(snapshot_id, sector),
+                FOREIGN KEY (snapshot_id) REFERENCES snapshots(snapshot_id) ON DELETE CASCADE
+            )
+        """)
+
+        # Table 17: snapshot_market (Universe-wide breadth metrics)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS snapshot_market (
+                id                      INTEGER PRIMARY KEY AUTOINCREMENT,
+                snapshot_id             TEXT NOT NULL UNIQUE,
+                total_stocks            INTEGER,
+                advancing_stocks        INTEGER,
+                declining_stocks        INTEGER,
+                unchanged_stocks        INTEGER,
+                advance_decline_ratio   REAL,
+                advance_volume          INTEGER,
+                decline_volume          INTEGER,
+                stocks_above_ema20      INTEGER,
+                stocks_above_ema50      INTEGER,
+                stocks_above_ema200     INTEGER,
+                pct_above_ema20         REAL,
+                pct_above_ema50         REAL,
+                pct_above_ema200        REAL,
+                week52_high_count       INTEGER,
+                week52_low_count        INTEGER,
+                avg_composite           REAL,
+                avg_confidence          REAL,
+                avg_rsi                 REAL,
+                avg_momentum            REAL,
+                avg_daily_chg_pct       REAL,
+                bullish_pct             REAL,
+                bearish_pct             REAL,
+                market_regime           TEXT,
+                strong_buy_count        INTEGER,
+                buy_count               INTEGER,
+                hold_count              INTEGER,
+                sell_count              INTEGER,
+                strong_sell_count       INTEGER,
+                india_vix               REAL,
+                pcr                     REAL,
+                fii_activity            REAL,
+                dii_activity            REAL,
+                FOREIGN KEY (snapshot_id) REFERENCES snapshots(snapshot_id) ON DELETE CASCADE
+            )
+        """)
+
+        # Table 18: snapshot_watchlist (Automatic smart watchlist items)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS snapshot_watchlist (
+                id             INTEGER PRIMARY KEY AUTOINCREMENT,
+                snapshot_id    TEXT NOT NULL,
+                watchlist_name TEXT NOT NULL,
+                symbol         TEXT NOT NULL,
+                rank_in_list   INTEGER,
+                score_used     REAL,
+                reason         TEXT,
+                UNIQUE(snapshot_id, watchlist_name, symbol),
+                FOREIGN KEY (snapshot_id) REFERENCES snapshots(snapshot_id) ON DELETE CASCADE
+            )
+        """)
+
+        # Table 19: snapshot_change (Recommendation diff records)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS snapshot_change (
+                id                   INTEGER PRIMARY KEY AUTOINCREMENT,
+                snapshot_id          TEXT NOT NULL,
+                prev_snapshot_id     TEXT,
+                symbol               TEXT NOT NULL,
+                change_type          TEXT NOT NULL,
+                prev_rating          TEXT,
+                new_rating           TEXT,
+                composite_diff       REAL,
+                confidence_diff      REAL,
+                technical_diff       REAL,
+                ml_diff              REAL,
+                momentum_diff        REAL,
+                trend_diff           REAL,
+                risk_diff            REAL,
+                primary_driver       TEXT,
+                secondary_driver     TEXT,
+                is_significant       INTEGER,
+                FOREIGN KEY (snapshot_id) REFERENCES snapshots(snapshot_id) ON DELETE CASCADE
+            )
+        """)
+
+        # Table 20: snapshot_report (Snapshot report files registry)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS snapshot_report (
+                id             INTEGER PRIMARY KEY AUTOINCREMENT,
+                snapshot_id    TEXT NOT NULL,
+                report_type    TEXT NOT NULL,
+                symbol         TEXT,
+                html_path      TEXT,
+                pdf_path       TEXT,
+                generated_at   TEXT,
+                file_size_kb   REAL,
+                FOREIGN KEY (snapshot_id) REFERENCES snapshots(snapshot_id) ON DELETE CASCADE
+            )
+        """)
+
+        # Table 21: snapshot_validation (Quality validation rules results)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS snapshot_validation (
+                id             INTEGER PRIMARY KEY AUTOINCREMENT,
+                snapshot_id    TEXT NOT NULL,
+                check_name     TEXT NOT NULL,
+                status         TEXT,
+                detail         TEXT,
+                affected_count INTEGER,
+                threshold      REAL,
+                actual_value   REAL,
+                FOREIGN KEY (snapshot_id) REFERENCES snapshots(snapshot_id) ON DELETE CASCADE
+            )
+        """)
+
+        # Table 22: snapshot_metadata (Detailed pipeline metrics & timings)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS snapshot_metadata (
+                id              INTEGER PRIMARY KEY AUTOINCREMENT,
+                snapshot_id     TEXT NOT NULL,
+                stage_name      TEXT NOT NULL,
+                stage_status    TEXT,
+                started_at      TEXT,
+                completed_at    TEXT,
+                duration_sec    REAL,
+                stocks_success  INTEGER,
+                stocks_failed   INTEGER,
+                warnings_count  INTEGER,
+                errors_count    INTEGER,
+                log_summary     TEXT,
+                FOREIGN KEY (snapshot_id) REFERENCES snapshots(snapshot_id) ON DELETE CASCADE
+            )
+        """)
+
         conn.commit()
+
 
         # Ensure lab reports directory exists
         lab_reports_dir = os.path.join(DB_DIR, "reports", "lab")
@@ -489,3 +777,746 @@ def get_latest_report(report_type: str, symbol: Optional[str] = None) -> Optiona
         return dict(row) if row else None
     finally:
         conn.close()
+
+
+# ── Phase 13 Snapshot Helper Functions ─────────────────────────────────────
+
+import uuid
+import json
+
+
+def _now_ist() -> str:
+    """Return current IST datetime as ISO string."""
+    import pytz
+    from datetime import datetime
+    return datetime.now(pytz.timezone("Asia/Kolkata")).isoformat()
+
+
+def create_snapshot(
+    snapshot_date: str,
+    market_date: str,
+    is_official: bool = True,
+    universe_version: str = "nifty50_v1",
+    engine_version: str = "1.0.0",
+) -> str:
+    """Create a new snapshot record and return its snapshot_id."""
+    snapshot_id = str(uuid.uuid4())
+    now = _now_ist()
+    conn = get_db_connection()
+    try:
+        conn.execute(
+            """
+            INSERT INTO snapshots
+            (snapshot_id, snapshot_date, market_date, generated_at, is_official,
+             status, universe_version, engine_version, pipeline_started_at)
+            VALUES (?, ?, ?, ?, ?, 'generating', ?, ?, ?)
+            """,
+            (snapshot_id, snapshot_date, market_date, now,
+             1 if is_official else 0, universe_version, engine_version, now)
+        )
+        conn.commit()
+        logger.info(f"[Snapshot] Created snapshot {snapshot_id} for {snapshot_date}")
+        return snapshot_id
+    finally:
+        conn.close()
+
+
+def update_snapshot_status(
+    snapshot_id: str,
+    status: str,
+    stocks_processed: int = 0,
+    stocks_failed: int = 0,
+    validation_passed: bool = False,
+    validation_score: Optional[float] = None,
+    notes: Optional[str] = None,
+) -> None:
+    """Update status, counts, and final timestamps on a snapshot."""
+    now = _now_ist()
+    conn = get_db_connection()
+    try:
+        conn.execute(
+            """
+            UPDATE snapshots SET
+                status = ?, stocks_processed = ?, stocks_failed = ?,
+                validation_passed = ?, validation_score = ?,
+                pipeline_ended_at = ?, notes = ?
+            WHERE snapshot_id = ?
+            """,
+            (status, stocks_processed, stocks_failed,
+             1 if validation_passed else 0, validation_score,
+             now, notes, snapshot_id)
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def publish_snapshot(snapshot_id: str) -> None:
+    """Mark a snapshot as officially published."""
+    now = _now_ist()
+    conn = get_db_connection()
+    try:
+        conn.execute(
+            "UPDATE snapshots SET published_at = ? WHERE snapshot_id = ?",
+            (now, snapshot_id)
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def set_snapshot_pipeline_duration(snapshot_id: str, duration_sec: float) -> None:
+    """Store total pipeline duration on the snapshot record."""
+    conn = get_db_connection()
+    try:
+        conn.execute(
+            "UPDATE snapshots SET pipeline_duration_sec = ? WHERE snapshot_id = ?",
+            (duration_sec, snapshot_id)
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def save_snapshot_stage(
+    snapshot_id: str,
+    stage_name: str,
+    stage_status: str,
+    started_at: Optional[str] = None,
+    completed_at: Optional[str] = None,
+    duration_sec: Optional[float] = None,
+    stocks_success: int = 0,
+    stocks_failed: int = 0,
+    warnings_count: int = 0,
+    errors_count: int = 0,
+    log_summary: Optional[str] = None,
+) -> None:
+    """Insert or update a pipeline stage record in snapshot_metadata."""
+    conn = get_db_connection()
+    try:
+        # Try update first, then insert
+        rows = conn.execute(
+            "SELECT id FROM snapshot_metadata WHERE snapshot_id = ? AND stage_name = ?",
+            (snapshot_id, stage_name)
+        ).fetchall()
+        if rows:
+            conn.execute(
+                """
+                UPDATE snapshot_metadata SET
+                    stage_status = ?, started_at = ?, completed_at = ?,
+                    duration_sec = ?, stocks_success = ?, stocks_failed = ?,
+                    warnings_count = ?, errors_count = ?, log_summary = ?
+                WHERE snapshot_id = ? AND stage_name = ?
+                """,
+                (stage_status, started_at, completed_at, duration_sec,
+                 stocks_success, stocks_failed, warnings_count, errors_count,
+                 log_summary, snapshot_id, stage_name)
+            )
+        else:
+            conn.execute(
+                """
+                INSERT INTO snapshot_metadata
+                (snapshot_id, stage_name, stage_status, started_at, completed_at,
+                 duration_sec, stocks_success, stocks_failed, warnings_count, errors_count, log_summary)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (snapshot_id, stage_name, stage_status, started_at, completed_at,
+                 duration_sec, stocks_success, stocks_failed, warnings_count, errors_count, log_summary)
+            )
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def save_snapshot_stocks(snapshot_id: str, records: List[Dict[str, Any]]) -> int:
+    """Bulk insert stock records for a snapshot. Returns count inserted."""
+    if not records:
+        return 0
+    
+    default_record = {
+        "company_name": None, "sector": None, "industry": None,
+        "open": None, "high": None, "low": None, "close": None, "volume": None,
+        "prev_close": None, "daily_chg_pct": None, "daily_chg_amt": None,
+        "week52_high": None, "week52_low": None,
+        "technical_score": None, "ml_score": None, "gru_score": None,
+        "risk_score": None, "momentum_score": None, "trend_score": None,
+        "confidence": None, "composite_score": None, "reliability_score": None,
+        "final_rating": None, "portfolio_eligible": None, "conviction_level": None,
+        "rank": None, "percentile": None, "universe_position": None,
+        "data_source": "yfinance", "download_status": "success", "data_warnings": None
+    }
+    
+    conn = get_db_connection()
+    try:
+        conn.executemany(
+            """
+            INSERT OR REPLACE INTO snapshot_stock
+            (snapshot_id, symbol, company_name, sector, industry,
+             open, high, low, close, volume, prev_close, daily_chg_pct, daily_chg_amt,
+             week52_high, week52_low,
+             technical_score, ml_score, gru_score, risk_score, momentum_score,
+             trend_score, confidence, composite_score, reliability_score,
+             final_rating, portfolio_eligible, conviction_level, rank, percentile,
+             universe_position, data_source, download_status, data_warnings)
+            VALUES
+            (:snapshot_id, :symbol, :company_name, :sector, :industry,
+             :open, :high, :low, :close, :volume, :prev_close, :daily_chg_pct, :daily_chg_amt,
+             :week52_high, :week52_low,
+             :technical_score, :ml_score, :gru_score, :risk_score, :momentum_score,
+             :trend_score, :confidence, :composite_score, :reliability_score,
+             :final_rating, :portfolio_eligible, :conviction_level, :rank, :percentile,
+             :universe_position, :data_source, :download_status, :data_warnings)
+            """,
+            [{**default_record, **r, "snapshot_id": snapshot_id} for r in records]
+        )
+        conn.commit()
+        return len(records)
+    finally:
+        conn.close()
+
+
+
+def save_snapshot_indicators(snapshot_id: str, records: List[Dict[str, Any]]) -> int:
+    """Bulk insert indicator records for a snapshot."""
+    if not records:
+        return 0
+    
+    default_record = {
+        "rsi_14": None, "ema_20": None, "ema_50": None, "ema_200": None,
+        "macd": None, "macd_signal": None, "bb_upper": None, "bb_lower": None,
+        "atr_14": None, "stoch_k": None, "adx_14": None, "obv": None, "vwap": None,
+        "above_ema20": 0, "above_ema50": 0, "above_ema200": 0,
+        "near_52w_high": 0, "near_52w_low": 0
+    }
+    
+    conn = get_db_connection()
+    try:
+        conn.executemany(
+            """
+            INSERT OR REPLACE INTO snapshot_indicator
+            (snapshot_id, symbol, rsi_14, ema_20, ema_50, ema_200,
+             macd, macd_signal, bb_upper, bb_lower, atr_14, stoch_k,
+             adx_14, obv, vwap, above_ema20, above_ema50, above_ema200,
+             near_52w_high, near_52w_low)
+            VALUES
+            (:snapshot_id, :symbol, :rsi_14, :ema_20, :ema_50, :ema_200,
+             :macd, :macd_signal, :bb_upper, :bb_lower, :atr_14, :stoch_k,
+             :adx_14, :obv, :vwap, :above_ema20, :above_ema50, :above_ema200,
+             :near_52w_high, :near_52w_low)
+            """,
+            [{**default_record, **r, "snapshot_id": snapshot_id} for r in records]
+        )
+        conn.commit()
+        return len(records)
+    finally:
+        conn.close()
+
+
+def save_snapshot_scores(snapshot_id: str, records: List[Dict[str, Any]]) -> int:
+    """Bulk insert score breakdown records for a snapshot."""
+    if not records:
+        return 0
+    
+    default_record = {
+        "trend_component": None, "momentum_component": None,
+        "volatility_component": None, "volume_component": None,
+        "lgbm_signal": None, "rf_signal": None, "xgb_signal": None,
+        "gru_hold": None, "gru_long": None, "gru_short": None, "return_score": None,
+        "primary_driver": None, "secondary_driver": None,
+        "w_technical": 0.40, "w_ml": 0.35, "w_gru": 0.15, "w_reliability": 0.10
+    }
+    
+    conn = get_db_connection()
+    try:
+        conn.executemany(
+            """
+            INSERT OR REPLACE INTO snapshot_score
+            (snapshot_id, symbol, trend_component, momentum_component,
+             volatility_component, volume_component, lgbm_signal, rf_signal,
+             xgb_signal, gru_hold, gru_long, gru_short, return_score,
+             primary_driver, secondary_driver, w_technical, w_ml, w_gru, w_reliability)
+            VALUES
+            (:snapshot_id, :symbol, :trend_component, :momentum_component,
+             :volatility_component, :volume_component, :lgbm_signal, :rf_signal,
+             :xgb_signal, :gru_hold, :gru_long, :gru_short, :return_score,
+             :primary_driver, :secondary_driver, :w_technical, :w_ml, :w_gru, :w_reliability)
+            """,
+            [{**default_record, **r, "snapshot_id": snapshot_id} for r in records]
+        )
+        conn.commit()
+        return len(records)
+    finally:
+        conn.close()
+
+
+
+def save_snapshot_sector(snapshot_id: str, records: List[Dict[str, Any]]) -> int:
+    """Bulk insert sector aggregates for a snapshot."""
+    if not records:
+        return 0
+    conn = get_db_connection()
+    try:
+        conn.executemany(
+            """
+            INSERT OR REPLACE INTO snapshot_sector
+            (snapshot_id, sector, stock_count, avg_composite, avg_confidence,
+             avg_technical, avg_momentum, avg_trend, avg_risk,
+             strong_buy_count, buy_count, hold_count, sell_count, strong_sell_count,
+             bullish_pct, bearish_pct, sector_rank, top_stock, weakest_stock, avg_daily_chg_pct)
+            VALUES
+            (:snapshot_id, :sector, :stock_count, :avg_composite, :avg_confidence,
+             :avg_technical, :avg_momentum, :avg_trend, :avg_risk,
+             :strong_buy_count, :buy_count, :hold_count, :sell_count, :strong_sell_count,
+             :bullish_pct, :bearish_pct, :sector_rank, :top_stock, :weakest_stock, :avg_daily_chg_pct)
+            """,
+            [{**r, "snapshot_id": snapshot_id} for r in records]
+        )
+        conn.commit()
+        return len(records)
+    finally:
+        conn.close()
+
+
+def save_snapshot_market(snapshot_id: str, data: Dict[str, Any]) -> None:
+    """Insert universe-wide market breadth record for a snapshot."""
+    data["snapshot_id"] = snapshot_id
+    conn = get_db_connection()
+    try:
+        conn.execute(
+            """
+            INSERT OR REPLACE INTO snapshot_market
+            (snapshot_id, total_stocks, advancing_stocks, declining_stocks, unchanged_stocks,
+             advance_decline_ratio, advance_volume, decline_volume,
+             stocks_above_ema20, stocks_above_ema50, stocks_above_ema200,
+             pct_above_ema20, pct_above_ema50, pct_above_ema200,
+             week52_high_count, week52_low_count,
+             avg_composite, avg_confidence, avg_rsi, avg_momentum, avg_daily_chg_pct,
+             bullish_pct, bearish_pct, market_regime,
+             strong_buy_count, buy_count, hold_count, sell_count, strong_sell_count,
+             india_vix, pcr, fii_activity, dii_activity)
+            VALUES
+            (:snapshot_id, :total_stocks, :advancing_stocks, :declining_stocks, :unchanged_stocks,
+             :advance_decline_ratio, :advance_volume, :decline_volume,
+             :stocks_above_ema20, :stocks_above_ema50, :stocks_above_ema200,
+             :pct_above_ema20, :pct_above_ema50, :pct_above_ema200,
+             :week52_high_count, :week52_low_count,
+             :avg_composite, :avg_confidence, :avg_rsi, :avg_momentum, :avg_daily_chg_pct,
+             :bullish_pct, :bearish_pct, :market_regime,
+             :strong_buy_count, :buy_count, :hold_count, :sell_count, :strong_sell_count,
+             :india_vix, :pcr, :fii_activity, :dii_activity)
+            """,
+            data
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def save_snapshot_watchlists(snapshot_id: str, records: List[Dict[str, Any]]) -> int:
+    """Bulk insert watchlist membership records for a snapshot."""
+    if not records:
+        return 0
+    conn = get_db_connection()
+    try:
+        conn.executemany(
+            """
+            INSERT OR IGNORE INTO snapshot_watchlist
+            (snapshot_id, watchlist_name, symbol, rank_in_list, score_used, reason)
+            VALUES (:snapshot_id, :watchlist_name, :symbol, :rank_in_list, :score_used, :reason)
+            """,
+            [{**r, "snapshot_id": snapshot_id} for r in records]
+        )
+        conn.commit()
+        return len(records)
+    finally:
+        conn.close()
+
+
+def save_snapshot_changes(snapshot_id: str, records: List[Dict[str, Any]]) -> int:
+    """Bulk insert recommendation change records for a snapshot."""
+    if not records:
+        return 0
+    conn = get_db_connection()
+    try:
+        conn.executemany(
+            """
+            INSERT INTO snapshot_change
+            (snapshot_id, prev_snapshot_id, symbol, change_type,
+             prev_rating, new_rating, composite_diff, confidence_diff,
+             technical_diff, ml_diff, momentum_diff, trend_diff, risk_diff,
+             primary_driver, secondary_driver, is_significant)
+            VALUES
+            (:snapshot_id, :prev_snapshot_id, :symbol, :change_type,
+             :prev_rating, :new_rating, :composite_diff, :confidence_diff,
+             :technical_diff, :ml_diff, :momentum_diff, :trend_diff, :risk_diff,
+             :primary_driver, :secondary_driver, :is_significant)
+            """,
+            [{**r, "snapshot_id": snapshot_id} for r in records]
+        )
+        conn.commit()
+        return len(records)
+    finally:
+        conn.close()
+
+
+def save_snapshot_validations(snapshot_id: str, records: List[Dict[str, Any]]) -> int:
+    """Bulk insert validation check results for a snapshot."""
+    if not records:
+        return 0
+    conn = get_db_connection()
+    try:
+        conn.executemany(
+            """
+            INSERT INTO snapshot_validation
+            (snapshot_id, check_name, status, detail, affected_count, threshold, actual_value)
+            VALUES (:snapshot_id, :check_name, :status, :detail, :affected_count, :threshold, :actual_value)
+            """,
+            [{**r, "snapshot_id": snapshot_id} for r in records]
+        )
+        conn.commit()
+        return len(records)
+    finally:
+        conn.close()
+
+
+def link_snapshot_report(
+    snapshot_id: str,
+    report_type: str,
+    html_path: Optional[str] = None,
+    pdf_path: Optional[str] = None,
+    symbol: Optional[str] = None,
+    file_size_kb: Optional[float] = None,
+) -> None:
+    """Insert a report link for a snapshot."""
+    conn = get_db_connection()
+    try:
+        conn.execute(
+            """
+            INSERT INTO snapshot_report
+            (snapshot_id, report_type, symbol, html_path, pdf_path, generated_at, file_size_kb)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            """,
+            (snapshot_id, report_type, symbol, html_path, pdf_path, _now_ist(), file_size_kb)
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+
+# ── Snapshot Query Functions ─────────────────────────────────────────────────
+
+def get_latest_snapshot(official_only: bool = True) -> Optional[Dict[str, Any]]:
+    """Return the most recent completed snapshot record."""
+    conn = get_db_connection()
+    try:
+        query = """
+            SELECT * FROM snapshots
+            WHERE status IN ('completed', 'completed_with_warnings')
+        """
+        if official_only:
+            query += " AND is_official = 1"
+        query += " ORDER BY snapshot_date DESC, generated_at DESC LIMIT 1"
+        row = conn.execute(query).fetchone()
+        return dict(row) if row else None
+    finally:
+        conn.close()
+
+
+def get_snapshot_by_id(snapshot_id: str) -> Optional[Dict[str, Any]]:
+    """Return snapshot record by ID."""
+    conn = get_db_connection()
+    try:
+        row = conn.execute(
+            "SELECT * FROM snapshots WHERE snapshot_id = ?", (snapshot_id,)
+        ).fetchone()
+        return dict(row) if row else None
+    finally:
+        conn.close()
+
+
+def get_snapshot_by_date(snapshot_date: str, official_only: bool = True) -> Optional[Dict[str, Any]]:
+    """Return snapshot for a specific market date."""
+    conn = get_db_connection()
+    try:
+        query = """
+            SELECT * FROM snapshots
+            WHERE snapshot_date = ?
+            AND status IN ('completed', 'completed_with_warnings')
+        """
+        params: tuple = (snapshot_date,)
+        if official_only:
+            query += " AND is_official = 1"
+        query += " ORDER BY generated_at DESC LIMIT 1"
+        row = conn.execute(query, params).fetchone()
+        return dict(row) if row else None
+    finally:
+        conn.close()
+
+
+def list_snapshot_dates(official_only: bool = True, limit: int = 365) -> List[Dict[str, Any]]:
+    """List all available snapshot dates, newest first."""
+    conn = get_db_connection()
+    try:
+        query = """
+            SELECT snapshot_id, snapshot_date, market_date, generated_at,
+                   status, stocks_processed, stocks_failed, validation_score,
+                   pipeline_duration_sec, is_official
+            FROM snapshots
+            WHERE status IN ('completed', 'completed_with_warnings')
+        """
+        if official_only:
+            query += " AND is_official = 1"
+        query += f" ORDER BY snapshot_date DESC, generated_at DESC LIMIT {limit}"
+        rows = conn.execute(query).fetchall()
+        return [dict(r) for r in rows]
+    finally:
+        conn.close()
+
+
+def get_snapshot_stocks(snapshot_id: str) -> List[Dict[str, Any]]:
+    """Return all stock records for a snapshot."""
+    conn = get_db_connection()
+    try:
+        rows = conn.execute(
+            "SELECT * FROM snapshot_stock WHERE snapshot_id = ? ORDER BY rank ASC",
+            (snapshot_id,)
+        ).fetchall()
+        return [dict(r) for r in rows]
+    finally:
+        conn.close()
+
+
+def get_snapshot_stock(snapshot_id: str, symbol: str) -> Optional[Dict[str, Any]]:
+    """Return a single stock record from a snapshot."""
+    conn = get_db_connection()
+    try:
+        row = conn.execute(
+            "SELECT * FROM snapshot_stock WHERE snapshot_id = ? AND UPPER(symbol) = UPPER(?)",
+            (snapshot_id, symbol)
+        ).fetchone()
+        return dict(row) if row else None
+    finally:
+        conn.close()
+
+
+def get_snapshot_indicators(snapshot_id: str, symbol: Optional[str] = None) -> List[Dict[str, Any]]:
+    """Return indicator records for a snapshot (all stocks or single symbol)."""
+    conn = get_db_connection()
+    try:
+        if symbol:
+            rows = conn.execute(
+                "SELECT * FROM snapshot_indicator WHERE snapshot_id = ? AND UPPER(symbol) = UPPER(?)",
+                (snapshot_id, symbol)
+            ).fetchall()
+        else:
+            rows = conn.execute(
+                "SELECT * FROM snapshot_indicator WHERE snapshot_id = ?", (snapshot_id,)
+            ).fetchall()
+        return [dict(r) for r in rows]
+    finally:
+        conn.close()
+
+
+def get_snapshot_scores(snapshot_id: str, symbol: Optional[str] = None) -> List[Dict[str, Any]]:
+    """Return score breakdown records for a snapshot."""
+    conn = get_db_connection()
+    try:
+        if symbol:
+            rows = conn.execute(
+                "SELECT * FROM snapshot_score WHERE snapshot_id = ? AND UPPER(symbol) = UPPER(?)",
+                (snapshot_id, symbol)
+            ).fetchall()
+        else:
+            rows = conn.execute(
+                "SELECT * FROM snapshot_score WHERE snapshot_id = ?", (snapshot_id,)
+            ).fetchall()
+        return [dict(r) for r in rows]
+    finally:
+        conn.close()
+
+
+def get_snapshot_sector(snapshot_id: str) -> List[Dict[str, Any]]:
+    """Return sector aggregates for a snapshot, sorted by rank."""
+    conn = get_db_connection()
+    try:
+        rows = conn.execute(
+            "SELECT * FROM snapshot_sector WHERE snapshot_id = ? ORDER BY sector_rank ASC",
+            (snapshot_id,)
+        ).fetchall()
+        return [dict(r) for r in rows]
+    finally:
+        conn.close()
+
+
+def get_snapshot_market(snapshot_id: str) -> Optional[Dict[str, Any]]:
+    """Return market breadth record for a snapshot."""
+    conn = get_db_connection()
+    try:
+        row = conn.execute(
+            "SELECT * FROM snapshot_market WHERE snapshot_id = ?", (snapshot_id,)
+        ).fetchone()
+        return dict(row) if row else None
+    finally:
+        conn.close()
+
+
+def get_snapshot_watchlists(
+    snapshot_id: str, watchlist_name: Optional[str] = None
+) -> List[Dict[str, Any]]:
+    """Return watchlist records for a snapshot, optionally filtered by name."""
+    conn = get_db_connection()
+    try:
+        if watchlist_name:
+            rows = conn.execute(
+                """
+                SELECT * FROM snapshot_watchlist
+                WHERE snapshot_id = ? AND watchlist_name = ?
+                ORDER BY rank_in_list ASC
+                """,
+                (snapshot_id, watchlist_name)
+            ).fetchall()
+        else:
+            rows = conn.execute(
+                "SELECT * FROM snapshot_watchlist WHERE snapshot_id = ? ORDER BY watchlist_name, rank_in_list",
+                (snapshot_id,)
+            ).fetchall()
+        return [dict(r) for r in rows]
+    finally:
+        conn.close()
+
+
+def get_snapshot_changes(
+    snapshot_id: str, change_type: Optional[str] = None, significant_only: bool = False
+) -> List[Dict[str, Any]]:
+    """Return recommendation change records for a snapshot."""
+    conn = get_db_connection()
+    try:
+        query = "SELECT * FROM snapshot_change WHERE snapshot_id = ?"
+        params: list = [snapshot_id]
+        if change_type:
+            query += " AND change_type = ?"
+            params.append(change_type)
+        if significant_only:
+            query += " AND is_significant = 1"
+        query += " ORDER BY ABS(composite_diff) DESC"
+        rows = conn.execute(query, params).fetchall()
+        return [dict(r) for r in rows]
+    finally:
+        conn.close()
+
+
+def get_snapshot_validations(snapshot_id: str) -> List[Dict[str, Any]]:
+    """Return all validation check results for a snapshot."""
+    conn = get_db_connection()
+    try:
+        rows = conn.execute(
+            "SELECT * FROM snapshot_validation WHERE snapshot_id = ? ORDER BY check_name",
+            (snapshot_id,)
+        ).fetchall()
+        return [dict(r) for r in rows]
+    finally:
+        conn.close()
+
+
+def get_snapshot_pipeline(snapshot_id: str) -> List[Dict[str, Any]]:
+    """Return pipeline stage execution timeline for a snapshot."""
+    conn = get_db_connection()
+    try:
+        rows = conn.execute(
+            "SELECT * FROM snapshot_metadata WHERE snapshot_id = ? ORDER BY id ASC",
+            (snapshot_id,)
+        ).fetchall()
+        return [dict(r) for r in rows]
+    finally:
+        conn.close()
+
+
+def get_snapshot_reports(snapshot_id: str) -> List[Dict[str, Any]]:
+    """Return all report links for a snapshot."""
+    conn = get_db_connection()
+    try:
+        rows = conn.execute(
+            "SELECT * FROM snapshot_report WHERE snapshot_id = ? ORDER BY report_type",
+            (snapshot_id,)
+        ).fetchall()
+        return [dict(r) for r in rows]
+    finally:
+        conn.close()
+
+
+def get_snapshot_status_summary() -> Dict[str, Any]:
+    """Return high-level snapshot system status."""
+    conn = get_db_connection()
+    try:
+        latest = conn.execute(
+            """
+            SELECT snapshot_id, snapshot_date, generated_at, status,
+                   stocks_processed, stocks_failed, pipeline_duration_sec, validation_score
+            FROM snapshots
+            WHERE is_official = 1
+            AND status IN ('completed', 'completed_with_warnings')
+            ORDER BY snapshot_date DESC, generated_at DESC LIMIT 1
+            """
+        ).fetchone()
+        total = conn.execute(
+            "SELECT COUNT(*) FROM snapshots WHERE is_official = 1"
+        ).fetchone()[0]
+        in_progress = conn.execute(
+            "SELECT COUNT(*) FROM snapshots WHERE status = 'generating'"
+        ).fetchone()[0]
+        return {
+            "latest_snapshot": dict(latest) if latest else None,
+            "total_snapshots": total,
+            "in_progress": in_progress,
+        }
+    finally:
+        conn.close()
+
+
+def get_previous_official_snapshot(before_snapshot_id: str) -> Optional[Dict[str, Any]]:
+    """Return the official snapshot immediately before the given one."""
+    conn = get_db_connection()
+    try:
+        current = conn.execute(
+            "SELECT snapshot_date FROM snapshots WHERE snapshot_id = ?",
+            (before_snapshot_id,)
+        ).fetchone()
+        if not current:
+            return None
+        row = conn.execute(
+            """
+            SELECT * FROM snapshots
+            WHERE is_official = 1
+            AND status IN ('completed', 'completed_with_warnings')
+            AND snapshot_date < ?
+            ORDER BY snapshot_date DESC, generated_at DESC LIMIT 1
+            """,
+            (current["snapshot_date"],)
+        ).fetchone()
+        return dict(row) if row else None
+    finally:
+        conn.close()
+
+
+def get_stock_history_across_snapshots(symbol: str, limit: int = 90) -> List[Dict[str, Any]]:
+    """Return a stock's scores/ratings across the last N official snapshots."""
+    conn = get_db_connection()
+    try:
+        rows = conn.execute(
+            """
+            SELECT ss.snapshot_date, sk.final_rating, sk.composite_score,
+                   sk.confidence, sk.technical_score, sk.ml_score, sk.close, sk.daily_chg_pct
+            FROM snapshot_stock sk
+            JOIN snapshots ss ON ss.snapshot_id = sk.snapshot_id
+            WHERE UPPER(sk.symbol) = UPPER(?)
+            AND ss.is_official = 1
+            AND ss.status IN ('completed', 'completed_with_warnings')
+            ORDER BY ss.snapshot_date DESC
+            LIMIT ?
+            """,
+            (symbol, limit)
+        ).fetchall()
+        return [dict(r) for r in rows]
+    finally:
+        conn.close()
+
