@@ -21,6 +21,7 @@ from typing import List, Dict, Any, Optional
 import pandas as pd
 import os
 import json
+from app.services.yfinance_feed import fetch_quote_single as fetch_yf_quote
 
 logger = logging.getLogger(__name__)
 
@@ -43,60 +44,7 @@ PRICE_CACHE_DIR = os.path.abspath(
 )
 os.makedirs(PRICE_CACHE_DIR, exist_ok=True)
 
-# Known approximate prices for Nifty 50 stocks
-NIFTY50_PRICE_HINTS: Dict[str, float] = {
-    "ADANIENT.NS": 2400.0,
-    "ADANIPORTS.NS": 1300.0,
-    "APOLLOHOSP.NS": 7200.0,
-    "ASIANPAINT.NS": 2300.0,
-    "AXISBANK.NS": 1100.0,
-    "BAJAJ-AUTO.NS": 9200.0,
-    "BAJFINANCE.NS": 7200.0,
-    "BAJAJFINSV.NS": 1700.0,
-    "BPCL.NS": 320.0,
-    "BHARTIARTL.NS": 1900.0,
-    "BRITANNIA.NS": 5300.0,
-    "CIPLA.NS": 1500.0,
-    "COALINDIA.NS": 430.0,
-    "DIVISLAB.NS": 5700.0,
-    "DRREDDY.NS": 1250.0,
-    "EICHERMOT.NS": 4900.0,
-    "GRASIM.NS": 2600.0,
-    "HCLTECH.NS": 1700.0,
-    "HDFCBANK.NS": 1800.0,
-    "HDFCLIFE.NS": 700.0,
-    "HEROMOTOCO.NS": 4200.0,
-    "HINDALCO.NS": 680.0,
-    "HINDUNILVR.NS": 2400.0,
-    "ICICIBANK.NS": 1300.0,
-    "INDUSINDBK.NS": 1100.0,
-    "INFY.NS": 1600.0,
-    "ITC.NS": 460.0,
-    "JIOFIN.NS": 1320.0,
-    "JSWSTEEL.NS": 970.0,
-    "KOTAKBANK.NS": 2100.0,
-    "LT.NS": 3600.0,
-    "LTIM.NS": 6200.0,
-    "M&M.NS": 2900.0,
-    "MARUTI.NS": 12500.0,
-    "NESTLEIND.NS": 2300.0,
-    "NTPC.NS": 360.0,
-    "ONGC.NS": 260.0,
-    "POWERGRID.NS": 310.0,
-    "RELIANCE.NS": 1400.0,
-    "SBILIFE.NS": 1600.0,
-    "SBIN.NS": 810.0,
-    "SUNPHARMA.NS": 1800.0,
-    "TATACONSUM.NS": 1100.0,
-    "TATAMOTORS.NS": 680.0,
-    "TATASTEEL.NS": 155.0,
-    "TCS.NS": 3500.0,
-    "TECHM.NS": 1700.0,
-    "TITAN.NS": 4400.0,
-    "TRENT.NS": 5800.0,
-    "ULTRACEMCO.NS": 11000.0,
-    "WIPRO.NS": 270.0,
-}
+
 
 
 def _get_price_cache_path(symbol: str) -> str:
@@ -106,13 +54,20 @@ def _get_price_cache_path(symbol: str) -> str:
 
 
 def _load_cached_price(symbol: str) -> Optional[Dict[str, Any]]:
-    """Load last known price for a symbol from disk cache."""
+    """Load last known price for a symbol from disk cache if within 24h TTL."""
+    import time
     cache_path = _get_price_cache_path(symbol)
     if os.path.exists(cache_path):
         try:
+            mtime = os.path.getmtime(cache_path)
+            age_seconds = time.time() - mtime
+            # 24 hours TTL = 86400 seconds
+            if age_seconds > 86400:
+                logger.warning(f"[CACHED] Price cache for {symbol} is stale ({age_seconds:.0f}s old). Rejecting.")
+                return None
             with open(cache_path, 'r') as f:
                 cached = json.load(f)
-                logger.info(f"[CACHED] {symbol}: INR {cached.get('CurrentPrice', 'N/A')}")
+                logger.info(f"[CACHED] {symbol}: INR {cached.get('CurrentPrice', 'N/A')} (age: {age_seconds:.0f}s)")
                 return cached
         except Exception as e:
             logger.debug(f"Error reading cache for {symbol}: {e}")
@@ -141,44 +96,7 @@ def _symbol_to_finnhub_format(symbol: str) -> str:
     return symbol
 
 
-def generate_realistic_quote(symbol: str, base_price: Optional[float] = None) -> Dict[str, Any]:
-    """
-    Generate realistic quote data based on price hints.
-    Uses actual price hints or cached prices as base.
-    """
-    h = int(hashlib.md5(symbol.encode("utf-8")).hexdigest(), 16)
 
-    sym_upper = symbol.upper()
-    if base_price is None:
-        if sym_upper in NIFTY50_PRICE_HINTS:
-            base_price = NIFTY50_PRICE_HINTS[sym_upper]
-        else:
-            base_price = (h % 11900) + 100.0
-
-    now = datetime.now()
-    change_pct = ((h + now.minute) % 600 - 300) / 100.0
-
-    current_price = round(base_price * (1 + change_pct / 100.0), 2)
-    prev_close = round(base_price, 2)
-    change_amount = round(current_price - prev_close, 2)
-
-    open_val = round(prev_close * (1 + (h % 10 - 5) / 500.0), 2)
-    high_val = round(max(current_price, open_val) * (1 + (h % 5) / 1000.0), 2)
-    low_val = round(min(current_price, open_val) * (1 - (h % 5) / 1000.0), 2)
-    volume = int((h % 1500000) + 20000)
-
-    return {
-        "Symbol": symbol,
-        "CurrentPrice": current_price,
-        "Open": open_val,
-        "High": high_val,
-        "Low": low_val,
-        "Volume": volume,
-        "PreviousClose": prev_close,
-        "DailyChangePct": round(change_pct, 2),
-        "DailyChangeAmount": change_amount,
-        "IsMock": True,
-    }
 
 
 def _fetch_via_nse_api(symbol: str) -> Optional[Dict[str, Any]]:
@@ -324,18 +242,15 @@ def _fetch_via_alpha_vantage(symbol: str) -> Optional[Dict[str, Any]]:
         return None
 
 
-def fetch_quote_single(symbol: str, retries: int = 1) -> Dict[str, Any]:
+def fetch_quote_single(symbol: str, retries: int = 1) -> Optional[Dict[str, Any]]:
     """
     Fetch live quote for a single symbol with graceful fallback.
     
     Priority:
       1. NSE API (Official real-time)
-      2. Finnhub (Free tier, global)
-      3. Alpha Vantage (Free tier, rate limited)
-      4. Load from persistent disk cache
-      5. Generate realistic mock based on price hints
-    
-    Always returns a valid quote, never fails.
+      2. yfinance (Official Yahoo Finance)
+      3. Load from persistent disk cache
+      4. Data Unavailable (Return None)
     """
     logger.info(f"Fetching quote for: {symbol}")
     
@@ -345,26 +260,23 @@ def fetch_quote_single(symbol: str, retries: int = 1) -> Dict[str, Any]:
         if quote:
             return quote
     
-    # Priority 2: Finnhub
+    # Priority 2: yfinance (Direct fetch)
     for _ in range(retries):
-        quote = _fetch_via_finnhub(symbol)
-        if quote:
-            return quote
+        try:
+            quote = fetch_yf_quote(symbol)
+            if quote:
+                # Save to cache
+                _save_cached_price(symbol, quote)
+                return quote
+        except Exception as e:
+            logger.debug(f"yfinance fetch failed in realtime fallback for {symbol}: {e}")
     
-    # Priority 3: Alpha Vantage
-    for _ in range(retries):
-        quote = _fetch_via_alpha_vantage(symbol)
-        if quote:
-            return quote
-    
-    # Priority 4: Disk cache (last known real price)
+    # Priority 3: Disk cache (last known real price)
     cached = _load_cached_price(symbol)
     if cached:
         return cached
     
-    # Priority 5: Realistic mock using price hints
-    quote = generate_realistic_quote(symbol)
-    return quote
+    return None
 
 
 def fetch_quotes_batch(symbols: List[str], retries: int = 1) -> pd.DataFrame:
@@ -377,7 +289,8 @@ def fetch_quotes_batch(symbols: List[str], retries: int = 1) -> pd.DataFrame:
     results = []
     for symbol in symbols:
         quote = fetch_quote_single(symbol, retries=retries)
-        results.append(quote)
+        if quote:
+            results.append(quote)
     
-    return pd.DataFrame(results)
+    return pd.DataFrame(results) if results else pd.DataFrame(columns=["Symbol", "CurrentPrice", "Open", "High", "Low", "Volume", "PreviousClose", "DailyChangePct", "DailyChangeAmount"])
 

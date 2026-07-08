@@ -17,7 +17,7 @@ from app.models.schemas import (
     AnalyzeResponse
 )
 from app.services import user_stock_service, analysis_history_service, company_service, research_workspace_service, stock_service
-from app.services.realtime_feed import fetch_quote_single
+from app.services.market_data_service import market_data_service
 from app.data.loader import data_loader
 
 logger = logging.getLogger(__name__)
@@ -109,34 +109,43 @@ async def analyze_stock(symbol: str):
         )
     
     # 1. Fetch live quote and recalculate scores based on the latest OHLCV data
+    quote = market_data_service.get_live_quote(canonical_symbol)
+    if not quote:
+        raise HTTPException(
+            status_code=503,
+            detail="Market data validation failed. Unable to generate reliable recommendation."
+        )
+        
     try:
-        quote = fetch_quote_single(canonical_symbol)
-        if quote:
-            df = data_loader._df
-            if df is not None and not df.empty:
-                idx = df[df["Symbol"].str.upper() == canonical_symbol.upper()].index
-                if not idx.empty:
-                    # Update live price details in DataFrame
-                    for col in ["CurrentPrice", "Open", "High", "Low", "Volume",
-                                "PreviousClose", "DailyChangePct", "DailyChangeAmount"]:
-                        if col in quote:
-                            df.at[idx[0], col] = quote[col]
-                    
-                    # Update live market timestamp
-                    import pytz
-                    from datetime import datetime
-                    ist = pytz.timezone("Asia/Kolkata")
-                    data_loader.last_market_update = datetime.now(ist).strftime("%d-%b-%Y %I:%M %p IST")
-                    
-                    # --- DYNAMIC SCORE RECALCULATION USING LAST TRADING DAY DATA ---
-                    from app.services.historical_data_service import historical_data_service
-                    from app.lab.indicators import compute_rsi, compute_macd, compute_ema, compute_bollinger
-                    import numpy as np
-                    import pandas as pd
-                    
-                    # Fetch 1Y history
-                    df_hist = historical_data_service.get_stock_history(canonical_symbol, "1Y")
-                    if df_hist is not None and not df_hist.empty:
+        df = data_loader._df
+        if df is not None and not df.empty:
+            idx = df[df["Symbol"].str.upper() == canonical_symbol.upper()].index
+            if not idx.empty:
+                # Update live price details in DataFrame
+                for col in ["CurrentPrice", "Open", "High", "Low", "Volume",
+                            "PreviousClose", "DailyChangePct", "DailyChangeAmount"]:
+                    if col in quote:
+                        df.at[idx[0], col] = quote[col]
+                
+                # Update live market timestamp
+                import pytz
+                from datetime import datetime
+                ist = pytz.timezone("Asia/Kolkata")
+                data_loader.last_market_update = datetime.now(ist).strftime("%d-%b-%Y %I:%M %p IST")
+                
+                # --- DYNAMIC SCORE RECALCULATION USING LAST TRADING DAY DATA ---
+                from app.lab.indicators import compute_rsi, compute_macd, compute_ema, compute_bollinger
+                import numpy as np
+                import pandas as pd
+                
+                # Fetch 1Y history
+                df_hist = market_data_service.get_historical_data(canonical_symbol, "1Y")
+                if df_hist is None or df_hist.empty:
+                    raise HTTPException(
+                        status_code=503,
+                        detail="Market data validation failed. Unable to generate reliable recommendation."
+                    )
+                    if True:
                         # Append/update the latest live price as the last row
                         today_str = datetime.now(ist).strftime("%Y-%m-%d")
                         if df_hist.iloc[-1]["Date"] == today_str:

@@ -4,8 +4,7 @@ Market Router — Endpoints for stock quotes, price history, and market overview
 
 from typing import Optional
 from fastapi import APIRouter, HTTPException, Query
-from app.services.historical_data_service import historical_data_service
-from app.services.realtime_feed import fetch_quote_single
+from app.services.market_data_service import market_data_service
 from app.data.loader import data_loader
 
 router = APIRouter(tags=["market"])
@@ -14,7 +13,7 @@ router = APIRouter(tags=["market"])
 @router.get("/market/quote/{symbol}")
 async def get_market_quote(symbol: str):
     """Return live quote details for a single symbol from yfinance."""
-    quote = fetch_quote_single(symbol)
+    quote = market_data_service.get_live_quote(symbol)
     if not quote:
         # Check if symbol exists in data loader, if it does but fetch failed, return from memory
         df = data_loader.get_df()
@@ -69,7 +68,7 @@ async def get_market_history(
     # Fetch from historical data service
     # We standardise the symbol casing
     standardized_symbol = match.iloc[0]["Symbol"]
-    history_df = historical_data_service.get_stock_history(standardized_symbol, period)
+    history_df = market_data_service.get_historical_data(standardized_symbol, period)
     if history_df is None or history_df.empty:
         raise HTTPException(
             status_code=500, detail=f"Failed to retrieve history series for {symbol}"

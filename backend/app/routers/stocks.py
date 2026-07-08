@@ -7,7 +7,7 @@ from fastapi import APIRouter, HTTPException, Query
 from app.models.schemas import StockDetail, StockSummary
 from app.services import stock_service
 from app.services.db import search_security_master, get_security_master_entry
-from app.services.realtime_feed import fetch_quote_single
+from app.services.market_data_service import market_data_service
 from app.services.user_stock_service import get_canonical_symbol
 
 logger = logging.getLogger(__name__)
@@ -86,7 +86,7 @@ async def get_stock(symbol: str):
     last_update = None
     
     try:
-        quote = fetch_quote_single(canonical)
+        quote = market_data_service.get_live_quote(canonical)
         if quote:
             current_price = quote.get("CurrentPrice")
             open_val = quote.get("Open")

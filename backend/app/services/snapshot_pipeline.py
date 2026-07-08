@@ -283,18 +283,20 @@ def _stage_load_security_master(ctx: PipelineContext) -> StageResult:
 def _stage_download_ohlcv(ctx: PipelineContext) -> StageResult:
     """Stage 02: Download live OHLCV for all symbols (critical stage)."""
     t0 = time.monotonic()
-    from app.services.realtime_feed import fetch_quote_single
+    from app.services.market_data_service import market_data_service
     monitor = get_monitor()
     ok, failed = 0, 0
     warnings: List[str] = []
 
     for symbol in ctx.symbols:
         try:
-            quote = fetch_quote_single(symbol)
+            # Fetch and validate quote via MarketDataService
+            quote = market_data_service.get_live_quote(symbol)
+            if not quote:
+                raise ValueError("Market data unavailable or validation failed")
+
             ctx.ohlcv_data[symbol] = quote
-            is_mock = quote.get("IsMock", True)
-            if is_mock:
-                warnings.append(f"{symbol}: using mock/cached price data")
+            
             # Merge into DataFrame
             if ctx.df is not None:
                 idx = ctx.df[ctx.df["Symbol"].str.upper() == symbol.upper()].index
@@ -308,7 +310,7 @@ def _stage_download_ohlcv(ctx: PipelineContext) -> StageResult:
         except Exception as e:
             failed += 1
             ctx.failed_symbols.append(symbol)
-            warnings.append(f"{symbol}: download failed — {str(e)[:80]}")
+            warnings.append(f"{symbol}: download failed — {e}")
             monitor.stock_done(symbol, success=False)
 
     status = "done" if ok > 0 else "failed"
@@ -318,8 +320,7 @@ def _stage_download_ohlcv(ctx: PipelineContext) -> StageResult:
         "02_download_ohlcv", status,
         stocks_ok=ok, stocks_failed=failed,
         warnings=warnings[:20],
-        log_summary=f"Downloaded {ok}/{len(ctx.symbols)} quotes; {failed} failed; "
-                    f"{sum(1 for q in ctx.ohlcv_data.values() if q.get('IsMock'))} mocked",
+        log_summary=f"Downloaded {ok}/{len(ctx.symbols)} quotes; {failed} failed",
         duration_sec=round(time.monotonic() - t0, 2),
     )
 
@@ -582,6 +583,9 @@ def _stage_generate_recommendations(ctx: PipelineContext) -> StageResult:
 
             # OHLCV from quote
             quote = ctx.ohlcv_data.get(symbol, {})
+            if not quote or not quote.get("CurrentPrice"):
+                logger.warning(f"Skipping recommendation generation for {symbol} due to missing/invalid quote data")
+                continue
             close = float(quote.get("CurrentPrice") or row.get("CurrentPrice") or 0)
             open_ = float(quote.get("Open") or row.get("Open") or 0)
             high = float(quote.get("High") or row.get("High") or 0)
@@ -942,8 +946,11 @@ def _stage_run_validation(ctx: PipelineContext) -> StageResult:
     t0 = time.monotonic()
     try:
         # Save temporary draft records to SQLite so validation checks can query DB correctly
+        logger.info(f"[Snapshot Saved] Saving {len(ctx.stock_records)} stock records for snapshot {ctx.snapshot_id}")
         db.save_snapshot_stocks(ctx.snapshot_id, ctx.stock_records)
+        logger.info(f"[Snapshot Saved] Saving indicator records for snapshot {ctx.snapshot_id}")
         db.save_snapshot_indicators(ctx.snapshot_id, ctx.indicator_records)
+        logger.info(f"[Snapshot Saved] Saving score records for snapshot {ctx.snapshot_id}")
         db.save_snapshot_scores(ctx.snapshot_id, ctx.score_records)
         if ctx.sector_records:
             db.save_snapshot_sector(ctx.snapshot_id, ctx.sector_records)
@@ -1276,7 +1283,7 @@ def run_pipeline(is_official: bool = True, symbols: Optional[List[str]] = None) 
 
     monitor.finish(final_status)
     logger.info(
-        f"[Pipeline] Finished snapshot {snapshot_id}: status={final_status}, "
+        f"[Pipeline Completed] Finished snapshot {snapshot_id}: status={final_status}, "
         f"duration={pipeline_dur}s, stocks={len(ctx.stock_records)}"
     )
     return snapshot_id

@@ -107,6 +107,7 @@ export default function StockDetail() {
   const [lastAnalysisTimestamp, setLastAnalysisTimestamp] = useState('');
 
   // Progressive Report States
+  const [analysisError, setAnalysisError] = useState(null);
   const [reportSections, setReportSections] = useState(Array(9).fill(false));
   const [isRevealing, setIsRevealing] = useState(false);
   const [isGeneratingReport, setIsGeneratingReport] = useState(false);
@@ -210,6 +211,7 @@ export default function StockDetail() {
     setAnalyzedStockData(null);
     setAnalysisCompleted(false);
     setGeneratedReportId(null);
+    setAnalysisError(null);
 
     try {
       const [analyzeRes, historyRes] = await Promise.all([
@@ -253,8 +255,17 @@ export default function StockDetail() {
       console.error('Analysis execution failed', err);
       setIsAnalyzing(false);
       setIsRevealing(false);
-      const errorMsg = err.response?.data?.detail || 'Analysis execution failed. Please verify API is running.';
-      alert(errorMsg);
+      
+      let displayMsg = 'Analysis execution failed. Please verify API is running.';
+      if (err.response?.data?.detail) {
+        const detail = err.response.data.detail;
+        if (detail.includes("Market data validation failed")) {
+          displayMsg = "Market Data Unavailable. Latest verified data could not be retrieved. Analysis has been aborted to prevent incorrect recommendations.";
+        } else {
+          displayMsg = detail;
+        }
+      }
+      setAnalysisError(displayMsg);
     }
   };
 
@@ -465,6 +476,14 @@ export default function StockDetail() {
       </div>
 
       {/* ── PRIMARY CTA: RUN PMS ANALYSIS BUTTON ── */}
+      {analysisError && (
+        <div className="reports-alert reports-alert-error" style={{ maxWidth: '800px', margin: '0 auto 24px auto', textAlign: 'left' }}>
+          <span style={{ fontSize: '20px' }}>⚠️</span>
+          <div style={{ flex: 1, lineHeight: '1.5' }}>{analysisError}</div>
+          <button className="reports-alert-close" onClick={() => setAnalysisError(null)} style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'inherit', fontSize: '18px', padding: '0 4px' }}>×</button>
+        </div>
+      )}
+
       {!analysisCompleted && !isAnalyzing && (
         <div style={{ textAlign: 'center', padding: '32px 0', borderTop: '1px solid var(--border-color)', borderBottom: '1px solid var(--border-color)', marginBottom: '32px' }}>
           {isNotAnalyzed ? (
