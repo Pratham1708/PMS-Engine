@@ -1,11 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { createChart } from 'lightweight-charts';
+import { createChart, AreaSeries, CandlestickSeries, LineSeries, HistogramSeries } from 'lightweight-charts';
 import { ChartTheme } from './ChartTheme';
 import {
   mapOhlcvData,
   calculateSMA,
   calculateEMA,
   calculateBollingerBands,
+  formatChartTime,
 } from './ChartUtils';
 import ChartToolbar from './ChartToolbar';
 import ChartLegend from './ChartLegend';
@@ -149,7 +150,7 @@ export default function FinancialChart({
       const mainKey = valueKeys[0] || 'close';
       
       // Main series as Area
-      priceSeriesRef.current = chart.addAreaSeries({
+      priceSeriesRef.current = chart.addSeries(AreaSeries, {
         lineColor: colors[0] || ChartTheme.price.lineColor,
         topColor: colors[0] ? `${colors[0]}4d` : ChartTheme.price.topColor, // 30% opacity
         bottomColor: colors[0] ? `${colors[0]}00` : ChartTheme.price.bottomColor, // 0% opacity
@@ -163,7 +164,7 @@ export default function FinancialChart({
       // Extra line overlays (for multi-series line charts)
       valueKeys.slice(1).forEach((key, idx) => {
         const lineCol = colors[idx + 1] || '#10b981';
-        const lineSeries = chart.addLineSeries({
+        const lineSeries = chart.addSeries(LineSeries, {
           color: lineCol,
           lineWidth: 2,
           priceFormat: { type: 'price', precision: 2, minMove: 0.01 },
@@ -174,7 +175,7 @@ export default function FinancialChart({
         extraSeriesRefs.current[key] = lineSeries;
       });
     } else {
-      priceSeriesRef.current = chart.addCandlestickSeries({
+      priceSeriesRef.current = chart.addSeries(CandlestickSeries, {
         upColor: ChartTheme.price.upColor,
         downColor: ChartTheme.price.downColor,
         borderUpColor: ChartTheme.price.borderUpColor,
@@ -196,7 +197,7 @@ export default function FinancialChart({
 
     // 4. Add Volume histogram series if present
     if (hasVolume) {
-      volumeSeriesRef.current = chart.addHistogramSeries({
+      volumeSeriesRef.current = chart.addSeries(HistogramSeries, {
         priceFormat: { type: 'volume' },
         priceScaleId: 'volume', // Sits on its own scale overlay
       });
@@ -227,7 +228,7 @@ export default function FinancialChart({
         if (indKey === 'bollinger') {
           const { upper, basis, lower } = calculateBollingerBands(chartData);
           
-          const upperSeries = chart.addLineSeries({
+          const upperSeries = chart.addSeries(LineSeries, {
             color: ChartTheme.indicators.bbUpper,
             lineWidth: 1,
             lineStyle: 2, // Dotted
@@ -235,7 +236,7 @@ export default function FinancialChart({
           upperSeries.setData(upper);
           indicatorSeriesRefs.current['bbUpper'] = upperSeries;
 
-          const lowerSeries = chart.addLineSeries({
+          const lowerSeries = chart.addSeries(LineSeries, {
             color: ChartTheme.indicators.bbLower,
             lineWidth: 1,
             lineStyle: 2,
@@ -243,7 +244,7 @@ export default function FinancialChart({
           lowerSeries.setData(lower);
           indicatorSeriesRefs.current['bbLower'] = lowerSeries;
 
-          const basisSeries = chart.addLineSeries({
+          const basisSeries = chart.addSeries(LineSeries, {
             color: ChartTheme.indicators.bbBasis,
             lineWidth: 1,
           });
@@ -272,7 +273,7 @@ export default function FinancialChart({
             color = ChartTheme.indicators.ema200;
           }
 
-          const series = chart.addLineSeries({
+          const series = chart.addSeries(LineSeries, {
             color,
             lineWidth: 1.5,
           });
