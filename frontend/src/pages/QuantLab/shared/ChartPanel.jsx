@@ -1,10 +1,6 @@
 import React, { useState } from 'react';
 import {
   ResponsiveContainer,
-  LineChart,
-  Line,
-  AreaChart,
-  Area,
   BarChart,
   Bar,
   ScatterChart,
@@ -15,6 +11,7 @@ import {
   Tooltip,
   Legend,
 } from 'recharts';
+import FinancialChart from '../../../components/charts/FinancialChart';
 
 /**
  * Reusable tabbed Recharts dashboard panel.
@@ -61,38 +58,18 @@ export default function ChartPanel({ charts }) {
 
     switch (c.type) {
       case 'area':
+      case 'line':
+      default:
         return (
-          <ResponsiveContainer width="100%" height={350}>
-            <AreaChart data={c.data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-              <defs>
-                {yKeys.map((yK, i) => (
-                  <linearGradient key={yK} id={`grad-${yK}`} x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor={colors[i]} stopOpacity={0.3} />
-                    <stop offset="95%" stopColor={colors[i]} stopOpacity={0.0} />
-                  </linearGradient>
-                ))}
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-              <XAxis dataKey={xKey} stroke="var(--text-muted)" fontSize={11} tickLine={false} />
-              <YAxis stroke="var(--text-muted)" fontSize={11} tickLine={false} domain={['auto', 'auto']} />
-              <Tooltip
-                contentStyle={{ background: '#111827', borderColor: 'var(--border-primary)', borderRadius: '6px' }}
-                labelStyle={{ fontWeight: 'bold', color: 'var(--text-primary)' }}
-              />
-              <Legend verticalAlign="top" height={36} iconType="circle" />
-              {yKeys.map((yK, i) => (
-                <Area
-                  key={yK}
-                  type="monotone"
-                  dataKey={yK}
-                  stroke={colors[i]}
-                  strokeWidth={2}
-                  fillOpacity={1}
-                  fill={`url(#grad-${yK})`}
-                />
-              ))}
-            </AreaChart>
-          </ResponsiveContainer>
+          <div style={{ width: '100%', height: '380px' }}>
+            <FinancialChart
+              symbol={c.title || 'Chart'}
+              rawData={c.data}
+              valueKeys={yKeys}
+              colors={colors}
+              height={340}
+            />
+          </div>
         );
 
       case 'bar':
@@ -128,33 +105,6 @@ export default function ChartPanel({ charts }) {
               <Legend verticalAlign="top" height={36} />
               <Scatter name="Trades" data={c.data} fill={colors[0]} />
             </ScatterChart>
-          </ResponsiveContainer>
-        );
-
-      case 'line':
-      default:
-        return (
-          <ResponsiveContainer width="100%" height={350}>
-            <LineChart data={c.data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-              <XAxis dataKey={xKey} stroke="var(--text-muted)" fontSize={11} tickLine={false} />
-              <YAxis stroke="var(--text-muted)" fontSize={11} tickLine={false} domain={['auto', 'auto']} />
-              <Tooltip
-                contentStyle={{ background: '#111827', borderColor: 'var(--border-primary)', borderRadius: '6px' }}
-                labelStyle={{ fontWeight: 'bold', color: 'var(--text-primary)' }}
-              />
-              <Legend verticalAlign="top" height={36} iconType="circle" />
-              {yKeys.map((yK, i) => (
-                <Line
-                  key={yK}
-                  type="monotone"
-                  dataKey={yK}
-                  stroke={colors[i]}
-                  strokeWidth={2}
-                  dot={false}
-                />
-              ))}
-            </LineChart>
           </ResponsiveContainer>
         );
     }

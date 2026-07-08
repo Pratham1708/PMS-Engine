@@ -19,7 +19,8 @@ import RatingBadge from '../components/common/RatingBadge';
 import ScoreBar from '../components/common/ScoreBar';
 import ConfidenceBar from '../components/common/ConfidenceBar';
 import LoadingSpinner from '../components/common/LoadingSpinner';
-import { AreaChart, Area, XAxis, YAxis, ResponsiveContainer, Tooltip } from 'recharts';
+import FinancialChart from '../components/charts/FinancialChart';
+
 
 function confidenceColor(val) {
   if (val >= 80) return '#10b981';
@@ -448,51 +449,17 @@ export default function StockDetail() {
             </div>
           </div>
 
-          {/* Historical Area Chart */}
-          <div className="card" style={{ padding: '20px', flex: 1, minHeight: '320px', display: 'flex', flexDirection: 'column' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-              <h3 className="card-title" style={{ margin: 0 }}>📈 Price History Chart</h3>
-              
-              {/* Dynamic Period Selectors */}
-              <div className="filter-chips" style={{ display: 'flex', gap: '4px', margin: 0 }}>
-                {['1M', '3M', '6M', '1Y'].map((p) => (
-                  <button
-                    key={p}
-                    className={`filter-chip ${chartPeriod === p ? 'active' : ''}`}
-                    onClick={() => setChartPeriod(p)}
-                    style={{ padding: '4px 8px', fontSize: '11px', minWidth: '40px', height: '26px' }}
-                  >
-                    {p}
-                  </button>
-                ))}
-              </div>
-            </div>
-            
-            {historyData.length === 0 ? (
-              <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}>
-                No historical charting data available.
-              </div>
-            ) : (
-              <div style={{ flex: 1, width: '100%', minHeight: '220px' }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={historyData}>
-                    <defs>
-                      <linearGradient id="colorClose" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#6366f1" stopOpacity={0.4}/>
-                        <stop offset="95%" stopColor="#6366f1" stopOpacity={0.0}/>
-                      </linearGradient>
-                    </defs>
-                    <XAxis dataKey="Date" stroke="rgba(255,255,255,0.3)" fontSize={10} tickLine={false} />
-                    <YAxis stroke="rgba(255,255,255,0.3)" fontSize={10} domain={['auto', 'auto']} tickLine={false} />
-                    <Tooltip 
-                      contentStyle={{ background: '#111', border: '1px solid var(--border-color)', borderRadius: '6px', fontSize: '12px' }}
-                      labelStyle={{ color: 'var(--text-muted)' }}
-                    />
-                    <Area type="monotone" dataKey="Close" stroke="#6366f1" strokeWidth={2} fillOpacity={1} fill="url(#colorClose)" />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
-            )}
+          {/* Unified Institutional Charting Framework (TradingView) */}
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+            <FinancialChart
+              symbol={symbol}
+              companyName={company?.company_name}
+              rawData={historyData}
+              recHistory={historyLogs}
+              timeframe={chartPeriod}
+              onChangeTimeframe={setChartPeriod}
+              height={380}
+            />
           </div>
         </div>
       </div>
