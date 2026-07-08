@@ -210,20 +210,40 @@ class HistoricalDataService:
         curr_price = base_price * 0.95  # Start slightly lower than base
         
         for i, dt in enumerate(dates):
-            # Deterministic daily step with realistic volatility
-            step = (((h + i) % 100) - 50) / 500.0  # ±0.1% daily volatility
-            curr_price = curr_price * (1.0 + step / 100.0)
+            # Deterministic daily step with pseudo-random hash-based noise
+            # Generate a pseudo-random hash for this specific day to ensure random walk behavior
+            day_str = f"{symbol.upper()}_{period}_{dt}_{i}"
+            day_hash = int(hashlib.md5(day_str.encode('utf-8')).hexdigest(), 16)
             
-            # Ensure price stays within realistic bounds
-            if curr_price < base_price * 0.7:
-                curr_price = base_price * 0.7
-            elif curr_price > base_price * 1.3:
-                curr_price = base_price * 1.3
+            # daily return between -2.2% and +2.2% (with standard stock volatility)
+            day_rand = (day_hash % 10000) / 10000.0  # 0.0 to 1.0
             
-            open_val = curr_price * (1.0 + (((h + i * 2) % 10) - 5) / 1000.0)
-            high_val = max(curr_price, open_val) * (1.0 + ((h + i) % 5) / 1000.0)
-            low_val = min(curr_price, open_val) * (1.0 - ((h + i) % 5) / 1000.0)
-            volume = int(((h + i * 3) % 1500000) + 15000)
+            # Add a slight upward drift so stock prices generally trend up long-term
+            daily_return = (day_rand - 0.485) * 0.03  # yields ~-1.45% to +1.55%
+            
+            prev_price = curr_price
+            curr_price = curr_price * (1.0 + daily_return)
+            
+            # Ensure price stays within reasonable boundary of Price Hint
+            if curr_price < base_price * 0.5:
+                curr_price = base_price * 0.5
+            elif curr_price > base_price * 2.0:
+                curr_price = base_price * 2.0
+            
+            # Derive Open, High, Low from same day's hash for stochastic candle dimensions
+            # Open is close to the previous close plus small noise (0.2%)
+            open_noise = (((day_hash >> 4) % 100) - 50) / 25000.0  # -0.2% to +0.2%
+            open_val = prev_price * (1.0 + open_noise)
+            
+            # High must be higher than max(open, close) by up to 1.5%
+            high_noise = ((day_hash >> 12) % 100) / 6666.0  # 0% to +1.5%
+            high_val = max(open_val, curr_price) * (1.0 + high_noise)
+            
+            # Low must be lower than min(open, close) by up to 1.5%
+            low_noise = ((day_hash >> 20) % 100) / 6666.0  # 0% to +1.5%
+            low_val = min(open_val, curr_price) * (1.0 - low_noise)
+            
+            volume = int(((day_hash >> 28) % 1500000) + 15000)
             
             prices.append({
                 "Date": dt,
