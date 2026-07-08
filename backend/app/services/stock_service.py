@@ -125,6 +125,9 @@ def _df_to_stock_detail(row: pd.Series) -> StockDetail:
         GRUScore=round(row["GRUScore"], 2),
         ReliabilityScore=round(row["ReliabilityScore"], 2),
         Sector=row.get("Sector", "—"),
+        CompanyName=row.get("CompanyName") if pd.notna(row.get("CompanyName")) else None,
+        Industry=row.get("Industry") if pd.notna(row.get("Industry")) else None,
+        Website=row.get("Website") if pd.notna(row.get("Website")) else None,
         GRU_HOLD=gru_hold,
         GRU_LONG=gru_long,
         GRU_SHORT=gru_short,
@@ -150,6 +153,7 @@ def _df_to_stock_detail(row: pd.Series) -> StockDetail:
         LastMarketUpdate=data_loader.last_market_update,
         LastScannerRun=data_loader.last_scanner_run
     )
+
 
 
 def _df_to_stock_summary(row: pd.Series) -> StockSummary:

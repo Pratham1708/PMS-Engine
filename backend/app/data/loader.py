@@ -64,8 +64,20 @@ class DataLoader:
                 if col in df.columns:
                     df[col] = df[col].round(2)
 
-            # Add Sector placeholder for future expansion
-            df["Sector"] = "\u2014"
+            # Add real Sector, CompanyName, Industry, and Website from static metadata
+            from app.data.nifty50_metadata import NIFTY50_METADATA
+            df["Sector"] = df["Symbol"].apply(
+                lambda s: NIFTY50_METADATA.get(s, {}).get("sector", "—")
+            )
+            df["CompanyName"] = df["Symbol"].apply(
+                lambda s: NIFTY50_METADATA.get(s, {}).get("company_name", None)
+            )
+            df["Industry"] = df["Symbol"].apply(
+                lambda s: NIFTY50_METADATA.get(s, {}).get("industry", None)
+            )
+            df["Website"] = df["Symbol"].apply(
+                lambda s: NIFTY50_METADATA.get(s, {}).get("website", None)
+            )
 
             # Drop FrontendSignal — we only use FinalRating
             if "FrontendSignal" in df.columns:

@@ -47,6 +47,9 @@ class StockDetail(BaseModel):
     GRUScore: float
     ReliabilityScore: float
     Sector: str = "\u2014"
+    CompanyName: Optional[str] = None
+    Industry: Optional[str] = None
+    Website: Optional[str] = None
     GRU_HOLD: Optional[float] = None
     GRU_LONG: Optional[float] = None
     GRU_SHORT: Optional[float] = None

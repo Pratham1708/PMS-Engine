@@ -1,0 +1,311 @@
+"""
+nifty50_metadata.py — Static metadata for all Nifty 50 stocks.
+Provides real company names, sectors, industries, and official websites.
+This is used to enrich stock data displayed in the StockSearch and StockDetail pages.
+"""
+
+# Complete Nifty 50 metadata lookup
+# Keys: NSE symbol with .NS suffix (matching the CSV)
+# Values: dict with company_name, sector, industry, website
+NIFTY50_METADATA = {
+    "ADANIENT.NS": {
+        "company_name": "Adani Enterprises Ltd",
+        "sector": "Energy & Resources",
+        "industry": "Conglomerates / Infrastructure",
+        "website": "https://www.adanienterprises.com",
+    },
+    "ADANIPORTS.NS": {
+        "company_name": "Adani Ports & SEZ Ltd",
+        "sector": "Industrials",
+        "industry": "Marine Ports & Services",
+        "website": "https://www.adaniports.com",
+    },
+    "APOLLOHOSP.NS": {
+        "company_name": "Apollo Hospitals Enterprise Ltd",
+        "sector": "Healthcare",
+        "industry": "Hospitals & Medical Services",
+        "website": "https://www.apollohospitals.com",
+    },
+    "ASIANPAINT.NS": {
+        "company_name": "Asian Paints Ltd",
+        "sector": "Consumer Discretionary",
+        "industry": "Paints & Coatings",
+        "website": "https://www.asianpaints.com",
+    },
+    "AXISBANK.NS": {
+        "company_name": "Axis Bank Ltd",
+        "sector": "Financials",
+        "industry": "Private Sector Banking",
+        "website": "https://www.axisbank.com",
+    },
+    "BAJAJ-AUTO.NS": {
+        "company_name": "Bajaj Auto Ltd",
+        "sector": "Consumer Discretionary",
+        "industry": "Two & Three-Wheelers",
+        "website": "https://www.bajajauto.com",
+    },
+    "BAJAJFINSV.NS": {
+        "company_name": "Bajaj Finserv Ltd",
+        "sector": "Financials",
+        "industry": "Diversified Financial Services",
+        "website": "https://www.bajajfinserv.in",
+    },
+    "BAJFINANCE.NS": {
+        "company_name": "Bajaj Finance Ltd",
+        "sector": "Financials",
+        "industry": "Consumer Finance & NBFC",
+        "website": "https://www.bajajfinserv.in/bajaj-finance",
+    },
+    "BEL.NS": {
+        "company_name": "Bharat Electronics Ltd",
+        "sector": "Industrials",
+        "industry": "Defence Electronics",
+        "website": "https://www.bel-india.in",
+    },
+    "BHARTIARTL.NS": {
+        "company_name": "Bharti Airtel Ltd",
+        "sector": "Communication Services",
+        "industry": "Telecom — Mobile & Broadband",
+        "website": "https://www.airtel.in",
+    },
+    "BPCL.NS": {
+        "company_name": "Bharat Petroleum Corporation Ltd",
+        "sector": "Energy",
+        "industry": "Oil Refining & Marketing",
+        "website": "https://www.bharatpetroleum.in",
+    },
+    "BRITANNIA.NS": {
+        "company_name": "Britannia Industries Ltd",
+        "sector": "Consumer Staples",
+        "industry": "Packaged Foods & Bakery",
+        "website": "https://www.britannia.co.in",
+    },
+    "CIPLA.NS": {
+        "company_name": "Cipla Ltd",
+        "sector": "Healthcare",
+        "industry": "Pharmaceuticals",
+        "website": "https://www.cipla.com",
+    },
+    "COALINDIA.NS": {
+        "company_name": "Coal India Ltd",
+        "sector": "Energy",
+        "industry": "Coal Mining",
+        "website": "https://www.coalindia.in",
+    },
+    "DRREDDY.NS": {
+        "company_name": "Dr. Reddy's Laboratories Ltd",
+        "sector": "Healthcare",
+        "industry": "Pharmaceuticals & API",
+        "website": "https://www.drreddys.com",
+    },
+    "EICHERMOT.NS": {
+        "company_name": "Eicher Motors Ltd",
+        "sector": "Consumer Discretionary",
+        "industry": "Motorcycles (Royal Enfield)",
+        "website": "https://www.eichermotors.com",
+    },
+    "ETERNAL.NS": {
+        "company_name": "Eternal Ltd (Zomato)",
+        "sector": "Consumer Discretionary",
+        "industry": "Online Food Delivery & Quick Commerce",
+        "website": "https://www.zomato.com",
+    },
+    "GRASIM.NS": {
+        "company_name": "Grasim Industries Ltd",
+        "sector": "Materials",
+        "industry": "Cement, Chemicals & Textiles (Aditya Birla)",
+        "website": "https://www.grasim.com",
+    },
+    "HCLTECH.NS": {
+        "company_name": "HCL Technologies Ltd",
+        "sector": "Information Technology",
+        "industry": "IT Services & Consulting",
+        "website": "https://www.hcltech.com",
+    },
+    "HDFCBANK.NS": {
+        "company_name": "HDFC Bank Ltd",
+        "sector": "Financials",
+        "industry": "Private Sector Banking",
+        "website": "https://www.hdfcbank.com",
+    },
+    "HDFCLIFE.NS": {
+        "company_name": "HDFC Life Insurance Company Ltd",
+        "sector": "Financials",
+        "industry": "Life Insurance",
+        "website": "https://www.hdfclife.com",
+    },
+    "HEROMOTOCO.NS": {
+        "company_name": "Hero MotoCorp Ltd",
+        "sector": "Consumer Discretionary",
+        "industry": "Two-Wheelers",
+        "website": "https://www.heromotocorp.com",
+    },
+    "HINDALCO.NS": {
+        "company_name": "Hindalco Industries Ltd",
+        "sector": "Materials",
+        "industry": "Aluminium & Copper",
+        "website": "https://www.hindalco.com",
+    },
+    "HINDUNILVR.NS": {
+        "company_name": "Hindustan Unilever Ltd",
+        "sector": "Consumer Staples",
+        "industry": "FMCG — Personal Care & Foods",
+        "website": "https://www.hul.co.in",
+    },
+    "ICICIBANK.NS": {
+        "company_name": "ICICI Bank Ltd",
+        "sector": "Financials",
+        "industry": "Private Sector Banking",
+        "website": "https://www.icicibank.com",
+    },
+    "INDUSINDBK.NS": {
+        "company_name": "IndusInd Bank Ltd",
+        "sector": "Financials",
+        "industry": "Private Sector Banking",
+        "website": "https://www.indusind.com",
+    },
+    "INFY.NS": {
+        "company_name": "Infosys Ltd",
+        "sector": "Information Technology",
+        "industry": "IT Services & Consulting",
+        "website": "https://www.infosys.com",
+    },
+    "ITC.NS": {
+        "company_name": "ITC Ltd",
+        "sector": "Consumer Staples",
+        "industry": "FMCG — Cigarettes, Foods & Hotels",
+        "website": "https://www.itcportal.com",
+    },
+    "JIOFIN.NS": {
+        "company_name": "Jio Financial Services Ltd",
+        "sector": "Financials",
+        "industry": "Digital & Financial Services",
+        "website": "https://www.jiofinance.com",
+    },
+    "JSWSTEEL.NS": {
+        "company_name": "JSW Steel Ltd",
+        "sector": "Materials",
+        "industry": "Steel Manufacturing",
+        "website": "https://www.jsw.in/steel",
+    },
+    "KOTAKBANK.NS": {
+        "company_name": "Kotak Mahindra Bank Ltd",
+        "sector": "Financials",
+        "industry": "Private Sector Banking",
+        "website": "https://www.kotak.com",
+    },
+    "LT.NS": {
+        "company_name": "Larsen & Toubro Ltd",
+        "sector": "Industrials",
+        "industry": "Infrastructure & Engineering",
+        "website": "https://www.larsentoubro.com",
+    },
+    "M&M.NS": {
+        "company_name": "Mahindra & Mahindra Ltd",
+        "sector": "Consumer Discretionary",
+        "industry": "Automobiles — SUVs & Tractors",
+        "website": "https://www.mahindra.com",
+    },
+    "MARUTI.NS": {
+        "company_name": "Maruti Suzuki India Ltd",
+        "sector": "Consumer Discretionary",
+        "industry": "Passenger Automobiles",
+        "website": "https://www.marutisuzuki.com",
+    },
+    "NESTLEIND.NS": {
+        "company_name": "Nestle India Ltd",
+        "sector": "Consumer Staples",
+        "industry": "Packaged Foods & Beverages",
+        "website": "https://www.nestle.in",
+    },
+    "NTPC.NS": {
+        "company_name": "NTPC Ltd",
+        "sector": "Utilities",
+        "industry": "Power Generation (Thermal & Renewable)",
+        "website": "https://www.ntpc.co.in",
+    },
+    "ONGC.NS": {
+        "company_name": "Oil & Natural Gas Corporation Ltd",
+        "sector": "Energy",
+        "industry": "Oil & Gas Exploration",
+        "website": "https://www.ongcindia.com",
+    },
+    "POWERGRID.NS": {
+        "company_name": "Power Grid Corporation of India Ltd",
+        "sector": "Utilities",
+        "industry": "Electric Power Transmission",
+        "website": "https://www.powergrid.in",
+    },
+    "RELIANCE.NS": {
+        "company_name": "Reliance Industries Ltd",
+        "sector": "Energy & Consumer",
+        "industry": "Oil, Retail, Telecom & Financial Services",
+        "website": "https://www.ril.com",
+    },
+    "SBIN.NS": {
+        "company_name": "State Bank of India",
+        "sector": "Financials",
+        "industry": "Public Sector Banking",
+        "website": "https://www.sbi.co.in",
+    },
+    "SBILIFE.NS": {
+        "company_name": "SBI Life Insurance Company Ltd",
+        "sector": "Financials",
+        "industry": "Life Insurance",
+        "website": "https://www.sbilife.co.in",
+    },
+    "SHRIRAMFIN.NS": {
+        "company_name": "Shriram Finance Ltd",
+        "sector": "Financials",
+        "industry": "Vehicle Finance & NBFC",
+        "website": "https://www.shriramfinance.in",
+    },
+    "SUNPHARMA.NS": {
+        "company_name": "Sun Pharmaceutical Industries Ltd",
+        "sector": "Healthcare",
+        "industry": "Pharmaceuticals",
+        "website": "https://www.sunpharma.com",
+    },
+    "TATASTEEL.NS": {
+        "company_name": "Tata Steel Ltd",
+        "sector": "Materials",
+        "industry": "Steel Manufacturing",
+        "website": "https://www.tatasteel.com",
+    },
+    "TCS.NS": {
+        "company_name": "Tata Consultancy Services Ltd",
+        "sector": "Information Technology",
+        "industry": "IT Services & Consulting",
+        "website": "https://www.tcs.com",
+    },
+    "TECHM.NS": {
+        "company_name": "Tech Mahindra Ltd",
+        "sector": "Information Technology",
+        "industry": "IT Services & BPO",
+        "website": "https://www.techmahindra.com",
+    },
+    "TITAN.NS": {
+        "company_name": "Titan Company Ltd",
+        "sector": "Consumer Discretionary",
+        "industry": "Watches, Jewellery & Eyewear",
+        "website": "https://www.titancompany.in",
+    },
+    "TRENT.NS": {
+        "company_name": "Trent Ltd",
+        "sector": "Consumer Discretionary",
+        "industry": "Retail — Fashion & Lifestyle",
+        "website": "https://www.trent.in",
+    },
+    "ULTRACEMCO.NS": {
+        "company_name": "UltraTech Cement Ltd",
+        "sector": "Materials",
+        "industry": "Cement Manufacturing",
+        "website": "https://www.ultratechcement.com",
+    },
+    "WIPRO.NS": {
+        "company_name": "Wipro Ltd",
+        "sector": "Information Technology",
+        "industry": "IT Services & Consulting",
+        "website": "https://www.wipro.com",
+    },
+}

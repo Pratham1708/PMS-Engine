@@ -86,7 +86,7 @@ export default function StockSearch() {
       {/* Grid of covered stocks */}
       <div style={{ 
         display: 'grid', 
-        gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', 
+        gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', 
         gap: '16px' 
       }}>
         {stocks.map((stock) => {
@@ -103,7 +103,7 @@ export default function StockSearch() {
                 flexDirection: 'column',
                 alignItems: 'stretch',
                 padding: '16px',
-                borderRadius: '8px',
+                borderRadius: '10px',
                 background: 'rgba(255,255,255,0.03)',
                 border: '1px solid var(--border-color)',
                 cursor: 'pointer',
@@ -119,10 +119,15 @@ export default function StockSearch() {
                 e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.03)';
               }}
             >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
+              {/* Top row: Symbol + Price */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '4px' }}>
                 <div>
-                  <div style={{ fontWeight: 800, fontSize: '18px', color: '#fff' }}>{stock.Symbol}</div>
-                  <div className="text-xs text-muted" style={{ marginTop: '2px' }}>Sector: {stock.Sector}</div>
+                  <div style={{ fontWeight: 800, fontSize: '17px', color: '#fff' }}>{stock.Symbol.replace('.NS', '')}</div>
+                  {stock.CompanyName && (
+                    <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.75)', marginTop: '1px', fontWeight: 500 }}>
+                      {stock.CompanyName}
+                    </div>
+                  )}
                 </div>
                 {isNotAnalyzed ? (
                   <span className="badge-not-analyzed" style={{ alignSelf: 'flex-start' }}>NOT ANALYZED</span>
@@ -143,10 +148,42 @@ export default function StockSearch() {
                 )}
               </div>
 
-              <div style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
+              {/* Sector + Industry tags */}
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '8px', marginBottom: '12px' }}>
+                {stock.Sector && stock.Sector !== '—' && (
+                  <span style={{
+                    fontSize: '10px',
+                    fontWeight: 600,
+                    padding: '2px 8px',
+                    borderRadius: '20px',
+                    background: 'rgba(99,102,241,0.15)',
+                    color: '#a5b4fc',
+                    border: '1px solid rgba(99,102,241,0.3)',
+                    letterSpacing: '0.02em'
+                  }}>
+                    {stock.Sector}
+                  </span>
+                )}
+                {stock.Industry && (
+                  <span style={{
+                    fontSize: '10px',
+                    fontWeight: 500,
+                    padding: '2px 8px',
+                    borderRadius: '20px',
+                    background: 'rgba(255,255,255,0.05)',
+                    color: 'rgba(255,255,255,0.5)',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                  }}>
+                    {stock.Industry}
+                  </span>
+                )}
+              </div>
+
+              {/* Action Buttons */}
+              <div style={{ display: 'flex', gap: '6px', marginTop: 'auto' }}>
                 <button 
                   className="btn btn-primary text-sm" 
-                  style={{ flex: 1, padding: '6px 12px' }}
+                  style={{ flex: 1, padding: '6px 10px', fontSize: '12px' }}
                   onClick={(e) => {
                     e.stopPropagation();
                     navigate(`/stock/${encodeURIComponent(stock.Symbol)}`);
@@ -158,7 +195,8 @@ export default function StockSearch() {
                   className={`btn ${isTracked ? 'btn-secondary' : 'btn-back'} text-sm`}
                   style={{ 
                     flex: 1, 
-                    padding: '6px 12px',
+                    padding: '6px 10px',
+                    fontSize: '12px',
                     borderColor: isTracked ? 'transparent' : 'rgba(255,255,255,0.15)'
                   }}
                   disabled={isTracked}
@@ -166,11 +204,31 @@ export default function StockSearch() {
                 >
                   {isTracked ? '⭐ Tracking' : '＋ Track'}
                 </button>
+                {stock.Website && (
+                  <button
+                    className="btn btn-back text-sm"
+                    style={{ 
+                      padding: '6px 10px',
+                      fontSize: '12px',
+                      borderColor: 'rgba(255,255,255,0.1)',
+                      flexShrink: 0,
+                      minWidth: '36px'
+                    }}
+                    title={`Visit ${stock.CompanyName || stock.Symbol} website`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      window.open(stock.Website, '_blank', 'noopener,noreferrer');
+                    }}
+                  >
+                    🌐
+                  </button>
+                )}
               </div>
             </div>
           );
         })}
       </div>
+
 
       {stocks.length === 0 && (
         <div style={{ textAlign: 'center', padding: '64px', color: 'var(--text-muted)' }}>
