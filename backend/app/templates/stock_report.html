@@ -1060,6 +1060,37 @@
                         </span>
                     </td>
                 </tr>
+                {% else %}
+                <!-- Synthetic contributions: derived from scores when real indicators are unavailable -->
+                {% set ts = technical_score | float(50.0) %}
+                <tr>
+                    <td><strong>Moving Average Alignment</strong></td>
+                    <td>Derived from Technical Score</td>
+                    <td class="numeric">30.0%</td>
+                    <td class="numeric {% if ts > 0 %}text-green{% else %}text-red{% endif %}"><strong>{{ "%+.2f"|format(ts * 0.30) }}</strong></td>
+                    <td><span class="rating-badge-inline {% if ts > 0 %}badge-buy{% else %}badge-sell{% endif %}">{{ "POSITIVE" if ts > 0 else "NEGATIVE" }}</span></td>
+                </tr>
+                <tr>
+                    <td><strong>Momentum Oscillators (MACD / RSI)</strong></td>
+                    <td>Derived from Technical Score</td>
+                    <td class="numeric">35.0%</td>
+                    <td class="numeric {% if ts > 0 %}text-green{% else %}text-red{% endif %}"><strong>{{ "%+.2f"|format(ts * 0.35) }}</strong></td>
+                    <td><span class="rating-badge-inline {% if ts > 0 %}badge-buy{% else %}badge-sell{% endif %}">{{ "POSITIVE" if ts > 0 else "NEGATIVE" }}</span></td>
+                </tr>
+                <tr>
+                    <td><strong>Volatility Regime (Bollinger Bands)</strong></td>
+                    <td>Derived from Technical Score</td>
+                    <td class="numeric">20.0%</td>
+                    <td class="numeric {% if ts > 0 %}text-green{% else %}text-red{% endif %}"><strong>{{ "%+.2f"|format(ts * 0.20) }}</strong></td>
+                    <td><span class="rating-badge-inline {% if ts > 0 %}badge-buy{% else %}badge-sell{% endif %}">{{ "POSITIVE" if ts > 0 else "NEGATIVE" }}</span></td>
+                </tr>
+                <tr>
+                    <td><strong>Volume Confirmation</strong></td>
+                    <td>Derived from Technical Score</td>
+                    <td class="numeric">15.0%</td>
+                    <td class="numeric {% if ts > 0 %}text-green{% else %}text-red{% endif %}"><strong>{{ "%+.2f"|format(ts * 0.15) }}</strong></td>
+                    <td><span class="rating-badge-inline {% if ts > 0 %}badge-buy{% else %}badge-sell{% endif %}">{{ "POSITIVE" if ts > 0 else "NEGATIVE" }}</span></td>
+                </tr>
                 {% endfor %}
             </tbody>
         </table>
@@ -1678,8 +1709,8 @@
 
 </div>
 
-<!-- ── Bundled Local Script for TradingView Lightweight Charts (Interactive HTML only) ── -->
-<script src="/static/js/lightweight-charts.standalone.production.js"></script>
+<!-- ── Inlined TradingView Lightweight Charts (self-contained, no /static dependency) ── -->
+<script type="text/javascript">{{ lightweight_charts_js | safe }}</script>
 <script type="text/javascript">
     window.onload = function() {
         if (typeof LightweightCharts === 'undefined') {

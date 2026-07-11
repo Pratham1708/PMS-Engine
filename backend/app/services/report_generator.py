@@ -34,6 +34,27 @@ REPORTS_DIR = os.path.join(BACKEND_DIR, "data", "reports")
 for sub in ("stock", "workspace", "market"):
     os.makedirs(os.path.join(REPORTS_DIR, sub), exist_ok=True)
 
+# ── Inline JS bundle for self-contained HTML exports ─────────
+# Read once at startup; embedded directly into generated HTML so the
+# interactive chart works when the file is opened from disk (no /static).
+_JS_BUNDLE_PATH = os.path.join(
+    BACKEND_DIR, "backend", "app", "static", "js",
+    "lightweight-charts.standalone.production.js"
+)
+if not os.path.exists(_JS_BUNDLE_PATH):
+    # Fallback: look relative to this file
+    _JS_BUNDLE_PATH = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "..", "static", "js",
+        "lightweight-charts.standalone.production.js"
+    )
+_LIGHTWEIGHT_CHARTS_JS: str = ""
+try:
+    with open(os.path.abspath(_JS_BUNDLE_PATH), "r", encoding="utf-8") as _f:
+        _LIGHTWEIGHT_CHARTS_JS = _f.read()
+    logger.info("[ReportGenerator] Inlined lightweight-charts.js (%d bytes)", len(_LIGHTWEIGHT_CHARTS_JS))
+except Exception as _e:
+    logger.warning("[ReportGenerator] Could not inline lightweight-charts.js: %s", _e)
+
 # ── Jinja2 Environment ────────────────────────────────────────
 jinja_env = Environment(
     loader=FileSystemLoader(os.path.abspath(TEMPLATES_DIR)),
@@ -808,6 +829,8 @@ def generate_stock_report(symbol: str) -> Optional[dict]:
     }
 
     # ── Step 1: Render Interactive HTML Report ──────────────────
+    # Inject the inlined JS bundle so the downloaded file is self-contained.
+    context["lightweight_charts_js"] = _LIGHTWEIGHT_CHARTS_JS
     html_template = jinja_env.get_template("stock_report.html")
     html_content = html_template.render(**context)
 
