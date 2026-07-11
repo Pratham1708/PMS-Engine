@@ -150,7 +150,8 @@ def generate_rating_drivers(row: pd.Series) -> List[RatingDriver]:
     drivers = []
 
     # 1. Technical Score
-    tech_val = float(row["TechnicalScore"])
+    tech_raw = row.get("TechnicalScore")
+    tech_val = float(tech_raw) if pd.notna(tech_raw) else 50.0
     tech_impact = "positive" if tech_val > 10 else ("negative" if tech_val < -10 else "neutral")
     drivers.append(
         RatingDriver(
@@ -163,7 +164,8 @@ def generate_rating_drivers(row: pd.Series) -> List[RatingDriver]:
     )
 
     # 2. ML Score
-    ml_val = float(row["MLScore"])
+    ml_raw = row.get("MLScore")
+    ml_val = float(ml_raw) if pd.notna(ml_raw) else 50.0
     ml_impact = "positive" if ml_val > 5 else ("negative" if ml_val < -5 else "neutral")
     drivers.append(
         RatingDriver(
@@ -176,7 +178,8 @@ def generate_rating_drivers(row: pd.Series) -> List[RatingDriver]:
     )
 
     # 3. GRU Score
-    gru_val = float(row["GRUScore"])
+    gru_raw = row.get("GRUScore")
+    gru_val = float(gru_raw) if pd.notna(gru_raw) else 50.0
     gru_impact = "positive" if gru_val > 5 else ("negative" if gru_val < -5 else "neutral")
     drivers.append(
         RatingDriver(
@@ -204,7 +207,8 @@ def generate_rating_drivers(row: pd.Series) -> List[RatingDriver]:
         )
 
     # 5. Reliability Score
-    rel_val = float(row["ReliabilityScore"])
+    rel_raw = row.get("ReliabilityScore")
+    rel_val = float(rel_raw) if pd.notna(rel_raw) else 50.0
     rel_impact = "positive" if rel_val >= 70 else ("negative" if rel_val < 60 else "neutral")
     drivers.append(
         RatingDriver(
@@ -225,12 +229,22 @@ def generate_positive_factors(row: pd.Series) -> List[str]:
     """Generate dynamic list of top positive factors."""
     factors = []
     
-    tech_val = float(row["TechnicalScore"])
-    ml_val = float(row["MLScore"])
-    gru_val = float(row["GRUScore"])
+    tech_raw = row.get("TechnicalScore")
+    tech_val = float(tech_raw) if pd.notna(tech_raw) else 50.0
+    
+    ml_raw = row.get("MLScore")
+    ml_val = float(ml_raw) if pd.notna(ml_raw) else 50.0
+    
+    gru_raw = row.get("GRUScore")
+    gru_val = float(gru_raw) if pd.notna(gru_raw) else 50.0
+    
     ret_val = row.get("ReturnScore")
-    rel_val = float(row["ReliabilityScore"])
-    conf_val = float(row["Confidence"])
+    
+    rel_raw = row.get("ReliabilityScore")
+    rel_val = float(rel_raw) if pd.notna(rel_raw) else 50.0
+    
+    conf_raw = row.get("Confidence")
+    conf_val = float(conf_raw) if pd.notna(conf_raw) else 50.0
 
     if tech_val > 10:
         factors.append(f"Bullish technical trend momentum: TechnicalScore is {tech_val:.2f}")
@@ -252,19 +266,29 @@ def generate_positive_factors(row: pd.Series) -> List[str]:
         factors.append("Active models indicate benchmark-conforming risk metrics")
         factors.append("Scoring reliability metrics meet institutional standards")
 
-    return factors[:3]  # Return top 2 or 3
+    return factors[:3]
 
 
 def generate_negative_factors(row: pd.Series) -> List[str]:
     """Generate dynamic list of top negative factors."""
     factors = []
     
-    tech_val = float(row["TechnicalScore"])
-    ml_val = float(row["MLScore"])
-    gru_val = float(row["GRUScore"])
+    tech_raw = row.get("TechnicalScore")
+    tech_val = float(tech_raw) if pd.notna(tech_raw) else 50.0
+    
+    ml_raw = row.get("MLScore")
+    ml_val = float(ml_raw) if pd.notna(ml_raw) else 50.0
+    
+    gru_raw = row.get("GRUScore")
+    gru_val = float(gru_raw) if pd.notna(gru_raw) else 50.0
+    
     ret_val = row.get("ReturnScore")
-    rel_val = float(row["ReliabilityScore"])
-    conf_val = float(row["Confidence"])
+    
+    rel_raw = row.get("ReliabilityScore")
+    rel_val = float(rel_raw) if pd.notna(rel_raw) else 50.0
+    
+    conf_raw = row.get("Confidence")
+    conf_val = float(conf_raw) if pd.notna(conf_raw) else 50.0
 
     if tech_val < -10:
         factors.append(f"Bearish technical trend breakdown: TechnicalScore is {tech_val:.2f}")
@@ -286,18 +310,29 @@ def generate_negative_factors(row: pd.Series) -> List[str]:
         factors.append("Potential for near-term volatility or minor consolidation")
         factors.append("Benchmark divergence risks remain under volatile market regimes")
 
-    return factors[:3]  # Return top 2 or 3
+    return factors[:3]
 
 
 def generate_institutional_insight(row: pd.Series, rank: int, percentile: float) -> str:
     """Generate a synthesized analyst-style insight based entirely on real metrics."""
     symbol = row["Symbol"]
     rating = row["FinalRating"]
-    conf = float(row["Confidence"])
-    comp = float(row["CompositeScoreV2"])
-    tech = float(row["TechnicalScore"])
-    ml = float(row["MLScore"])
-    gru = float(row["GRUScore"])
+    
+    conf_raw = row.get("Confidence")
+    conf = float(conf_raw) if pd.notna(conf_raw) else 50.0
+    
+    comp_raw = row.get("CompositeScoreV2")
+    comp = float(comp_raw) if pd.notna(comp_raw) else 50.0
+    
+    tech_raw = row.get("TechnicalScore")
+    tech = float(tech_raw) if pd.notna(tech_raw) else 50.0
+    
+    ml_raw = row.get("MLScore")
+    ml = float(ml_raw) if pd.notna(ml_raw) else 50.0
+    
+    gru_raw = row.get("GRUScore")
+    gru = float(gru_raw) if pd.notna(gru_raw) else 50.0
+    
     universe_pos = get_universe_position(percentile)
 
     if rating == "STRONG BUY":
@@ -340,5 +375,6 @@ def generate_institutional_insight(row: pd.Series, rank: int, percentile: float)
             f"there is a persistent bearish crossover across all sub-engines (TechnicalScore = {tech:.2f}, "
             f"MLScore = {ml:.2f}, GRUScore = {gru:.2f}). Portfolio exit and strict risk protection are advised."
         )
+    return insight
 
     return insight

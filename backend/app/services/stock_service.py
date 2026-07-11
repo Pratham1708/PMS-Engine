@@ -90,32 +90,47 @@ def _df_to_stock_detail(row: pd.Series) -> StockDetail:
         f"ReliabilityScore={row.get('ReliabilityScore')}, CompositeScoreV2={row.get('CompositeScoreV2')}"
     )
 
-    rank = int(row.get("Rank", 0))
-    percentile = float(row.get("Percentile", 0.0))
-    universe_pos = row.get("UniversePosition", "—")
+    rank_val = row.get("Rank")
+    rank = int(rank_val) if pd.notna(rank_val) else 0
 
-    portfolio_eligible = bool(row.get("PortfolioEligible", False))
+    pct_val = row.get("Percentile")
+    percentile = float(pct_val) if pd.notna(pct_val) else 0.0
+
+    universe_pos = row.get("UniversePosition", "—")
+    if pd.isna(universe_pos):
+        universe_pos = "—"
+
+    portfolio_eligible = bool(row.get("PortfolioEligible", False)) if pd.notna(row.get("PortfolioEligible")) else False
     conviction_level = row.get("ConvictionLevel", "Medium Conviction")
+    if pd.isna(conviction_level):
+        conviction_level = "Medium Conviction"
 
 
     # Safe float handling for merged nullable fields
+    confidence_val = float(row["Confidence"]) if pd.notna(row.get("Confidence")) else 50.0
+    comp_val = float(row["CompositeScoreV2"]) if pd.notna(row.get("CompositeScoreV2")) else 50.0
+    tech_val = float(row["TechnicalScore"]) if pd.notna(row.get("TechnicalScore")) else 50.0
+    ml_val = float(row["MLScore"]) if pd.notna(row.get("MLScore")) else 50.0
+    gru_val = float(row["GRUScore"]) if pd.notna(row.get("GRUScore")) else 50.0
+    reliability_val = float(row["ReliabilityScore"]) if pd.notna(row.get("ReliabilityScore")) else 50.0
+
     gru_hold = float(row["GRU_HOLD"]) if pd.notna(row.get("GRU_HOLD")) else None
     gru_long = float(row["GRU_LONG"]) if pd.notna(row.get("GRU_LONG")) else None
     gru_short = float(row["GRU_SHORT"]) if pd.notna(row.get("GRU_SHORT")) else None
     return_score = float(row["ReturnScore"]) if pd.notna(row.get("ReturnScore")) else None
 
     # Retrieve or dynamically compute Trend, Momentum, and Risk scores
-    risk_val = float(row["RiskScore"]) if pd.notna(row.get("RiskScore")) else (100.0 - float(row["Confidence"]))
-    momentum_val = float(row["MomentumScore"]) if pd.notna(row.get("MomentumScore")) else (float(row["TechnicalScore"]) * 0.8 + float(row["MLScore"]) * 0.2)
-    trend_val = float(row["TrendScore"]) if pd.notna(row.get("TrendScore")) else (float(row["GRUScore"]) * 0.6 + float(row["TechnicalScore"]) * 0.4)
+    risk_val = float(row["RiskScore"]) if pd.notna(row.get("RiskScore")) else (100.0 - confidence_val)
+    momentum_val = float(row["MomentumScore"]) if pd.notna(row.get("MomentumScore")) else (tech_val * 0.8 + ml_val * 0.2)
+    trend_val = float(row["TrendScore"]) if pd.notna(row.get("TrendScore")) else (gru_val * 0.6 + tech_val * 0.4)
 
     # Generate explanations
-    tech_reason = xai_service.generate_technical_reason(float(row["TechnicalScore"]))
-    ml_reason = xai_service.generate_ml_reason(float(row["MLScore"]))
-    gru_reason = xai_service.generate_gru_reason(float(row["GRUScore"]), gru_long, gru_short, gru_hold)
+    tech_reason = xai_service.generate_technical_reason(tech_val)
+    ml_reason = xai_service.generate_ml_reason(ml_val)
+    gru_reason = xai_service.generate_gru_reason(gru_val, gru_long, gru_short, gru_hold)
     ret_reason = xai_service.generate_return_reason(return_score)
     rating_reason = xai_service.generate_rating_reason(
-        row["Symbol"], row["FinalRating"], float(row["CompositeScoreV2"]), rank, percentile, universe_pos
+        row["Symbol"], row["FinalRating"], comp_val, rank, percentile, universe_pos
     )
     drivers = xai_service.generate_rating_drivers(row)
 
@@ -135,16 +150,16 @@ def _df_to_stock_detail(row: pd.Series) -> StockDetail:
     return StockDetail(
         Symbol=row["Symbol"],
         FinalRating=row["FinalRating"],
-        Confidence=round(row["Confidence"], 2),
-        CompositeScoreV2=round(row["CompositeScoreV2"], 2),
-        TechnicalScore=round(row["TechnicalScore"], 2),
-        MLScore=round(row["MLScore"], 2),
-        GRUScore=round(row["GRUScore"], 2),
-        ReliabilityScore=round(row["ReliabilityScore"], 2),
+        Confidence=round(confidence_val, 2),
+        CompositeScoreV2=round(comp_val, 2),
+        TechnicalScore=round(tech_val, 2),
+        MLScore=round(ml_val, 2),
+        GRUScore=round(gru_val, 2),
+        ReliabilityScore=round(reliability_val, 2),
         RiskScore=round(risk_val, 2),
         MomentumScore=round(momentum_val, 2),
         TrendScore=round(trend_val, 2),
-        Sector=row.get("Sector", "—"),
+        Sector=str(row["Sector"]) if pd.notna(row.get("Sector")) else "—",
         CompanyName=row.get("CompanyName") if pd.notna(row.get("CompanyName")) else None,
         Industry=row.get("Industry") if pd.notna(row.get("Industry")) else None,
         Website=row.get("Website") if pd.notna(row.get("Website")) else None,
