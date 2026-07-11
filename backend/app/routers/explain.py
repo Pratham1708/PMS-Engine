@@ -82,15 +82,30 @@ async def explain_score(
             stock_data["indicators"] = get_indicators_for_stock(snap_id, canonical_symbol)
             stock_data["scores"] = get_scores_detail_for_stock(snap_id, canonical_symbol)
             
-            # Map GRU probabilities directly if present in DB
-            stock_data["GRU_LONG"] = stock_data["scores"].get("gru_long") or stock_data.get("GRU_LONG")
-            stock_data["GRU_HOLD"] = stock_data["scores"].get("gru_hold") or stock_data.get("GRU_HOLD")
-            stock_data["GRU_SHORT"] = stock_data["scores"].get("gru_short") or stock_data.get("GRU_SHORT")
-            stock_data["ReturnScore"] = stock_data["scores"].get("return_score") or stock_data.get("ReturnScore")
+        # Map GRU probabilities directly if present in DB
+        scores_dict = stock_data.get("scores") or {}
+        stock_data["GRU_LONG"] = scores_dict.get("gru_long") or stock_data.get("GRU_LONG")
+        stock_data["GRU_HOLD"] = scores_dict.get("gru_hold") or stock_data.get("GRU_HOLD")
+        stock_data["GRU_SHORT"] = scores_dict.get("gru_short") or stock_data.get("GRU_SHORT")
+        stock_data["ReturnScore"] = scores_dict.get("return_score") or stock_data.get("ReturnScore")
+        
+        logger.info(
+            f"[API ROUTE DEBUG] Loaded stock detail payload for symbol {symbol}: "
+            f"TechnicalScore={stock_data.get('TechnicalScore')}, "
+            f"MLScore={stock_data.get('MLScore')}, GRUScore={stock_data.get('GRUScore')}, "
+            f"ReliabilityScore={stock_data.get('ReliabilityScore')}"
+        )
+
             
     # 2. Run explanation generation
     try:
         response = explainer.explain(stock_data, history)
+        logger.info(
+            f"[API ROUTE DEBUG] Explainer [{score_type}] completed successfully. "
+            f"current_value={response.current_value}, "
+            f"current_values={response.current_values}, "
+            f"contributions_count={len(response.current_contributions)}"
+        )
         return response
     except Exception as e:
         logger.error(f"Failed to generate explainability payload for {score_type}: {e}", exc_info=True)
@@ -98,3 +113,4 @@ async def explain_score(
             status_code=500,
             detail=f"Internal explainability computation error: {str(e)}"
         )
+

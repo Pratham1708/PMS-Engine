@@ -66,6 +66,13 @@ class CompositeExplainer(BaseExplainer):
         gru = stock_data.get("GRUScore", 0.0)
         reliability = stock_data.get("ReliabilityScore", 70.0)
         
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.info(
+            f"[ENGINE DEBUG] Composite Explainer run: tech={tech}, ml={ml}, gru={gru}, reliability={reliability}, "
+            f"w_tech={w_tech}, w_ml={w_ml}, w_gru={w_gru}, w_reliability={w_reliability}"
+        )
+        
         contributions = [
             Contribution(
                 name="Technical Score Component",
@@ -146,7 +153,16 @@ class CompositeExplainer(BaseExplainer):
             interpretation=self.get_interpretation(),
             limitations=self.get_limitations(),
             references=self.get_references(),
-            current_values={"w_technical": w_tech, "w_ml": w_ml, "w_gru": w_gru, "w_reliability": w_reliability},
+            current_values={
+                "w_technical": w_tech,
+                "w_ml": w_ml,
+                "w_gru": w_gru,
+                "w_reliability": w_reliability,
+                "technical_score": tech,
+                "ml_score": ml,
+                "gru_score": gru,
+                "reliability_score": reliability
+            },
             current_contributions=contributions,
             dynamic_explanation=dynamic_text,
             why_not=why_not_text,

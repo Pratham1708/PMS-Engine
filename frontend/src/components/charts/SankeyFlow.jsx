@@ -6,17 +6,21 @@ import React from 'react';
  * into the Dynamic Weight Optimizer and out to the Composite Score.
  */
 export default function SankeyFlow({
-  tech = 0.0,
-  ml = 0.0,
-  gru = 0.0,
-  reliability = 70.0,
+  tech = null,
+  ml = null,
+  gru = null,
+  reliability = null,
   wTech = 0.40,
   wMl = 0.35,
   wGru = 0.15,
   wReliability = 0.10,
-  composite = 0.0,
+  composite = null,
   title = "Composite Weight Allocation Journey"
 }) {
+  console.log("[VISUALIZATION DEBUG] SankeyFlow rendering with values:", {
+    tech, ml, gru, reliability, wTech, wMl, wGru, wReliability, composite
+  });
+
   // SVG coordinates: Width 600, Height 260
   const width = 600;
   const height = 260;
@@ -36,7 +40,10 @@ export default function SankeyFlow({
   const outX = 520;
   const outY = 120;
 
-  const scoreClass = (val) => val > 0 ? '#10b981' : val < 0 ? '#ef4444' : '#9ca3af';
+  const scoreClass = (val) => {
+    if (val === null || val === undefined) return '#9ca3af';
+    return val > 0 ? '#10b981' : val < 0 ? '#ef4444' : '#9ca3af';
+  };
 
   return (
     <div className="sankey-flow-chart" style={{ width: '100%', overflowX: 'auto', background: 'rgba(5, 10, 20, 0.3)', padding: '16px', borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
@@ -69,30 +76,33 @@ export default function SankeyFlow({
 
         {/* Weighted Flow Paths from Sources to Optimizer */}
         {sources.map((src, idx) => {
+          const isAvailable = src.value !== null && src.value !== undefined;
           // Bezier curve control points
           const pathD = `M 130 ${src.y} C ${(optX + 130) / 2} ${src.y}, ${(optX + 130) / 2} ${optY + 15}, ${optX} ${optY + 15}`;
           const strokeWidth = Math.max(src.weight * 25, 2); // Map weight to path thickness
+          const strokeColor = isAvailable ? `url(#grad-${idx})` : '#4b5563';
+          const pathOpacity = isAvailable ? 0.75 : 0.08;
           return (
             <g key={idx}>
               {/* Glow trace */}
               <path
                 d={pathD}
                 fill="none"
-                stroke={src.color}
+                stroke={isAvailable ? src.color : '#4b5563'}
                 strokeWidth={strokeWidth}
-                opacity="0.1"
+                opacity={isAvailable ? 0.1 : 0.0}
               />
               {/* Actual flow path */}
               <path
                 d={pathD}
                 fill="none"
-                stroke={`url(#grad-${idx})`}
+                stroke={strokeColor}
                 strokeWidth={strokeWidth}
-                opacity="0.75"
+                opacity={pathOpacity}
                 style={{
                   strokeDasharray: '400',
                   strokeDashoffset: '0',
-                  animation: 'dash 10s linear infinite'
+                  animation: isAvailable ? 'dash 10s linear infinite' : 'none'
                 }}
               />
               {/* Path weight percentage tooltip marker */}
@@ -114,33 +124,43 @@ export default function SankeyFlow({
         <path
           d={`M ${optX + 100} ${optY + 15} L ${outX} ${outY + 15}`}
           fill="none"
-          stroke="url(#grad-out)"
+          stroke={composite !== null && composite !== undefined ? "url(#grad-out)" : "#4b5563"}
           strokeWidth="8"
-          opacity="0.85"
+          opacity={composite !== null && composite !== undefined ? 0.85 : 0.08}
         />
 
         {/* 1. Source Nodes (Left) */}
-        {sources.map((src, idx) => (
-          <g key={idx} transform={`translate(10, ${src.y - 18})`}>
-            {/* Box */}
-            <rect
-              width="120"
-              height="36"
-              rx="4"
-              fill="rgba(10, 22, 40, 0.9)"
-              stroke={src.color}
-              strokeWidth="1.5"
-            />
-            {/* Ticker Name */}
-            <text x="8" y="15" fill="#e2e8f0" fontSize="10px" fontWeight="bold">
-              {src.name}
-            </text>
-            {/* Value */}
-            <text x="8" y="28" fill={src.color} fontSize="11px" fontWeight="900">
-              {src.value > 0 && idx < 3 ? '+' : ''}{src.value.toFixed(2)}
-            </text>
-          </g>
-        ))}
+        {sources.map((src, idx) => {
+          const isAvailable = src.value !== null && src.value !== undefined;
+          return (
+            <g key={idx} transform={`translate(10, ${src.y - 18})`}>
+              {/* Box */}
+              <rect
+                width="120"
+                height="36"
+                rx="4"
+                fill="rgba(10, 22, 40, 0.9)"
+                stroke={isAvailable ? src.color : '#4b5563'}
+                strokeWidth="1.5"
+              />
+              {/* Ticker Name */}
+              <text x="8" y="15" fill={isAvailable ? "#e2e8f0" : "#94a3b8"} fontSize="10px" fontWeight="bold">
+                {src.name}
+              </text>
+              {/* Value */}
+              <text 
+                x="8" 
+                y="28" 
+                fill={isAvailable ? src.color : '#f43f5e'} 
+                fontSize={isAvailable ? "11px" : "8px"} 
+                fontWeight={isAvailable ? "900" : "bold"}
+              >
+                {isAvailable ? `${src.value > 0 && idx < 3 ? '+' : ''}${src.value.toFixed(2)}` : 'Data unavailable'}
+              </text>
+            </g>
+          );
+        })}
+
 
         {/* 2. Dynamic Weight Optimizer Node (Center) */}
         <g transform={`translate(${optX}, ${optY - 20})`} filter="url(#glow)">

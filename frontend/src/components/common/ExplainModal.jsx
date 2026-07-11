@@ -28,6 +28,7 @@ export default function ExplainModal({ scoreType, symbol, defaultTab = 'why', on
     setError(null);
     fetchExplainScore(scoreType, symbol)
       .then((res) => {
+        console.log('[FRONTEND API DEBUG] Received explain payload:', res.data);
         setData(res.data);
       })
       .catch((err) => {
@@ -235,16 +236,17 @@ export default function ExplainModal({ scoreType, symbol, defaultTab = 'why', on
               {scoreType === 'composite' ? (
                 /* Sankey Flow for Composite */
                 <SankeyFlow 
-                  tech={data.current_values?.w_technical ? 0.0 : (data.current_contributions[0]?.value || 0.0)}
-                  ml={data.current_values?.w_technical ? 0.0 : (data.current_contributions[1]?.value || 0.0)}
-                  gru={data.current_values?.w_technical ? 0.0 : (data.current_contributions[2]?.value || 0.0)}
-                  reliability={data.current_values?.w_technical ? 70.0 : (data.current_contributions[3]?.value || 70.0)}
-                  wTech={data.current_values?.w_technical || 0.40}
-                  wMl={data.current_values?.w_ml || 0.35}
-                  wGru={data.current_values?.w_gru || 0.15}
-                  wReliability={data.current_values?.w_reliability || 0.10}
+                  tech={data.current_values?.technical_score}
+                  ml={data.current_values?.ml_score}
+                  gru={data.current_values?.gru_score}
+                  reliability={data.current_values?.reliability_score}
+                  wTech={data.current_values?.w_technical}
+                  wMl={data.current_values?.w_ml}
+                  wGru={data.current_values?.w_gru}
+                  wReliability={data.current_values?.w_reliability}
                   composite={currentVal}
                 />
+
               ) : (
                 /* Standard Bar Chart for others */
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '24px' }}>

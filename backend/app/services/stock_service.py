@@ -82,12 +82,21 @@ def _get_active_df() -> pd.DataFrame:
 
 def _df_to_stock_detail(row: pd.Series) -> StockDetail:
     """Convert a DataFrame row to StockDetail model including dynamic XAI fields."""
+    import logging
+    logger = logging.getLogger(__name__)
+    logger.info(
+        f"[ENGINE DEBUG] Loaded {row.get('Symbol')}: TechnicalScore={row.get('TechnicalScore')}, "
+        f"MLScore={row.get('MLScore')}, GRUScore={row.get('GRUScore')}, "
+        f"ReliabilityScore={row.get('ReliabilityScore')}, CompositeScoreV2={row.get('CompositeScoreV2')}"
+    )
+
     rank = int(row.get("Rank", 0))
     percentile = float(row.get("Percentile", 0.0))
     universe_pos = row.get("UniversePosition", "—")
 
     portfolio_eligible = bool(row.get("PortfolioEligible", False))
     conviction_level = row.get("ConvictionLevel", "Medium Conviction")
+
 
     # Safe float handling for merged nullable fields
     gru_hold = float(row["GRU_HOLD"]) if pd.notna(row.get("GRU_HOLD")) else None
