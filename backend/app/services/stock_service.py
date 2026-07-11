@@ -32,6 +32,9 @@ def _get_snapshot_df(snapshot_id: str) -> pd.DataFrame:
             ss.ml_score AS MLScore,
             ss.gru_score AS GRUScore,
             ss.reliability_score AS ReliabilityScore,
+            ss.risk_score AS RiskScore,
+            ss.momentum_score AS MomentumScore,
+            ss.trend_score AS TrendScore,
             ss.sector AS Sector,
             ss.open AS Open,
             ss.high AS High,
@@ -92,6 +95,11 @@ def _df_to_stock_detail(row: pd.Series) -> StockDetail:
     gru_short = float(row["GRU_SHORT"]) if pd.notna(row.get("GRU_SHORT")) else None
     return_score = float(row["ReturnScore"]) if pd.notna(row.get("ReturnScore")) else None
 
+    # Retrieve or dynamically compute Trend, Momentum, and Risk scores
+    risk_val = float(row["RiskScore"]) if pd.notna(row.get("RiskScore")) else (100.0 - float(row["Confidence"]))
+    momentum_val = float(row["MomentumScore"]) if pd.notna(row.get("MomentumScore")) else (float(row["TechnicalScore"]) * 0.8 + float(row["MLScore"]) * 0.2)
+    trend_val = float(row["TrendScore"]) if pd.notna(row.get("TrendScore")) else (float(row["GRUScore"]) * 0.6 + float(row["TechnicalScore"]) * 0.4)
+
     # Generate explanations
     tech_reason = xai_service.generate_technical_reason(float(row["TechnicalScore"]))
     ml_reason = xai_service.generate_ml_reason(float(row["MLScore"]))
@@ -124,6 +132,9 @@ def _df_to_stock_detail(row: pd.Series) -> StockDetail:
         MLScore=round(row["MLScore"], 2),
         GRUScore=round(row["GRUScore"], 2),
         ReliabilityScore=round(row["ReliabilityScore"], 2),
+        RiskScore=round(risk_val, 2),
+        MomentumScore=round(momentum_val, 2),
+        TrendScore=round(trend_val, 2),
         Sector=row.get("Sector", "—"),
         CompanyName=row.get("CompanyName") if pd.notna(row.get("CompanyName")) else None,
         Industry=row.get("Industry") if pd.notna(row.get("Industry")) else None,

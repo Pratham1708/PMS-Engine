@@ -20,6 +20,8 @@ import ScoreBar from '../components/common/ScoreBar';
 import ConfidenceBar from '../components/common/ConfidenceBar';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import FinancialChart from '../components/charts/FinancialChart';
+import ExplainActions from '../components/common/ExplainActions';
+import ExplainModal from '../components/common/ExplainModal';
 
 
 function confidenceColor(val) {
@@ -98,6 +100,10 @@ export default function StockDetail() {
   // Status States
   const [initialLoading, setInitialLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [explainTarget, setExplainTarget] = useState(null); // { scoreType, defaultTab }
+  const handleOpenExplain = (scoreType, defaultTab) => {
+    setExplainTarget({ scoreType, defaultTab });
+  };
 
   // Analysis Flow States
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -592,6 +598,7 @@ export default function StockDetail() {
                     <div className="score-counter-reason">
                       {reportData.xai_explanation?.TechnicalScoreReason}
                     </div>
+                    <ExplainActions scoreType="technical" onAction={handleOpenExplain} />
                   </div>
                 </div>
               </div>
@@ -621,6 +628,7 @@ export default function StockDetail() {
                     <div className="score-counter-reason">
                       {reportData.xai_explanation?.MLScoreReason}
                     </div>
+                    <ExplainActions scoreType="ensemble" onAction={handleOpenExplain} />
                   </div>
                 </div>
               </div>
@@ -650,6 +658,7 @@ export default function StockDetail() {
                     <div className="score-counter-reason">
                       {reportData.xai_explanation?.GRUScoreReason}
                     </div>
+                    <ExplainActions scoreType="gru" onAction={handleOpenExplain} />
                   </div>
                 </div>
                 {reportData.GRU_LONG !== null && (
@@ -695,6 +704,7 @@ export default function StockDetail() {
                     <div className="score-counter-reason">
                       {reportData.xai_explanation?.ReturnScoreReason}
                     </div>
+                    <ExplainActions scoreType="momentum" onAction={handleOpenExplain} />
                   </div>
                 </div>
               </div>
@@ -724,6 +734,7 @@ export default function StockDetail() {
                     <div className="score-counter-reason">
                       The telemetry integrity model evaluates data stream noise, time latency, and indicator alignment. Scores above 80% indicate premium signal validity.
                     </div>
+                    <ExplainActions scoreType="reliability" onAction={handleOpenExplain} />
                   </div>
                 </div>
               </div>
@@ -767,6 +778,9 @@ export default function StockDetail() {
                       {reportData.UniversePosition}
                     </div>
                   </div>
+                </div>
+                <div style={{ marginTop: '16px', display: 'flex', justifyContent: 'center' }}>
+                  <ExplainActions scoreType="composite" onAction={handleOpenExplain} />
                 </div>
               </div>
             </div>
@@ -825,6 +839,10 @@ export default function StockDetail() {
                         )}
                       </div>
                     </div>
+                  </div>
+                  
+                  <div style={{ marginTop: '16px', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '12px', display: 'flex', justifyContent: 'center' }}>
+                    <ExplainActions scoreType="confidence" onAction={handleOpenExplain} />
                   </div>
                 </div>
               </div>
@@ -1040,6 +1058,15 @@ export default function StockDetail() {
           </div>
 
         </div>
+      )}
+
+      {explainTarget && (
+        <ExplainModal
+          scoreType={explainTarget.scoreType}
+          symbol={symbol}
+          defaultTab={explainTarget.defaultTab}
+          onClose={() => setExplainTarget(null)}
+        />
       )}
 
     </div>

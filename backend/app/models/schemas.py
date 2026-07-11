@@ -46,6 +46,9 @@ class StockDetail(BaseModel):
     MLScore: float
     GRUScore: float
     ReliabilityScore: float
+    RiskScore: Optional[float] = None
+    MomentumScore: Optional[float] = None
+    TrendScore: Optional[float] = None
     Sector: str = "\u2014"
     CompanyName: Optional[str] = None
     Industry: Optional[str] = None
@@ -77,6 +80,54 @@ class StockDetail(BaseModel):
     top_positive_factors: Optional[List[str]] = None
     top_negative_factors: Optional[List[str]] = None
     institutional_insight: Optional[str] = None
+
+
+class Contribution(BaseModel):
+    name: str
+    value: Optional[float] = None
+    weight: Optional[float] = None
+    contribution: Optional[float] = None
+    direction: str  # "positive" | "negative" | "neutral"
+    description: str
+
+
+class ValidationMetric(BaseModel):
+    metric: str
+    value: str
+    description: str
+
+
+class ResearchReference(BaseModel):
+    paper: str
+    author: str
+    year: int
+    link: Optional[str] = None
+    description: str
+
+
+class ScoreInterpretation(BaseModel):
+    range: str
+    meaning: str
+    action: str
+
+
+class ExplainScoreResponse(BaseModel):
+    score_type: str
+    symbol: Optional[str] = None
+    current_value: Optional[float] = None
+    purpose: str
+    formula: str
+    factors: List[str]
+    validation: List[ValidationMetric]
+    interpretation: List[ScoreInterpretation]
+    limitations: List[str]
+    references: List[ResearchReference]
+    current_values: Optional[dict] = None
+    current_contributions: List[Contribution] = []
+    dynamic_explanation: str
+    why_not: str
+    historical_context: Optional[List[dict]] = None
+    llm_summary: Optional[str] = None
 
 
 class DashboardData(BaseModel):

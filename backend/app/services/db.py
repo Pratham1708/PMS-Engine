@@ -1517,3 +1517,33 @@ def get_stock_history_across_snapshots(symbol: str, limit: int = 90) -> List[Dic
     finally:
         conn.close()
 
+
+def get_historical_scores(symbol: str, limit: int = 30) -> List[Dict[str, Any]]:
+    """Return historical scores for a stock across snapshots."""
+    conn = get_db_connection()
+    try:
+        rows = conn.execute(
+            """
+            SELECT ss.snapshot_date, 
+                   sk.technical_score, 
+                   sk.ml_score, 
+                   sk.gru_score, 
+                   sk.risk_score, 
+                   sk.momentum_score, 
+                   sk.trend_score, 
+                   sk.confidence, 
+                   sk.composite_score, 
+                   sk.reliability_score
+            FROM snapshot_stock sk
+            JOIN snapshots ss ON ss.snapshot_id = sk.snapshot_id
+            WHERE UPPER(sk.symbol) = UPPER(?)
+            AND ss.status IN ('completed', 'completed_with_warnings', 'published')
+            ORDER BY ss.snapshot_date DESC
+            LIMIT ?
+            """,
+            (symbol, limit)
+        ).fetchall()
+        return [dict(r) for r in rows]
+    finally:
+        conn.close()
+

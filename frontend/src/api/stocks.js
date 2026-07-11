@@ -68,3 +68,7 @@ export const fetchCompareSnapshots = (date1, date2) =>
   client.get('/snapshot/compare', { params: { date1, date2 } });
 export const fetchCompareStock = (symbol, limit = 90) =>
   client.get('/snapshot/compare/stock', { params: { symbol, limit } });
+
+// Explainability Engine
+export const fetchExplainScore = (scoreType, symbol) =>
+  client.get(`/explain/${scoreType}`, { params: { symbol } });

@@ -9,7 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
 from app.services.json_response import SafeJSONResponse
-from app.routers import health, stocks, dashboard, portfolio, market, reports, user_stocks
+from app.routers import health, stocks, dashboard, portfolio, market, reports, user_stocks, explain
 from app.routers import snapshot as snapshot_router
 from app.routers import (
     lab_indicators,
@@ -61,6 +61,7 @@ app.include_router(market.router, prefix="/api")
 app.include_router(reports.router, prefix="/api")
 app.include_router(user_stocks.router, prefix="/api")
 app.include_router(snapshot_router.router, prefix="/api")  # Phase 13 snapshot publishing
+app.include_router(explain.router, prefix="/api")
 
 # Register Quant Research Laboratory routers (prefixes are built-in)
 app.include_router(lab_indicators.router)
