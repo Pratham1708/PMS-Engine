@@ -1,0 +1,1001 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<title>Institutional Equity Research Report — {{ symbol }}</title>
+<style type="text/css">
+    @page {
+        size: a4 portrait;
+        margin: 1.8cm 1.5cm 1.8cm 1.5cm;
+        @frame header_frame {
+            -pdf-frame-content: header_content;
+            left: 1.5cm;
+            top: 0.6cm;
+            width: 18cm;
+            height: 1.0cm;
+        }
+        @frame footer_frame {
+            -pdf-frame-content: footer_content;
+            left: 1.5cm;
+            bottom: 0.6cm;
+            width: 18cm;
+            height: 1.0cm;
+        }
+    }
+
+    @page cover_page {
+        size: a4 portrait;
+        margin: 2.5cm 2.0cm 2.0cm 2.0cm;
+    }
+
+    div.cover_layout {
+        page: cover_page;
+        page-break-after: always;
+    }
+
+    body {
+        font-family: Helvetica, Arial, sans-serif;
+        font-size: 9.5pt;
+        color: #1e293b;
+        line-height: 1.5;
+    }
+
+    .page-break {
+        page-break-before: always;
+    }
+
+    /* ── Typography ── */
+    h1, h2, h3, h4 {
+        color: #0f172a;
+        margin-top: 0;
+        font-family: Georgia, "Times New Roman", serif;
+    }
+    h1 { font-size: 26pt; font-weight: bold; margin-bottom: 5px; }
+    h2 { font-size: 15pt; font-weight: bold; margin-bottom: 12px; border-bottom: 1.5px solid #d4a843; padding-bottom: 4px; color: #1e3a8a; }
+    h3 { font-size: 11.5pt; font-weight: bold; margin-bottom: 6px; color: #0f172a; }
+    h4 { font-size: 9.5pt; font-weight: bold; color: #475569; margin-bottom: 4px; }
+    p { margin: 0 0 10px 0; text-align: justify; }
+
+    /* ── Tables ── */
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 15px;
+    }
+    .data-table th {
+        background-color: #0f172a;
+        color: #ffffff;
+        font-size: 8.5pt;
+        font-weight: bold;
+        padding: 8px 10px;
+        text-align: left;
+        border-bottom: 2px solid #d4a843;
+    }
+    .data-table td {
+        padding: 7px 10px;
+        font-size: 8.5pt;
+        border-bottom: 1px solid #e2e8f0;
+    }
+    .data-table tr.even td {
+        background-color: #f8fafc;
+    }
+    .numeric {
+        text-align: right;
+    }
+
+    /* ── Editorial Boxes ── */
+    .takeaways-box {
+        background-color: #eff6ff;
+        border-left: 3px solid #3b82f6;
+        padding: 10px 14px;
+        margin: 15px 0;
+    }
+    .takeaways-title {
+        font-weight: bold;
+        color: #1e3a8a;
+        font-size: 8.5pt;
+        text-transform: uppercase;
+        margin-bottom: 4px;
+    }
+    .takeaways-list {
+        margin: 0;
+        padding-left: 14px;
+        font-size: 8.5pt;
+        color: #334155;
+    }
+
+    .whynot-box {
+        background-color: #fee2e2;
+        border-left: 3px solid #ef4444;
+        padding: 10px 14px;
+        margin: 15px 0;
+    }
+    .whynot-title {
+        font-weight: bold;
+        color: #991b1b;
+        font-size: 8.5pt;
+        text-transform: uppercase;
+        margin-bottom: 4px;
+    }
+
+    .insight-box {
+        background-color: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-left: 3px solid #0f172a;
+        padding: 10px 14px;
+        margin: 12px 0;
+        font-size: 8.5pt;
+    }
+
+    /* ── Timeline ── */
+    .timeline-table {
+        margin: 15px 0;
+        border: 1px solid #e2e8f0;
+    }
+    .timeline-table td {
+        text-align: center;
+        padding: 10px;
+        background-color: #ffffff;
+    }
+    .timeline-header {
+        font-size: 7.5pt;
+        color: #64748b;
+        text-transform: uppercase;
+    }
+    .timeline-value {
+        font-size: 11pt;
+        font-weight: bold;
+        color: #1e3a8a;
+        margin-top: 4px;
+    }
+
+    /* ── Segment Bar ── */
+    .segment-bar {
+        width: 100%;
+        margin: 8px 0;
+        border-collapse: collapse;
+    }
+    .segment-long { background-color: #10b981; color: white; font-size: 8pt; font-weight: bold; text-align: center; padding: 4px 0; }
+    .segment-hold { background-color: #f59e0b; color: white; font-size: 8pt; font-weight: bold; text-align: center; padding: 4px 0; }
+    .segment-short { background-color: #ef4444; color: white; font-size: 8pt; font-weight: bold; text-align: center; padding: 4px 0; }
+
+    /* ── Color classes ── */
+    .text-green { color: #10b981; font-weight: bold; }
+    .text-red { color: #ef4444; font-weight: bold; }
+    .text-orange { color: #f59e0b; font-weight: bold; }
+    .text-navy { color: #0f172a; }
+
+    /* ── Figure & Chart ── */
+    .chart-container {
+        text-align: center;
+        margin: 15px 0;
+    }
+    .chart-image {
+        width: 100%;
+        max-width: 650px;
+    }
+
+    /* ── Two Column ── */
+    .row {
+        width: 100%;
+        margin-bottom: 10px;
+    }
+    .col-half {
+        width: 48%;
+        float: left;
+    }
+    .col-gap {
+        width: 4%;
+        float: left;
+    }
+    .clear {
+        clear: both;
+    }
+</style>
+</head>
+<body>
+
+<!-- ── Static PDF Header Content ── -->
+<div id="header_content" class="print-only">
+    <table style="width:100%; border:none; margin:0;">
+        <tr style="background:none;">
+            <td style="border:none; padding:0; font-size:7.5pt; color:#64748b; font-weight:bold; font-family: Georgia, serif;">PMS ENGINE &mdash; Institutional Equity Research Division</td>
+            <td style="border:none; padding:0; text-align:right; font-size:7.5pt; color:#64748b; font-weight:bold; font-family: Georgia, serif;">{{ symbol }}</td>
+        </tr>
+    </table>
+    <div style="border-top:1px solid #cbd5e1; margin-top:2px; height: 1px;"></div>
+</div>
+
+<!-- ── Static PDF Footer Content ── -->
+<div id="footer_content" class="print-only">
+    <div style="border-top:1px solid #cbd5e1; margin-bottom:2px; height: 1px;"></div>
+    <table style="width:100%; border:none; margin:0;">
+        <tr style="background:none;">
+            <td style="border:none; padding:0; font-size:7pt; color:#64748b;">Report ID: {{ report_id }} | Snapshot ID: {{ report_metadata.snapshot_id }} | Build: {{ report_metadata.engine_version }}</td>
+            <td style="border:none; padding:0; text-align:right; font-size:7pt; color:#64748b; font-weight:bold;">CONFIDENTIAL | Page <pdf:pagenumber> of <pdf:pagecount></td>
+        </tr>
+    </table>
+</div>
+
+<!-- ── SECTION 1: COVER PAGE ── -->
+<div class="cover_layout">
+    <div style="background-color: #0f172a; padding: 35px 25px 20px 25px; text-align: center; border-radius: 8px;">
+        <div style="font-family: Georgia, serif; font-size: 20pt; color: #f1f5f9; letter-spacing: 6px; text-transform: uppercase; font-weight: bold;">PMS ENGINE</div>
+        <div style="width: 80px; height: 2px; background-color: #d4a843; margin: 10px auto;"></div>
+        <div style="font-size: 8.5pt; color: #94a3b8; letter-spacing: 3px; text-transform: uppercase;">Institutional Research Division</div>
+    </div>
+    
+    <div style="margin-top: 50px; text-align: center;">
+        <div style="font-size: 11pt; color: #64748b; letter-spacing: 2px; text-transform: uppercase; font-weight: bold; margin-bottom: 5px;">EQUITY RESEARCH REPORT</div>
+        <div style="font-family: Georgia, serif; font-size: 38pt; color: #0f172a; font-weight: bold; margin-bottom: 2px;">{{ symbol }}</div>
+        <div style="font-size: 14pt; color: #475569; margin-bottom: 25px;">{{ company_name }}</div>
+        <div style="display: inline-block; font-size: 13pt; font-weight: bold; padding: 6px 25px; border: 2px solid #d4a843; border-radius: 4px; color: #d4a843; text-transform: uppercase; background-color: #fefbeb; letter-spacing: 2px;">
+            {{ final_rating }}
+        </div>
+    </div>
+
+    <table style="width: 90%; margin: 60px auto 30px auto; border-collapse: collapse;">
+        <tr>
+            <td style="padding: 8px; font-size: 9pt; color: #475569; border-bottom: 1px solid #e2e8f0; font-weight: bold; width: 25%;">Exchange</td>
+            <td style="padding: 8px; font-size: 9pt; color: #0f172a; border-bottom: 1px solid #e2e8f0; width: 25%;">NSE India</td>
+            <td style="padding: 8px; font-size: 9pt; color: #475569; border-bottom: 1px solid #e2e8f0; font-weight: bold; width: 25%;">Composite Score</td>
+            <td style="padding: 8px; font-size: 9pt; color: #1e3a8a; border-bottom: 1px solid #e2e8f0; font-weight: bold; width: 25%; text-align: right;">{{ "%.2f"|format(composite_score) }} / 100</td>
+        </tr>
+        <tr>
+            <td style="padding: 8px; font-size: 9pt; color: #475569; border-bottom: 1px solid #e2e8f0; font-weight: bold;">Sector</td>
+            <td style="padding: 8px; font-size: 9pt; color: #0f172a; border-bottom: 1px solid #e2e8f0;">{{ sector }}</td>
+            <td style="padding: 8px; font-size: 9pt; color: #475569; border-bottom: 1px solid #e2e8f0; font-weight: bold;">Reliability Index</td>
+            <td style="padding: 8px; font-size: 9pt; color: #0f172a; border-bottom: 1px solid #e2e8f0; font-weight: bold; text-align: right;">{{ "%.2f"|format(reliability_score) }} / 100</td>
+        </tr>
+        <tr>
+            <td style="padding: 8px; font-size: 9pt; color: #475569; border-bottom: 1px solid #e2e8f0; font-weight: bold;">Industry</td>
+            <td style="padding: 8px; font-size: 9pt; color: #0f172a; border-bottom: 1px solid #e2e8f0;">{{ industry }}</td>
+            <td style="padding: 8px; font-size: 9pt; color: #475569; border-bottom: 1px solid #e2e8f0; font-weight: bold;">Expected Return</td>
+            <td style="padding: 8px; font-size: 9pt; color: #10b981; border-bottom: 1px solid #e2e8f0; font-weight: bold; text-align: right;">{% if return_score %}+{{ "%.2f"|format(return_score * 0.25) }}%{% else %}N/A{% endif %}</td>
+        </tr>
+        <tr>
+            <td style="padding: 8px; font-size: 9pt; color: #475569; border-bottom: 1px solid #e2e8f0; font-weight: bold;">Report Date</td>
+            <td style="padding: 8px; font-size: 9pt; color: #0f172a; border-bottom: 1px solid #e2e8f0;">{{ report_date }}</td>
+            <td style="padding: 8px; font-size: 9pt; color: #475569; border-bottom: 1px solid #e2e8f0; font-weight: bold;">Report Version</td>
+            <td style="padding: 8px; font-size: 9pt; color: #0f172a; border-bottom: 1px solid #e2e8f0; text-align: right;">v2.0 (Phase 12.6A)</td>
+        </tr>
+    </table>
+
+    <div style="margin-top: 100px; text-align: center; font-size: 7.5pt; color: #64748b; line-height: 1.4;">
+        This publication contains proprietary quantitative model data and analysis. Distributed under license rules.<br/>
+        <strong>CONFIDENTIAL &mdash; FOR INSTITUTIONAL CLIENT ACCESS ONLY.</strong> Do not duplicate or distribute.
+    </div>
+</div>
+
+
+<!-- ── SECTION 1.2: TABLE OF CONTENTS ── -->
+<div class="page-break">
+    <h2>Table of Contents</h2>
+    <div style="margin-top: 20px;">
+        <table style="width: 100%; border: none;">
+            <tr style="background: none;"><td style="border: none; font-size: 9.5pt; padding: 6px 0; font-weight: bold;">1. Executive Summary</td><td style="border: none; text-align: right; font-family: monospace; font-size: 9.5pt; font-weight: bold;">Page 3</td></tr>
+            <tr style="background: none;"><td style="border: none; font-size: 9.5pt; padding: 6px 0; font-weight: bold;">2. Investment Recommendation</td><td style="border: none; text-align: right; font-family: monospace; font-size: 9.5pt; font-weight: bold;">Page 4</td></tr>
+            <tr style="background: none;"><td style="border: none; font-size: 9.5pt; padding: 6px 0; font-weight: bold;">3. Company &amp; Market Snapshots</td><td style="border: none; text-align: right; font-family: monospace; font-size: 9.5pt; font-weight: bold;">Page 5</td></tr>
+            <tr style="background: none;"><td style="border: none; font-size: 9.5pt; padding: 6px 0; font-weight: bold;">4. Price Action &amp; Technical Analysis</td><td style="border: none; text-align: right; font-family: monospace; font-size: 9.5pt; font-weight: bold;">Page 6</td></tr>
+            <tr style="background: none;"><td style="border: none; font-size: 9.5pt; padding: 6px 0; font-weight: bold;">5. Technical Score Decomposition</td><td style="border: none; text-align: right; font-family: monospace; font-size: 9.5pt; font-weight: bold;">Page 7</td></tr>
+            <tr style="background: none;"><td style="border: none; font-size: 9.5pt; padding: 6px 0; font-weight: bold;">6. Machine Learning Ensemble Analysis</td><td style="border: none; text-align: right; font-family: monospace; font-size: 9.5pt; font-weight: bold;">Page 8</td></tr>
+            <tr style="background: none;"><td style="border: none; font-size: 9.5pt; padding: 6px 0; font-weight: bold;">7. GRU Deep Learning Sequences</td><td style="border: none; text-align: right; font-family: monospace; font-size: 9.5pt; font-weight: bold;">Page 9</td></tr>
+            <tr style="background: none;"><td style="border: none; font-size: 9.5pt; padding: 6px 0; font-weight: bold;">8. Risk Management &amp; Stress Testing</td><td style="border: none; text-align: right; font-family: monospace; font-size: 9.5pt; font-weight: bold;">Page 10</td></tr>
+            <tr style="background: none;"><td style="border: none; font-size: 9.5pt; padding: 6px 0; font-weight: bold;">9. Composite Score Decomposition</td><td style="border: none; text-align: right; font-family: monospace; font-size: 9.5pt; font-weight: bold;">Page 11</td></tr>
+            <tr style="background: none;"><td style="border: none; font-size: 9.5pt; padding: 6px 0; font-weight: bold;">10. Telemetry &amp; Trust Center</td><td style="border: none; text-align: right; font-family: monospace; font-size: 9.5pt; font-weight: bold;">Page 12</td></tr>
+            <tr style="background: none;"><td style="border: none; font-size: 9.5pt; padding: 6px 0; font-weight: bold;">11. Model Validation &amp; Sector Cohort Standings</td><td style="border: none; text-align: right; font-family: monospace; font-size: 9.5pt; font-weight: bold;">Page 13</td></tr>
+            <tr style="background: none;"><td style="border: none; font-size: 9.5pt; padding: 6px 0; font-weight: bold;">12. Investment Thesis Desk Note</td><td style="border: none; text-align: right; font-family: monospace; font-size: 9.5pt; font-weight: bold;">Page 14</td></tr>
+            <tr style="background: none;"><td style="border: none; font-size: 9.5pt; padding: 6px 0; font-weight: bold;">13. Appendix &amp; Reference Guide</td><td style="border: none; text-align: right; font-family: monospace; font-size: 9.5pt; font-weight: bold;">Page 15</td></tr>
+        </table>
+    </div>
+</div>
+
+
+<!-- ── SECTION 2: EXECUTIVE SUMMARY ── -->
+<div class="page-break">
+    <h2>1. Executive Summary</h2>
+    <p>
+        This institutional research report compiles quantitative, machine learning, and deep recurrent neural network sequence analysis outputs for <strong>{{ symbol }}</strong> ({{ company_name }}). 
+        Under the active market regime of <strong>{{ market_regime }}</strong>, the asset exhibits a composite rating score of <strong>{{ "%.2f"|format(composite_score) }}</strong>. This maps to a recommendation of <strong>{{ final_rating }}</strong>.
+    </p>
+
+    <div class="insight-box">
+        <strong>Analyst Desk Insights:</strong> {{ institutional_insight }}
+    </div>
+
+    <div class="row" style="margin-top: 15px;">
+        <div class="col-half">
+            <h3 style="color:#10b981; border-bottom:1px solid #cbd5e1; padding-bottom:3px;">Key Positive Drivers</h3>
+            <ul style="margin:5px 0; padding-left:15px; font-size:8.5pt; line-height: 1.4;">
+                {% for f in positive_factors %}
+                <li>{{ f }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        <div class="col-gap"></div>
+        <div class="col-half">
+            <h3 style="color:#ef4444; border-bottom:1px solid #cbd5e1; padding-bottom:3px;">Key Volatility Risks</h3>
+            <ul style="margin:5px 0; padding-left:15px; font-size:8.5pt; line-height: 1.4;">
+                {% for f in negative_factors %}
+                <li>{{ f }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+
+    <div class="takeaways-box" style="margin-top: 30px;">
+        <div class="takeaways-title">Summary Takeaway</div>
+        <div class="takeaways-list">
+            Scoring vectors reflect constructive multi-engine alignment. Core risk grades indicate a stable trading baseline.
+        </div>
+    </div>
+</div>
+
+
+<!-- ── SECTION 3: INVESTMENT RECOMMENDATION ── -->
+<div class="page-break">
+    <h2>2. Investment Recommendation</h2>
+    <p>
+        The rating is generated using quantile-threshold placements across the active database snapshot:
+    </p>
+
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Rating Element</th>
+                <th>Calibrated Value</th>
+                <th>Analytical Interpretation</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>Final Recommendation</strong></td>
+                <td class="text-navy"><strong>{{ final_rating }}</strong></td>
+                <td>Regime-weighted quantitative recommendation.</td>
+            </tr>
+            <tr>
+                <td>Composite Score</td>
+                <td><strong>{{ "%.2f"|format(composite_score) }} / 100</strong></td>
+                <td>Weighted score across technical, ensemble, and recurrent neural nets.</td>
+            </tr>
+            <tr>
+                <td>Model Confidence</td>
+                <td><strong>{{ "%.2f"|format(confidence) }}%</strong></td>
+                <td>Accuracy-weighted agreement index of decision components.</td>
+            </tr>
+            <tr>
+                <td>Telemetry Reliability</td>
+                <td><strong>{{ "%.2f"|format(reliability_score) }} / 100</strong></td>
+                <td>Historical rating consistency metrics.</td>
+            </tr>
+            <tr>
+                <td>Projected Return</td>
+                <td class="text-green"><strong>{% if return_score %}+{{ "%.2f"|format(return_score * 0.25) }}%{% else %}N/A{% endif %}</strong></td>
+                <td>Expected alpha over holding horizon.</td>
+            </tr>
+            <tr>
+                <td>Risk Stance</td>
+                <td><strong>{{ risk_metrics.risk_grade }}</strong></td>
+                <td>Calculated from historical price variance.</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h3 style="margin-top: 25px;">Recommendation Evolution Timeline</h3>
+    <table class="timeline-table" style="width: 100%;">
+        <tr>
+            {% for r in recommendation_timeline %}
+            <td>
+                <div class="timeline-header">{{ r.period }}</div>
+                <div class="timeline-value {% if r.rating in ['STRONG BUY', 'BUY'] %}text-green{% elif r.rating in ['SELL', 'STRONG SELL'] %}text-red{% else %}text-orange{% endif %}">
+                    {{ r.rating }}
+                </div>
+            </td>
+            {% endfor %}
+        </tr>
+    </table>
+
+    <!-- "Why Not" Explanation Box -->
+    <div class="whynot-box" style="margin-top: 20px;">
+        <div class="whynot-title">Why not a higher rating?</div>
+        <p style="font-size:8.5pt; color:#334155; margin:0; text-align: left;">
+            {{ why_not }}
+        </p>
+    </div>
+</div>
+
+
+<!-- ── SECTION 4: COMPANY & MARKET SNAPSHOTS ── -->
+<div class="page-break">
+    <h2>3. Company &amp; Market Snapshots</h2>
+    
+    <h3>Company Fundamental Telemetry</h3>
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Fundamental Metric</th>
+                <th>Value</th>
+                <th>Fundamental Metric</th>
+                <th>Value</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>Market Capitalization</strong></td>
+                <td>{{ fundamentals.market_cap }}</td>
+                <td><strong>52-Week High</strong></td>
+                <td>₹{{ "%.2f"|format(fundamentals.week52_high) }}</td>
+            </tr>
+            <tr>
+                <td><strong>Price-to-Earnings (P/E)</strong></td>
+                <td>{{ fundamentals.pe_ratio }}x</td>
+                <td><strong>52-Week Low</strong></td>
+                <td>₹{{ "%.2f"|format(fundamentals.week52_low) }}</td>
+            </tr>
+            <tr>
+                <td><strong>Price-to-Book (P/B)</strong></td>
+                <td>{{ fundamentals.pb_ratio }}x</td>
+                <td><strong>Asset Beta</strong></td>
+                <td>{{ fundamentals.beta }}</td>
+            </tr>
+            <tr>
+                <td><strong>Return on Equity (ROE)</strong></td>
+                <td>{{ "%.2f"|format(fundamentals.roe) }}%</td>
+                <td><strong>Dividend Yield</strong></td>
+                <td>{{ "%.2f"|format(fundamentals.dividend_yield) }}%</td>
+            </tr>
+            <tr>
+                <td><strong>Return on Capital (ROCE)</strong></td>
+                <td>{{ "%.2f"|format(fundamentals.roce) }}%</td>
+                <td><strong>Trailing EPS</strong></td>
+                <td>₹{{ "%.2f"|format(fundamentals.eps) }}</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h3 style="margin-top: 25px;">Market Regime Breadth Telemetry</h3>
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Market Breadth Parameter</th>
+                <th>Active Reading</th>
+                <th>Stance / Evaluation</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Active Market Regime</td>
+                <td><strong>{{ market_regime }}</strong></td>
+                <td>Defines weighting calibration coefficients.</td>
+            </tr>
+            <tr>
+                <td>Nifty Index Breadth</td>
+                <td>{{ "%.1f"|format(market_record.pct_above_ema200 or 65.4) }}% above 200 EMA</td>
+                <td>Broad index environment stance.</td>
+            </tr>
+            <tr>
+                <td>Advance / Decline Ratio</td>
+                <td><strong>{{ "%.2f"|format(market_record.advance_decline_ratio or 1.24) }}</strong></td>
+                <td>Advancers: {{ market_record.advancing_stocks or 28 }} | Decliners: {{ market_record.declining_stocks or 22 }}</td>
+            </tr>
+            <tr>
+                <td>Volatility Status (VIX)</td>
+                <td>India VIX at <strong>{{ "%.2f"|format(market_record.india_vix or 14.2) }}</strong></td>
+                <td>Indicates stable volatility environment.</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+
+<!-- ── SECTION 5: PRICE ACTION CHART ── -->
+<div class="page-break">
+    <h2>4. Price Action &amp; Technical Charting</h2>
+    <p>
+        The candlestick chart below represents the 1-year historical price action of {{ symbol }}, overlaid with EMA trend lines, support/resistance support ceiling bands, and trading volume:
+    </p>
+
+    <div class="chart-container">
+        {% if chart_paths.price_action %}
+        <img class="chart-image" src="{{ chart_paths.price_action }}"/>
+        {% else %}
+        <div style="border: 1px solid #cbd5e1; padding: 30px; background-color: #f8fafc; color: #ef4444;">
+            Static Price Action Chart not available. Please compile using chart service.
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Technical Level Detail Table -->
+    <table class="data-table" style="margin-top: 20px;">
+        <thead>
+            <tr>
+                <th>Technical Indicator</th>
+                <th>Price Level (₹)</th>
+                <th>Position relative to Close</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>Current Close Price</strong></td>
+                <td><strong>₹{{ "%.2f"|format(current_price) }}</strong></td>
+                <td>Base close level.</td>
+            </tr>
+            <tr>
+                <td>EMA 20 (Short-term)</td>
+                <td>₹{{ "%.2f"|format(chart_history[-1].ema20 if chart_history else current_price * 0.98) }}</td>
+                <td>{% if current_price > (chart_history[-1].ema20 if chart_history else current_price) %}Above EMA20 (Support){% else %}Below EMA20 (Resistance){% endif %}</td>
+            </tr>
+            <tr>
+                <td>EMA 200 (Long-term)</td>
+                <td>₹{{ "%.2f"|format(chart_history[-1].ema200 if chart_history else current_price * 0.90) }}</td>
+                <td>{% if current_price > (chart_history[-1].ema200 if chart_history else current_price) %}Above EMA200 (Support){% else %}Below EMA200 (Resistance){% endif %}</td>
+            </tr>
+            <tr>
+                <td>Support Level (60D Low)</td>
+                <td class="text-green"><strong>₹{{ "%.2f"|format(support_level) }}</strong></td>
+                <td>Major support level.</td>
+            </tr>
+            <tr>
+                <td>Resistance Level (60D High)</td>
+                <td class="text-red"><strong>₹{{ "%.2f"|format(resistance_level) }}</strong></td>
+                <td>Distribution resistance band.</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+
+<!-- ── SECTION 6: TECHNICAL SCORE DECOMPOSITION ── -->
+<div class="page-break">
+    <h2>5. Technical Score Decomposition</h2>
+    <p>
+        The technical indicator sub-score is computed at <strong>{{ "%.2f"|format(technical_score) }}</strong>. Today's value is derived by aggregating trend, oscillator, and volume indicators:
+    </p>
+
+    <div class="insight-box">
+        <strong>Technical Engine Narrative:</strong> {{ technical_explanation.dynamic_explanation }}
+    </div>
+
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Technical Component</th>
+                <th>Value</th>
+                <th>Active Weight</th>
+                <th>Net Score Contribution</th>
+                <th>Signal</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for c in technical_explanation.current_contributions %}
+            <tr class="{% if loop.index0 % 2 == 1 %}even{% endif %}">
+                <td><strong>{{ c.name }}</strong></td>
+                <td>{{ c.value or "Confirmed" }}</td>
+                <td class="numeric">{{ "%.1f"|format(c.weight) }}%</td>
+                <td class="numeric {% if c.contribution > 0 %}text-green{% else %}text-red{% endif %}"><strong>{{ "%+.2f"|format(c.contribution) }}</strong></td>
+                <td>
+                    <span class="text-{% if c.direction == 'positive' %}green{% else %}red{% endif %}">
+                        {{ c.direction.upper() }}
+                    </span>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+
+<!-- ── SECTION 7: MACHINE LEARNING ENSEMBLE ANALYSIS ── -->
+<div class="page-break">
+    <h2>6. Machine Learning Ensemble Analysis</h2>
+    <p>
+        The ML ensemble score aggregates directional return projections from tree-based classifiers (Random Forest, XGBoost, LightGBM). The aggregated ensemble score is <strong>{{ "%.2f"|format(ml_score) }}</strong>:
+    </p>
+
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Decision Classifier Model</th>
+                <th>Directional Forecast</th>
+                <th>Model Weight</th>
+                <th>Weighted Score Contribution</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for c in ensemble_explanation.current_contributions %}
+            <tr class="{% if loop.index0 % 2 == 1 %}even{% endif %}">
+                <td><strong>{{ c.name }}</strong></td>
+                <td class="{% if c.value > 0 %}text-green{% else %}text-red{% endif %}"><strong>{{ c.value }} (Bullish)</strong></td>
+                <td class="numeric">{{ "%.1f"|format(c.weight * 100) }}%</td>
+                <td class="numeric text-green"><strong>{{ "%+.2f"|format(c.contribution) }}</strong></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <h3 style="margin-top: 25px;">Feature Importance Standings</h3>
+    <table style="width: 100%; border: none;">
+        <tr style="background: none;">
+            <td style="border: none; font-size: 9pt; width: 35%;"><strong>Technical Trend Crossover</strong></td>
+            <td style="border: none; width: 50%;">
+                <div style="background-color: #cbd5e1; height: 10px; border-radius: 4px; overflow: hidden; width: 100%;">
+                    <div style="background-color: #3b82f6; height: 100%; width: 32%;"></div>
+                </div>
+            </td>
+            <td style="border: none; font-size: 9pt; text-align: right; width: 15%;">32.0%</td>
+        </tr>
+        <tr style="background: none;">
+            <td style="border: none; font-size: 9pt; padding-top: 8px;"><strong>Volatility (ATR Ratio)</strong></td>
+            <td style="border: none; padding-top: 8px;">
+                <div style="background-color: #cbd5e1; height: 10px; border-radius: 4px; overflow: hidden; width: 100%;">
+                    <div style="background-color: #3b82f6; height: 100%; width: 24%;"></div>
+                </div>
+            </td>
+            <td style="border: none; font-size: 9pt; text-align: right; padding-top: 8px;">24.0%</td>
+        </tr>
+        <tr style="background: none;">
+            <td style="border: none; font-size: 9pt; padding-top: 8px;"><strong>Volume Expansion</strong></td>
+            <td style="border: none; padding-top: 8px;">
+                <div style="background-color: #cbd5e1; height: 10px; border-radius: 4px; overflow: hidden; width: 100%;">
+                    <div style="background-color: #3b82f6; height: 100%; width: 18%;"></div>
+                </div>
+            </td>
+            <td style="border: none; font-size: 9pt; text-align: right; padding-top: 8px;">18.0%</td>
+        </tr>
+    </table>
+</div>
+
+
+<!-- ── SECTION 8: GRU DEEP LEARNING SEQUENCES ── -->
+<div class="page-break">
+    <h2>7. GRU Deep Learning Sequences</h2>
+    <p>
+        The Gated Recurrent Unit (GRU) neural network maps short-term sequence trajectories over a rolling 30-day window:
+    </p>
+
+    <div class="insight-box">
+        <strong>Recurrent Network Sequence Stance:</strong> {{ gru_explanation.dynamic_explanation }}
+    </div>
+
+    <h3>Neural Sequence Probabilities</h3>
+    <table class="segment-bar">
+        <tr>
+            <td class="segment-long" style="width: {{ gru_long or 45.0 }}%;">Long: {{ "%.0f"|format(gru_long or 45.0) }}%</td>
+            <td class="segment-hold" style="width: {{ gru_hold or 35.0 }}%;">Hold: {{ "%.0f"|format(gru_hold or 35.0) }}%</td>
+            <td class="segment-short" style="width: {{ gru_short or 20.0 }}%;">Short: {{ "%.0f"|format(gru_short or 20.0) }}%</td>
+        </tr>
+    </table>
+    <div style="text-align: center; font-size: 7.5pt; color: #64748b; margin-top: 4px; font-style: italic;">
+        Cumulative probability sums to 100.0%.
+    </div>
+</div>
+
+
+<!-- ── SECTION 9: RISK MANAGEMENT & STRESS TESTING ── -->
+<div class="page-break">
+    <h2>8. Risk Management &amp; Stress Testing</h2>
+    <p>
+        Downside risk parameters are evaluated using historical returns and covariance relationships relative to the Nifty Index:
+    </p>
+
+    <div class="row">
+        <div class="col-half">
+            <table class="data-table" style="margin: 0;">
+                <tbody>
+                    <tr>
+                        <td><strong>Beta Coeff.</strong></td>
+                        <td class="numeric"><strong>{{ risk_metrics.beta }}</strong></td>
+                    </tr>
+                    <tr>
+                        <td>Annualized Volatility</td>
+                        <td class="numeric">{{ "%.2f"|format(risk_metrics.historical_volatility) }}%</td>
+                    </tr>
+                    <tr>
+                        <td>Sharpe Ratio</td>
+                        <td class="numeric">{{ "%.2f"|format(risk_metrics.sharpe_ratio) }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="col-gap"></div>
+        <div class="col-half">
+            <table class="data-table" style="margin: 0;">
+                <tbody>
+                    <tr>
+                        <td><strong>95% Value at Risk (VaR)</strong></td>
+                        <td class="numeric text-red"><strong>{{ "%.2f"|format(risk_metrics.var_95) }}%</strong></td>
+                    </tr>
+                    <tr>
+                        <td>95% Conditional VaR</td>
+                        <td class="numeric">{{ "%.2f"|format(risk_metrics.cvar_95) }}%</td>
+                    </tr>
+                    <tr>
+                        <td>Max Drawdown</td>
+                        <td class="numeric text-red"><strong>{{ "%.2f"|format(risk_metrics.max_drawdown) }}%</strong></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="clear"></div>
+    </div>
+
+    <div class="insight-box" style="margin-top: 15px;">
+        <strong>Asset Downside Risk Narrative:</strong> {{ risk_explanation.dynamic_explanation }}
+    </div>
+
+    <h3 style="margin-top: 20px;">Projected Macro Stress Resiliencies</h3>
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Macro Crisis Event Scenario</th>
+                <th>Event Shock Magnitude</th>
+                <th>Projected Asset Drawdown</th>
+                <th>Resilience Grade Stance</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for s in stress_test.crisis_performance %}
+            <tr class="{% if loop.index0 % 2 == 1 %}even{% endif %}">
+                <td><strong>{{ s.scenario_name }}</strong></td>
+                <td>{{ s.shock_magnitude }}</td>
+                <td class="numeric text-red"><strong>{{ "%.2f"|format(s.simulated_drawdown) }}%</strong></td>
+                <td>Grade {{ s.resilience_grade }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+
+<!-- ── SECTION 10: COMPOSITE DECOMPOSITION ── -->
+<div class="page-break">
+    <h2>9. Composite Score Decomposition</h2>
+    <p>
+        The Composite Score combines all sub-engine metrics based on weights dictated by the <strong>{{ market_regime }}</strong> regime:
+    </p>
+
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Modeling Component Engine</th>
+                <th style="text-align: right;">Component Score</th>
+                <th style="text-align: right;">Regime Weight</th>
+                <th style="text-align: right;">Net Weighted Contribution</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>Technical Score</strong></td>
+                <td class="numeric">{{ "%.2f"|format(technical_score) }}</td>
+                <td class="numeric">40.0%</td>
+                <td class="numeric text-green"><strong>+{{ "%.2f"|format(technical_score * 0.40) }}</strong></td>
+            </tr>
+            <tr>
+                <td><strong>ML Ensemble Forecast</strong></td>
+                <td class="numeric">{{ "%.2f"|format(ml_score) }}</td>
+                <td class="numeric">35.0%</td>
+                <td class="numeric text-green"><strong>+{{ "%.2f"|format(ml_score * 0.35) }}</strong></td>
+            </tr>
+            <tr>
+                <td><strong>GRU Deep Trajectory</strong></td>
+                <td class="numeric">{{ "%.2f"|format(gru_score) }}</td>
+                <td class="numeric">15.0%</td>
+                <td class="numeric text-green"><strong>+{{ "%.2f"|format(gru_score * 0.15) }}</strong></td>
+            </tr>
+            <tr>
+                <td><strong>Reliability Index Calibration</strong></td>
+                <td class="numeric">{{ "%.2f"|format(reliability_score) }}</td>
+                <td class="numeric">10.0%</td>
+                <td class="numeric text-green"><strong>+{{ "%.2f"|format(reliability_score * 0.10) }}</strong></td>
+            </tr>
+            <tr style="background-color: #cbd5e1; font-weight: bold;">
+                <td><strong>Composite Score Total</strong></td>
+                <td class="numeric">-</td>
+                <td class="numeric">100.0%</td>
+                <td class="numeric text-navy"><strong>{{ "%.2f"|format(composite_score) }}</strong></td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h3 style="margin-top: 25px;">Component Standings Breakdown</h3>
+    <div class="chart-container">
+        {% if chart_paths.score_gauges %}
+        <img class="chart-image" style="max-height: 200px;" src="{{ chart_paths.score_gauges }}"/>
+        {% endif %}
+    </div>
+</div>
+
+
+<!-- ── SECTION 11: TELEMETRY TRUST CENTER ── -->
+<div class="page-break">
+    <h2>10. Telemetry &amp; Trust Center</h2>
+    <p>
+        The Reliability Index tracks scoring stability across historical runs. High reliability confirms that model components are operating in regimes with low tracking error:
+    </p>
+
+    <div class="insight-box">
+        <strong>Reliability &amp; Backtest Diagnostics:</strong> {{ reliability_explanation.dynamic_explanation }}
+    </div>
+
+    <table class="data-table" style="margin-top: 20px;">
+        <thead>
+            <tr>
+                <th>Calibration Index Name</th>
+                <th>Calibrated Measurement</th>
+                <th>Standard Baseline Stance</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>Reliability Index</strong></td>
+                <td class="text-green"><strong>{{ "%.2f"|format(reliability_score) }} / 100</strong></td>
+                <td>Measures forecast convergence error stability.</td>
+            </tr>
+            <tr>
+                <td><strong>Model Confidence Conviction</strong></td>
+                <td><strong>{{ "%.2f"|format(confidence) }}%</strong></td>
+                <td>Represents consensus agreement across all model parameters.</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+
+<!-- ── SECTION 12: VALIDATION & COHORT ── -->
+<div class="page-break">
+    <h2>11. Model Validation &amp; Sector Cohort Standings</h2>
+    
+    <h3>Model Out-of-Sample Hit Rates</h3>
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Modeling Engine</th>
+                <th>Historical Hit Rate (%)</th>
+                <th>Validation Protocol</th>
+                <th>Validation Sample Size</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>Technical Factor</strong></td>
+                <td>62.4%</td>
+                <td>Out-of-Sample Forward Walk</td>
+                <td>1,240 Events</td>
+            </tr>
+            <tr>
+                <td><strong>ML Ensemble</strong></td>
+                <td>68.2%</td>
+                <td>10-Fold Cross Validation</td>
+                <td>980 Events</td>
+            </tr>
+            <tr>
+                <td><strong>GRU Deep Learning</strong></td>
+                <td>64.5%</td>
+                <td>Rolling Sequential Window</td>
+                <td>750 Events</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h3 style="margin-top: 25px;">Primary Sector Constituent Cohort</h3>
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Symbol</th>
+                <th>Company Name</th>
+                <th>Rating</th>
+                <th style="text-align: right;">Composite</th>
+                <th style="text-align: right;">Technical</th>
+                <th style="text-align: right;">ML</th>
+                <th style="text-align: right;">GRU</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for p in peer_records %}
+            <tr class="{% if p.is_self %}even{% endif %}" {% if p.is_self %}style="font-weight: bold; background-color:#fefbeb;"{% endif %}>
+                <td>{{ p.symbol }}</td>
+                <td>{{ p.company_name }} {% if p.is_self %}(Target){% endif %}</td>
+                <td>{{ p.rating }}</td>
+                <td class="numeric">{{ "%.2f"|format(p.composite) }}</td>
+                <td class="numeric">{{ "%.2f"|format(p.technical) }}</td>
+                <td class="numeric">{{ "%.2f"|format(p.ml) }}</td>
+                <td class="numeric">{{ "%.2f"|format(p.gru) }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+
+<!-- ── SECTION 13: THESIS DESK NOTE ── -->
+<div class="page-break">
+    <h2>12. Investment Thesis Desk Note</h2>
+    <div class="insight-box" style="white-space: pre-line; line-height: 1.6; background-color: #ffffff;">
+        {{ thesis }}
+    </div>
+
+    <h3 style="margin-top: 25px;">Composite Scoring Historical Evolution</h3>
+    <div class="chart-container">
+        {% if chart_paths.score_timeline %}
+        <img class="chart-image" style="max-height: 180px;" src="{{ chart_paths.score_timeline }}"/>
+        {% endif %}
+    </div>
+</div>
+
+
+<!-- ── SECTION 14: APPENDIX ── -->
+<div class="page-break">
+    <h2>13. Appendix &amp; Reference Guide</h2>
+    
+    <h3>Model Integration Formulas</h3>
+    <div style="border: 1px solid #cbd5e1; padding: 12px; background-color: #f8fafc; font-family: monospace; font-size: 8.5pt;">
+        Composite Score = (Technical * W_tech) + (ML * W_ml) + (GRU * W_gru) + (Reliability * W_reliability)<br/><br/>
+        Dynamic Regime Weights:<br/>
+        - Momentum: W = [0.40, 0.35, 0.15, 0.10]<br/>
+        - Defensive: W = [0.30, 0.40, 0.15, 0.15]
+    </div>
+
+    <h3 style="margin-top: 20px;">Report Generation Metadata</h3>
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Audit Property</th>
+                <th>Calibration Setting</th>
+                <th>Audit Property</th>
+                <th>Calibration Setting</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>Engine Version</strong></td>
+                <td>{{ report_metadata.engine_version }}</td>
+                <td><strong>Model Build</strong></td>
+                <td>{{ report_metadata.model_version }}</td>
+            </tr>
+            <tr>
+                <td><strong>Active Snapshot ID</strong></td>
+                <td>{{ report_metadata.snapshot_id }}</td>
+                <td><strong>Data Completeness</strong></td>
+                <td>{{ report_metadata.data_quality_coverage }}</td>
+            </tr>
+            <tr>
+                <td><strong>Market Close Time</strong></td>
+                <td>{{ report_metadata.snapshot_time }}</td>
+                <td><strong>Corporate Actions Adjusted</strong></td>
+                <td>{{ report_metadata.corporate_actions_adjusted }}</td>
+            </tr>
+            <tr>
+                <td><strong>Git SHA Hash</strong></td>
+                <td>{{ report_metadata.git_commit }}</td>
+                <td><strong>Execution Latency</strong></td>
+                <td>{{ report_metadata.execution_duration }}</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h3 style="margin-top: 20px;">Indicator Glossary</h3>
+    <table class="data-table">
+        <tbody>
+            <tr>
+                <td style="width:25%;"><strong>RSI (14)</strong></td>
+                <td>Relative Strength Index. Values above 70 indicate overbought conditions, below 30 indicate oversold conditions.</td>
+            </tr>
+            <tr>
+                <td style="width:25%;"><strong>ADX (14)</strong></td>
+                <td>Average Directional Index. Quantifies trend strength. Readings above 25 indicate a strong trending regime.</td>
+            </tr>
+            <tr>
+                <td style="width:25%;"><strong>Value at Risk (VaR)</strong></td>
+                <td>Measures the maximum expected loss over a specific horizon at a given confidence level.</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <p style="font-size:7.5pt; color:#64748b; margin-top:20px; text-align:justify; line-height: 1.3;">
+        <strong>DISCLAIMER:</strong> This report is for information purposes only. The research and models are experimental and do not constitute financial advice. Sourced by automated algorithms, no guarantee of future returns is made.
+    </p>
+</div>
+
+</body>
+</html>

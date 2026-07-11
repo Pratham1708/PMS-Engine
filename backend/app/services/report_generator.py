@@ -20,6 +20,7 @@ from app.data.loader import data_loader
 from app.services import stock_service, analysis_history_service, research_workspace_service, db
 from app.services.market_data_service import market_data_service
 from app.services.explainability import EXPLAINERS
+from app.services.chart_service import generate_all_charts
 from app.lab.stress_tester import run_stress_test
 
 logger = logging.getLogger(__name__)
@@ -62,21 +63,33 @@ def _save_report(
     report_type: str,
     report_id: str,
     html_content: str,
+    pdf_html_content: Optional[str] = None,
     symbol: Optional[str] = None,
     analysis_id: Optional[str] = None
 ) -> dict:
-    """Save HTML and PDF to disk, record in DB, and return metadata."""
+    """
+    Save HTML and PDF to disk, record in DB, and return metadata.
+
+    Args:
+        html_content:     The interactive HTML report (for browser/download).
+        pdf_html_content: Optional separate HTML designed for PDF compilation.
+                          When provided, the PDF is compiled from this content
+                          rather than from html_content, achieving independent
+                          HTML and PDF rendering from the same ReportContext.
+    """
     subdir = os.path.join(REPORTS_DIR, report_type)
     html_path = os.path.join(subdir, f"{report_id}.html")
     pdf_path = os.path.join(subdir, f"{report_id}.pdf")
 
-    # Save HTML
+    # Save interactive HTML
     with open(html_path, "w", encoding="utf-8") as f:
         f.write(html_content)
 
-    # Generate and save PDF
+    # Compile PDF from the dedicated PDF template when available,
+    # otherwise fall back to compiling from the HTML report directly.
+    pdf_source = pdf_html_content if pdf_html_content is not None else html_content
     try:
-        pdf_bytes = _html_to_pdf(html_content)
+        pdf_bytes = _html_to_pdf(pdf_source)
         with open(pdf_path, "wb") as f:
             f.write(pdf_bytes)
         pdf_generated = True
@@ -248,9 +261,12 @@ def calculate_risk_metrics(symbol: str, history_df: pd.DataFrame) -> dict:
     if history_df is None or history_df.empty or len(history_df) < 5:
         return {
             "volatility": 18.5,
+            "historical_volatility": 18.5,
             "downside_deviation": 12.4,
             "sharpe": 1.15,
+            "sharpe_ratio": 1.15,
             "sortino": 1.48,
+            "sortino_ratio": 1.48,
             "max_drawdown": -12.4,
             "var_95": -1.85,
             "cvar_95": -2.65,
@@ -308,9 +324,12 @@ def calculate_risk_metrics(symbol: str, history_df: pd.DataFrame) -> dict:
         
     return {
         "volatility": round(vol, 2),
+        "historical_volatility": round(vol, 2),
         "downside_deviation": round(downside_dev, 2),
         "sharpe": round(sharpe, 2),
+        "sharpe_ratio": round(sharpe, 2),
         "sortino": round(sortino, 2),
+        "sortino_ratio": round(sortino, 2),
         "max_drawdown": round(max_dd, 2),
         "var_95": round(var_95, 2),
         "cvar_95": round(cvar_95, 2),
@@ -575,6 +594,13 @@ def generate_stock_report(symbol: str) -> Optional[dict]:
             "rating": "B",
             "crisis_performance": []
         }
+        
+    if "crisis_performance" in stress_results:
+        for s in stress_results["crisis_performance"]:
+            s["scenario_name"] = s.get("name", "N/A")
+            s["shock_magnitude"] = s.get("period", "N/A")
+            s["simulated_drawdown"] = s.get("max_drawdown", 0.0)
+            s["resilience_grade"] = s.get("status", "B")
 
     company_profile = get_stock_fundamentals(symbol, price_close)
 
@@ -725,6 +751,9 @@ def generate_stock_report(symbol: str) -> Optional[dict]:
         
         "thesis": thesis,
         "why_not": why_not_text,
+        "positive_factors": stock.top_positive_factors,
+        "negative_factors": stock.top_negative_factors,
+        "institutional_insight": stock.institutional_insight,
         
         "peer_records": peer_records,
         "sector_rank": sector_rank,
@@ -741,9 +770,33 @@ def generate_stock_report(symbol: str) -> Optional[dict]:
         "report_id": report_id,
     }
 
-    template = jinja_env.get_template("stock_report.html")
-    html_content = template.render(**context)
-    return _save_report("stock", report_id, html_content, symbol=symbol, analysis_id=analysis_id)
+    # ── Step 1: Render Interactive HTML Report ──────────────────
+    html_template = jinja_env.get_template("stock_report.html")
+    html_content = html_template.render(**context)
+
+    # ── Step 2: Generate Static Chart PNGs for PDF ──────────────
+    chart_paths = {}
+    try:
+        chart_paths = generate_all_charts(report_id, context)
+    except Exception as ex:
+        logger.warning(f"[ReportGenerator] Chart generation failed, PDF will use fallback tables: {ex}")
+
+    # ── Step 3: Render Publication-Quality PDF Report ────────────
+    pdf_context = {**context, "chart_paths": chart_paths}
+    try:
+        pdf_template = jinja_env.get_template("stock_report_pdf.html")
+        pdf_html_content = pdf_template.render(**pdf_context)
+    except Exception as ex:
+        logger.error(f"[ReportGenerator] PDF template render failed, falling back to HTML template: {ex}")
+        pdf_html_content = html_content  # graceful degradation
+
+    return _save_report(
+        "stock", report_id,
+        html_content=html_content,
+        pdf_html_content=pdf_html_content,
+        symbol=symbol,
+        analysis_id=analysis_id,
+    )
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -993,10 +1046,16 @@ def list_all_reports() -> List[dict]:
                     html_path = os.path.join(subdir, filename)
                     pdf_path = os.path.join(subdir, f"{report_id}.pdf")
                     stat = os.stat(html_path)
+                    symbol_val = None
+                    if report_type == "stock":
+                        parts = report_id.split("_")
+                        if len(parts) > 1:
+                            symbol_val = parts[1]
+                    
                     reports.append({
                         "report_id": report_id,
                         "type": report_type,
-                        "symbol": report_id.split("_")[1] if report_type == "stock" else None,
+                        "symbol": symbol_val,
                         "generated_at": datetime.fromtimestamp(stat.st_mtime).isoformat(),
                         "has_pdf": os.path.exists(pdf_path),
                     })

@@ -6,6 +6,7 @@ Production-ready API server for institutional stock analytics.
 import logging
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from app.config import settings
 from app.services.json_response import SafeJSONResponse
@@ -83,6 +84,12 @@ for route in app.routes:
     if isinstance(route, APIRoute):
         if route.response_class == JSONResponse:
             route.response_class = SafeJSONResponse
+
+# Serve bundled static JS assets (TradingView Lightweight Charts, etc.)
+import os as _os
+_static_dir = _os.path.join(_os.path.dirname(__file__), "app", "static")
+if _os.path.isdir(_static_dir):
+    app.mount("/static", StaticFiles(directory=_static_dir), name="static")
 
 
 
