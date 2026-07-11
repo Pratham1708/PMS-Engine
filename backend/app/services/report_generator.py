@@ -224,8 +224,16 @@ def get_stock_fundamentals(symbol: str, current_price: Optional[float] = None) -
     avg_volume = None
     
     try:
-        ticker = yf.Ticker(symbol)
-        info = ticker.info
+        import socket as _socket
+        # Enforce a 5-second socket timeout so a slow/cold yfinance response
+        # cannot block the entire report generation pipeline.
+        _prev_timeout = _socket.getdefaulttimeout()
+        _socket.setdefaulttimeout(5)
+        try:
+            ticker = yf.Ticker(symbol)
+            info = ticker.info
+        finally:
+            _socket.setdefaulttimeout(_prev_timeout)
         if info:
             pe = info.get("trailingPE") or info.get("forwardPE")
             pb = info.get("priceToBook")
@@ -599,7 +607,23 @@ def generate_stock_report(symbol: str) -> Optional[dict]:
     risk_metrics = calculate_risk_metrics(symbol, history_df)
     
     try:
-        stress_results = run_stress_test(symbol=symbol)
+        # Pass the already-fetched 1Y history to the stress tester so it
+        # reuses in-memory data instead of issuing a second 5Y yfinance fetch.
+        if history_df is not None and not history_df.empty:
+            _dates_col = "Date" if "Date" in history_df.columns else None
+            _close_series = history_df["Close"].reset_index(drop=True)
+            _dates_list = (
+                history_df["Date"].astype(str).tolist()
+                if _dates_col
+                else pd.to_datetime(history_df.index).strftime("%Y-%m-%d").tolist()
+            )
+            stress_results = run_stress_test(
+                equity_series=_close_series,
+                dates=_dates_list,
+                symbol=symbol,
+            )
+        else:
+            stress_results = run_stress_test(symbol=symbol)
     except Exception as ex:
         logger.warning(f"Failed to execute crisis stress test: {ex}")
         stress_results = {

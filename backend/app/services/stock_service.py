@@ -244,14 +244,35 @@ def get_all_stocks(
 
 
 def get_stock(symbol: str) -> Optional[StockDetail]:
-    """Return a single stock by symbol, or None if not found."""
+    """Return a single stock by symbol, or None if not found.
+
+    Resolution order:
+    1. Latest snapshot (SQLite) — preferred; reflects most recent scanner run.
+    2. CSV data_loader fallback — used when the snapshot exists but does not
+       contain this symbol (e.g. snapshot is partial / still being built).
+    """
+    import logging
+    _log = logging.getLogger(__name__)
+
     df = _get_active_df()
     match = df[df["Symbol"] == symbol]
     if match.empty:
-        # Try case-insensitive match
         match = df[df["Symbol"].str.upper() == symbol.upper()]
+
     if match.empty:
-        return None
+        # Cascade: the snapshot may be partial — try the full CSV universe
+        csv_df = data_loader.get_df()
+        match = csv_df[csv_df["Symbol"] == symbol]
+        if match.empty:
+            match = csv_df[csv_df["Symbol"].str.upper() == symbol.upper()]
+        if not match.empty:
+            _log.info(
+                f"[StockService] '{symbol}' not in latest snapshot; "
+                "serving from CSV data_loader fallback."
+            )
+        else:
+            return None
+
     return _df_to_stock_detail(match.iloc[0])
 
 
