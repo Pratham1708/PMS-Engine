@@ -515,15 +515,64 @@ def generate_stock_report(symbol: str) -> Optional[dict]:
     history_sorted = sorted(history, key=lambda x: x.get("snapshot_date") or x.get("analyzed_at") or "")
 
     try:
-        composite_explanation = EXPLAINERS["composite"].explain(stock_data, history)
-        technical_explanation = EXPLAINERS["technical"].explain(stock_data, history)
-        ensemble_explanation = EXPLAINERS["ensemble"].explain(stock_data, history)
-        gru_explanation = EXPLAINERS["gru"].explain(stock_data, history)
-        reliability_explanation = EXPLAINERS["reliability"].explain(stock_data, history)
-        confidence_explanation = EXPLAINERS["confidence"].explain(stock_data, history)
-        risk_explanation = EXPLAINERS["risk"].explain(stock_data, history)
-        momentum_explanation = EXPLAINERS["momentum"].explain(stock_data, history)
-        trend_explanation = EXPLAINERS["trend"].explain(stock_data, history)
+        def _get_explanation_object(score_type, fallback_score_val):
+            if latest_snap:
+                snap_id = latest_snap["snapshot_id"]
+                conn = db.get_db_connection()
+                try:
+                    row = conn.execute(
+                        "SELECT * FROM explainability_snapshot WHERE snapshot_id = ? AND UPPER(symbol) = UPPER(?) AND LOWER(score_type) = LOWER(?)",
+                        (snap_id, symbol, score_type.lower())
+                    ).fetchone()
+                    if row:
+                        import json
+                        from app.models.schemas import Contribution, ValidationMetric, ResearchReference, ScoreInterpretation
+                        
+                        def load_json(val, default):
+                            if not val:
+                                return default
+                            try:
+                                return json.loads(val)
+                            except Exception:
+                                return default
+
+                        contribs = load_json(row.get("indicator_contributions"), [])
+                        val_metrics = load_json(row.get("validation_metrics"), [])
+                        refs = load_json(row.get("research_references"), [])
+                        interpretations = load_json(row.get("interpretation"), [])
+                        feat_vals = load_json(row.get("current_values"), {})
+                        
+                        class StoredExplanation:
+                            def __init__(self):
+                                self.purpose = row.get("purpose") or ""
+                                self.formula = row.get("formula") or ""
+                                self.current_value = float(fallback_score_val)
+                                self.current_values = feat_vals
+                                self.current_contributions = [Contribution(**c) for c in contribs]
+                                self.validation = [ValidationMetric(**v) for v in val_metrics]
+                                self.references = [ResearchReference(**r) for r in refs]
+                                self.interpretation = [ScoreInterpretation(**i) for i in interpretations]
+                                self.limitations = []
+                                self.dynamic_explanation = self.interpretation[0].narrative if self.interpretation else ""
+                                self.why_not = ""
+                                
+                        return StoredExplanation()
+                except Exception as ex:
+                    logger.warning(f"Error querying explainability_snapshot in report: {ex}")
+                finally:
+                    conn.close()
+            # Fallback to runtime
+            return EXPLAINERS[score_type].explain(stock_data, history)
+
+        composite_explanation = _get_explanation_object("composite", stock.CompositeScoreV2)
+        technical_explanation = _get_explanation_object("technical", stock.TechnicalScore)
+        ensemble_explanation = _get_explanation_object("ensemble", stock.MLScore)
+        gru_explanation = _get_explanation_object("gru", stock.GRUScore)
+        reliability_explanation = _get_explanation_object("reliability", stock.ReliabilityScore)
+        confidence_explanation = _get_explanation_object("confidence", stock.Confidence)
+        risk_explanation = _get_explanation_object("risk", stock.RiskScore or 100.0 - stock.Confidence)
+        momentum_explanation = _get_explanation_object("momentum", stock.MomentumScore or stock.TechnicalScore)
+        trend_explanation = _get_explanation_object("trend", stock.TrendScore or stock.GRUScore)
     except Exception as e:
         logger.error(f"Failed to run EQIF explainers in report generation: {e}", exc_info=True)
         class DummyExplanation:
@@ -549,6 +598,7 @@ def generate_stock_report(symbol: str) -> Optional[dict]:
         risk_explanation = DummyExplanation(stock.RiskScore or 100.0 - stock.Confidence)
         momentum_explanation = DummyExplanation(stock.MomentumScore or stock.TechnicalScore)
         trend_explanation = DummyExplanation(stock.TrendScore or stock.GRUScore)
+
 
     history_df = market_data_service.get_historical_data(symbol, "1Y")
     history_records = []

@@ -285,6 +285,7 @@ class AnalyzeResponse(BaseModel):
 class SnapshotMeta(BaseModel):
     """Master snapshot registry record."""
     snapshot_id: str
+    pipeline_run_id: Optional[str] = None
     snapshot_date: str
     market_date: str
     generated_at: str
@@ -306,6 +307,7 @@ class SnapshotMeta(BaseModel):
     validation_score: Optional[float] = None
     published_at: Optional[str] = None
     notes: Optional[str] = None
+
 
 
 class SnapshotStockRecord(BaseModel):

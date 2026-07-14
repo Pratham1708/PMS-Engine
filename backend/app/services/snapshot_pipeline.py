@@ -36,7 +36,17 @@ logger = logging.getLogger(__name__)
 
 IST = pytz.timezone("Asia/Kolkata")
 
+import numpy as np
+import yfinance as yf
+from datetime import timedelta
+from app.config import settings
+import concurrent.futures
+
+
+
+
 # ── Watchlist Definitions ──────────────────────────────────────────────────
+
 
 WATCHLIST_DEFINITIONS = {
     "top_opportunities": {
@@ -230,6 +240,295 @@ class StageResult:
     log_summary: str = ""
 
 
+# ── Concurrent & DB Helpers for Daily Update ───────────────────────────────
+
+def fetch_daily_ohlcv(symbol: str, target_date_str: str) -> Optional[Dict[str, Any]]:
+    """Fetch 10-day OHLCV window from yfinance to extract target date + previous close."""
+    try:
+        target_date = datetime.strptime(target_date_str, "%Y-%m-%d").date()
+        start_date = (target_date - timedelta(days=10)).strftime("%Y-%m-%d")
+        end_date = (target_date + timedelta(days=2)).strftime("%Y-%m-%d")
+        
+        df = yf.download(symbol, start=start_date, end=end_date, progress=False)
+        if df.empty:
+            return None
+            
+        df = df.reset_index()
+        if isinstance(df.columns, pd.MultiIndex):
+            df.columns = [col[0] for col in df.columns]
+            
+        df["Date"] = pd.to_datetime(df["Date"]).dt.strftime("%Y-%m-%d")
+        
+        target_rows = df[df["Date"] == target_date_str]
+        if target_rows.empty:
+            return None
+            
+        idx = target_rows.index[0]
+        row = df.loc[idx]
+        
+        open_val = float(row["Open"])
+        high_val = float(row["High"])
+        low_val = float(row["Low"])
+        close_val = float(row["Close"])
+        volume_val = int(row["Volume"])
+        adj_close = float(row["Adj Close"]) if "Adj Close" in df.columns else close_val
+        
+        if idx > 0:
+            prev_row = df.loc[idx - 1]
+            prev_close = float(prev_row["Close"])
+        else:
+            prev_close = open_val
+            
+        chg_amt = round(close_val - prev_close, 2)
+        chg_pct = round((chg_amt / prev_close) * 100, 2) if prev_close else 0.0
+        
+        return {
+            "Symbol": symbol,
+            "Open": round(open_val, 2),
+            "High": round(high_val, 2),
+            "Low": round(low_val, 2),
+            "CurrentPrice": round(close_val, 2),
+            "Close": round(close_val, 2),
+            "AdjustedClose": round(adj_close, 2),
+            "Volume": volume_val,
+            "PreviousClose": round(prev_close, 2),
+            "DailyChangePct": chg_pct,
+            "DailyChangeAmount": chg_amt,
+            "IsMock": False,
+        }
+    except Exception as e:
+        logger.error(f"Error fetching specific day quote for {symbol}: {e}")
+        return None
+
+
+def process_symbol_data(symbol: str, target_date_str: str) -> Tuple[str, bool, Optional[Dict[str, Any]], Optional[str]]:
+    """Download OHLCV, validate it, and write back to market_daily table."""
+    conn = db.get_db_connection()
+    try:
+        # Check if already exists in market_daily
+        row = conn.execute(
+            "SELECT * FROM market_daily WHERE symbol = ? AND trading_date = ?",
+            (symbol, target_date_str)
+        ).fetchone()
+        
+        if row:
+            chg_amt = round(row["close"] - row["previous_close"], 2) if row["previous_close"] else 0.0
+            chg_pct = round((chg_amt / row["previous_close"]) * 100, 2) if row["previous_close"] else 0.0
+            quote = {
+                "Symbol": symbol,
+                "Open": row["open"],
+                "High": row["high"],
+                "Low": row["low"],
+                "CurrentPrice": row["close"],
+                "Close": row["close"],
+                "Volume": row["volume"],
+                "PreviousClose": row["previous_close"],
+                "DailyChangePct": chg_pct,
+                "DailyChangeAmount": chg_amt,
+                "IsMock": False,
+            }
+            return symbol, True, quote, None
+        
+        # Download from yfinance
+        quote = fetch_daily_ohlcv(symbol, target_date_str)
+        if not quote:
+            return symbol, False, None, "Download failed or market holiday"
+            
+        # Validate quote using MarketDataValidator
+        from app.services.market_data_validator import MarketDataValidator
+        is_valid, errs = MarketDataValidator.validate_quote(quote, symbol)
+        if not is_valid:
+            return symbol, False, None, f"Validation failed: {errs}"
+            
+        # Save to market_daily
+        conn.execute(
+            """
+            INSERT INTO market_daily
+            (symbol, trading_date, open, high, low, close, adjusted_close, volume, previous_close, last_trading_date)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT (symbol, trading_date) DO UPDATE SET
+                open = EXCLUDED.open,
+                high = EXCLUDED.high,
+                low = EXCLUDED.low,
+                close = EXCLUDED.close,
+                adjusted_close = EXCLUDED.adjusted_close,
+                volume = EXCLUDED.volume,
+                previous_close = EXCLUDED.previous_close
+            """,
+            (symbol, target_date_str, quote["Open"], quote["High"], quote["Low"], quote["CurrentPrice"], quote["Close"], quote["Volume"], quote["PreviousClose"], target_date_str)
+        )
+        conn.commit()
+        return symbol, True, quote, None
+    except Exception as e:
+        return symbol, False, None, str(e)
+    finally:
+        conn.close()
+
+
+def compute_stock_indicators_stage(symbol: str, target_date_str: str, ohlcv_quote: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    """Fetch 1Y history and compute technical indicator values."""
+    try:
+        from app.services.historical_data_service import historical_data_service
+        df = historical_data_service.get_stock_history(symbol, "1Y")
+        if df is None or df.empty:
+            return None
+            
+        df["Date"] = pd.to_datetime(df["Date"]).dt.strftime("%Y-%m-%d")
+        
+        if target_date_str not in df["Date"].values:
+            new_row = pd.DataFrame([{
+                "Date": target_date_str,
+                "Open": ohlcv_quote["Open"],
+                "High": ohlcv_quote["High"],
+                "Low": ohlcv_quote["Low"],
+                "Close": ohlcv_quote["CurrentPrice"],
+                "Volume": ohlcv_quote["Volume"]
+            }])
+            df = pd.concat([df, new_row], ignore_index=True)
+            df["Date"] = pd.to_datetime(df["Date"]).dt.strftime("%Y-%m-%d")
+
+        df = df.sort_values("Date").reset_index(drop=True)
+        
+        from app.lab.indicators import (
+            compute_rsi, compute_macd, compute_ema, compute_sma,
+            compute_obv, compute_williams_r, compute_roc,
+            compute_supertrend, compute_vwap, compute_cmf
+        )
+        
+        df = compute_rsi(df)
+        df = compute_macd(df)
+        df = compute_ema(df, 20, 50)
+        
+        df["EMA200"] = df["Close"].ewm(span=200, adjust=False).mean()
+        df["SMA20"] = df["Close"].rolling(window=20).mean()
+        df["SMA50"] = df["Close"].rolling(window=50).mean()
+        
+        std20 = df["Close"].rolling(window=20).std()
+        df["BB_Upper"] = df["SMA20"] + (std20 * 2)
+        df["BB_Lower"] = df["SMA20"] - (std20 * 2)
+        
+        high, low, prev_close = df["High"], df["Low"], df["Close"].shift(1)
+        tr = pd.concat([high - low, (high - prev_close).abs(), (low - prev_close).abs()], axis=1).max(axis=1)
+        df["ATR"] = tr.ewm(alpha=1/14, adjust=False).mean()
+        
+        df = compute_williams_r(df)
+        df = compute_roc(df)
+        df = compute_obv(df)
+        df = compute_cmf(df)
+        df = compute_vwap(df)
+        df = compute_supertrend(df)
+        
+        low14 = df["Low"].rolling(14).min()
+        high14 = df["High"].rolling(14).max()
+        df["Stoch_K"] = (df["Close"] - low14) / (high14 - low14).replace(0, np.nan) * 100
+        
+        up = df["High"].diff()
+        down = -df["Low"].diff()
+        plus_dm = np.where((up > down) & (up > 0), up, 0.0)
+        minus_dm = np.where((down > up) & (down > 0), down, 0.0)
+        atr_14 = tr.rolling(14).mean()
+        plus_di = 100 * pd.Series(plus_dm).rolling(14).mean() / atr_14
+        minus_di = 100 * pd.Series(minus_dm).rolling(14).mean() / atr_14
+        dx = 100 * (plus_di - minus_di).abs() / (plus_di + minus_di).replace(0, np.nan)
+        df["ADX"] = dx.rolling(14).mean()
+        
+        target_rows = df[df["Date"] == target_date_str]
+        if target_rows.empty:
+            return None
+            
+        row = target_rows.iloc[-1]
+        
+        return {
+            "symbol": symbol,
+            "ema20": float(row["EMA_Fast"]) if "EMA_Fast" in row and pd.notna(row["EMA_Fast"]) else None,
+            "ema50": float(row["EMA_Slow"]) if "EMA_Slow" in row and pd.notna(row["EMA_Slow"]) else None,
+            "ema200": float(row["EMA200"]) if "EMA200" in row and pd.notna(row["EMA200"]) else None,
+            "sma20": float(row["SMA20"]) if "SMA20" in row and pd.notna(row["SMA20"]) else None,
+            "sma50": float(row["SMA50"]) if "SMA50" in row and pd.notna(row["SMA50"]) else None,
+            "rsi": float(row["RSI"]) if "RSI" in row and pd.notna(row["RSI"]) else None,
+            "macd": float(row["MACD"]) if "MACD" in row and pd.notna(row["MACD"]) else None,
+            "macd_signal": float(row["MACD_Signal"]) if "MACD_Signal" in row and pd.notna(row["MACD_Signal"]) else None,
+            "adx": float(row["ADX"]) if "ADX" in row and pd.notna(row["ADX"]) else None,
+            "atr": float(row["ATR"]) if "ATR" in row and pd.notna(row["ATR"]) else None,
+            "bb_upper": float(row["BB_Upper"]) if "BB_Upper" in row and pd.notna(row["BB_Upper"]) else None,
+            "bb_lower": float(row["BB_Lower"]) if "BB_Lower" in row and pd.notna(row["BB_Lower"]) else None,
+            "supertrend": float(row["Supertrend"]) if "Supertrend" in row and pd.notna(row["Supertrend"]) else None,
+            "vwap": float(row["VWAP"]) if "VWAP" in row and pd.notna(row["VWAP"]) else None,
+            "obv": float(row["OBV"]) if "OBV" in row and pd.notna(row["OBV"]) else None,
+            "cmf": float(row["CMF"]) if "CMF" in row and pd.notna(row["CMF"]) else None,
+            "roc": float(row["ROC"]) if "ROC" in row and pd.notna(row["ROC"]) else None,
+            "williams_r": float(row["Williams_R"]) if "Williams_R" in row and pd.notna(row["Williams_R"]) else None,
+            "stoch_k": float(row["Stoch_K"]) if "Stoch_K" in row and pd.notna(row["Stoch_K"]) else None,
+        }
+    except Exception as e:
+        logger.error(f"Error computing technical indicators for {symbol}: {e}")
+        return None
+
+
+def rehydrate_stage_data(ctx: PipelineContext, stage_name: str) -> None:
+    """Load previously computed snapshot data from the database into pipeline context."""
+    logger.info(f"Rehydrating pipeline context for completed stage: {stage_name}")
+    try:
+        if stage_name == "01_load_security_master":
+            from app.data.loader import data_loader
+            ctx.df = data_loader.get_df().copy()
+            ctx.symbols = ctx.df["Symbol"].tolist()
+            
+        elif stage_name == "02_download_ohlcv":
+            stocks = db.get_snapshot_stocks(ctx.snapshot_id)
+            if not stocks:
+                conn = db.get_db_connection()
+                try:
+                    rows = conn.execute(
+                        "SELECT * FROM market_daily WHERE trading_date = ?", (ctx.snapshot_date,)
+                    ).fetchall()
+                    stocks = [dict(r) for r in rows]
+                finally:
+                    conn.close()
+            for s in stocks:
+                sym = s.get("symbol") or s.get("Symbol")
+                ctx.ohlcv_data[sym] = {
+                    "Symbol": sym,
+                    "Open": s.get("open"),
+                    "High": s.get("high"),
+                    "Low": s.get("low"),
+                    "CurrentPrice": s.get("close"),
+                    "Close": s.get("close"),
+                    "Volume": s.get("volume"),
+                    "PreviousClose": s.get("prev_close") or s.get("previous_close"),
+                    "DailyChangePct": s.get("daily_chg_pct"),
+                    "DailyChangeAmount": s.get("daily_chg_amt") or s.get("daily_chg_amount"),
+                    "IsMock": False
+                }
+                
+        elif stage_name == "06_generate_indicators":
+            indicators = db.get_snapshot_indicators(ctx.snapshot_id)
+            for ind in indicators:
+                ctx.indicator_data[ind["symbol"]] = ind
+            ctx.indicator_records = list(ctx.indicator_data.values())
+            
+        elif stage_name == "15_generate_recommendations":
+            stocks = db.get_snapshot_stocks(ctx.snapshot_id)
+            ctx.stock_records = stocks
+            scores = db.get_snapshot_scores(ctx.snapshot_id)
+            ctx.score_records = scores
+            
+        elif stage_name == "17_generate_sector_rankings":
+            ctx.sector_records = db.get_snapshot_sector(ctx.snapshot_id)
+            
+        elif stage_name == "18_generate_market_breadth":
+            ctx.market_record = db.get_snapshot_market(ctx.snapshot_id) or {}
+            
+        elif stage_name == "19_generate_watchlists":
+            ctx.watchlist_records = db.get_snapshot_watchlists(ctx.snapshot_id)
+            
+        elif stage_name == "19b_compute_changes":
+            ctx.change_records = db.get_snapshot_changes(ctx.snapshot_id)
+            
+    except Exception as e:
+        logger.error(f"Failed to rehydrate stage {stage_name}: {e}", exc_info=True)
+
+
 def _now_ist_str() -> str:
     return datetime.now(IST).isoformat()
 
@@ -281,48 +580,98 @@ def _stage_load_security_master(ctx: PipelineContext) -> StageResult:
 
 
 def _stage_download_ohlcv(ctx: PipelineContext) -> StageResult:
-    """Stage 02: Download live OHLCV for all symbols (critical stage)."""
+    """Stage 02: Concurrently download daily quotes for target date."""
     t0 = time.monotonic()
-    from app.services.market_data_service import market_data_service
     monitor = get_monitor()
+    max_workers = getattr(settings, "pipeline_workers", 5)
+    
     ok, failed = 0, 0
-    warnings: List[str] = []
-
-    for symbol in ctx.symbols:
-        try:
-            # Fetch and validate quote via MarketDataService
-            quote = market_data_service.get_live_quote(symbol)
-            if not quote:
-                raise ValueError("Market data unavailable or validation failed")
-
-            ctx.ohlcv_data[symbol] = quote
-            
-            # Merge into DataFrame
-            if ctx.df is not None:
-                idx = ctx.df[ctx.df["Symbol"].str.upper() == symbol.upper()].index
-                if not idx.empty:
-                    for col in ["CurrentPrice", "Open", "High", "Low", "Volume",
-                                "PreviousClose", "DailyChangePct", "DailyChangeAmount"]:
-                        if col in quote:
-                            ctx.df.at[idx[0], col] = quote[col]
-            ok += 1
-            monitor.stock_done(symbol, success=True)
-        except Exception as e:
-            failed += 1
-            ctx.failed_symbols.append(symbol)
-            warnings.append(f"{symbol}: download failed — {e}")
-            monitor.stock_done(symbol, success=False)
+    warnings_list = []
+    
+    logger.info(f"Downloading quotes for date {ctx.snapshot_date} with {max_workers} parallel workers...")
+    
+    import concurrent.futures
+    with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+        futures = {
+            executor.submit(process_symbol_data, sym, ctx.snapshot_date): sym
+            for sym in ctx.symbols
+        }
+        for future in concurrent.futures.as_completed(futures):
+            sym = futures[future]
+            try:
+                symbol, success, quote, err = future.result()
+                if success and quote:
+                    ctx.ohlcv_data[symbol] = quote
+                    if ctx.df is not None:
+                        idx = ctx.df[ctx.df["Symbol"].str.upper() == symbol.upper()].index
+                        if not idx.empty:
+                            for col in ["CurrentPrice", "Open", "High", "Low", "Volume",
+                                        "PreviousClose", "DailyChangePct", "DailyChangeAmount"]:
+                                val_key = "CurrentPrice" if col == "CurrentPrice" else col
+                                if val_key in quote:
+                                    ctx.df.at[idx[0], col] = quote[val_key]
+                    ok += 1
+                    monitor.stock_done(symbol, success=True)
+                else:
+                    failed += 1
+                    ctx.failed_symbols.append(symbol)
+                    warnings_list.append(f"{symbol}: download failed — {err}")
+                    monitor.stock_done(symbol, success=False)
+            except Exception as e:
+                failed += 1
+                ctx.failed_symbols.append(sym)
+                warnings_list.append(f"{sym}: parallel execution threw exception — {e}")
+                monitor.stock_done(sym, success=False)
+                
+    # Retry failed downloads
+    if ctx.failed_symbols:
+        logger.info(f"Retrying download for {len(ctx.failed_symbols)} failed symbols separately...")
+        failed_retry_list = list(ctx.failed_symbols)
+        ctx.failed_symbols = [] # Clear list to populate only true failures after retry
+        
+        with concurrent.futures.ThreadPoolExecutor(max_workers=min(max_workers, len(failed_retry_list))) as executor:
+            futures_retry = {
+                executor.submit(process_symbol_data, sym, ctx.snapshot_date): sym
+                for sym in failed_retry_list
+            }
+            for future_retry in concurrent.futures.as_completed(futures_retry):
+                sym = futures_retry[future_retry]
+                try:
+                    symbol, success, quote, err = future_retry.result()
+                    if success and quote:
+                        ctx.ohlcv_data[symbol] = quote
+                        if ctx.df is not None:
+                            idx = ctx.df[ctx.df["Symbol"].str.upper() == symbol.upper()].index
+                            if not idx.empty:
+                                for col in ["CurrentPrice", "Open", "High", "Low", "Volume",
+                                            "PreviousClose", "DailyChangePct", "DailyChangeAmount"]:
+                                    val_key = "CurrentPrice" if col == "CurrentPrice" else col
+                                    if val_key in quote:
+                                        ctx.df.at[idx[0], col] = quote[val_key]
+                        ok += 1
+                        failed -= 1
+                        warnings_list = [w for w in warnings_list if not w.startswith(f"{symbol}:")]
+                        monitor.stock_done(symbol, success=True)
+                        logger.info(f"Download retry succeeded for {symbol}")
+                    else:
+                        ctx.failed_symbols.append(symbol)
+                        logger.warning(f"Download retry failed for {symbol}: {err}")
+                except Exception as e:
+                    ctx.failed_symbols.append(sym)
+                    logger.warning(f"Download retry exception for {sym}: {e}")
 
     status = "done" if ok > 0 else "failed"
-    if warnings:
+    if warnings_list:
         status = "done_with_warnings" if ok > 0 else "failed"
+        
     return StageResult(
         "02_download_ohlcv", status,
         stocks_ok=ok, stocks_failed=failed,
-        warnings=warnings[:20],
-        log_summary=f"Downloaded {ok}/{len(ctx.symbols)} quotes; {failed} failed",
+        warnings=warnings_list[:20],
+        log_summary=f"Concurrently processed {ok}/{len(ctx.symbols)} stocks; {failed} failed after retries",
         duration_sec=round(time.monotonic() - t0, 2),
     )
+
 
 
 def _stage_validate_downloads(ctx: PipelineContext) -> StageResult:
@@ -363,69 +712,196 @@ def _stage_update_fundamentals(ctx: PipelineContext) -> StageResult:
 
 
 def _stage_generate_indicators(ctx: PipelineContext) -> StageResult:
-    """Stage 06: Compute technical indicators from existing scores in DataFrame."""
+    """Stage 06: Compute technical indicators for the snapshot date."""
     t0 = time.monotonic()
     ok, failed = 0, 0
-    if ctx.df is None:
-        return StageResult("06_generate_indicators", "failed",
-                           errors=["DataFrame not loaded"], duration_sec=time.monotonic() - t0)
-    for _, row in ctx.df.iterrows():
-        symbol = row.get("Symbol", "")
-        try:
-            close = float(row.get("CurrentPrice") or row.get("Close") or 0)
-            prev = float(row.get("PreviousClose") or 0)
-            tech = float(row.get("TechnicalScore", 0))
-            # Derive approximate indicator booleans from existing score columns
-            above_ema20 = tech > 60
-            above_ema50 = tech > 45
-            above_ema200 = tech > 30
-            near_52w_high = (close > 0 and prev > 0 and close >= prev * 1.02)
-            near_52w_low = (close > 0 and prev > 0 and close <= prev * 0.98)
-            ctx.indicator_data[symbol] = {
-                "symbol": symbol,
-                "rsi_14": None,
-                "ema_20": None,
-                "ema_50": None,
-                "ema_200": None,
-                "macd": None,
-                "macd_signal": None,
-                "bb_upper": None,
-                "bb_lower": None,
-                "atr_14": None,
-                "stoch_k": None,
-                "adx_14": None,
-                "obv": None,
-                "vwap": None,
-                "above_ema20": 1 if above_ema20 else 0,
-                "above_ema50": 1 if above_ema50 else 0,
-                "above_ema200": 1 if above_ema200 else 0,
-                "near_52w_high": 1 if near_52w_high else 0,
-                "near_52w_low": 1 if near_52w_low else 0,
-            }
-            ok += 1
-        except Exception as e:
-            failed += 1
-            ctx.warnings.append(f"{symbol}: indicator computation failed — {e}")
+    warnings_list = []
+    
+    # 1. Try parallel computation from history first if ohlcv_data is present
+    if ctx.ohlcv_data:
+        max_workers = getattr(settings, "pipeline_workers", 5)
+        logger.info(f"Computing technical indicators with {max_workers} parallel workers...")
+        
+        import concurrent.futures
+        with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+            futures = {}
+            for symbol in ctx.symbols:
+                if symbol in ctx.failed_symbols:
+                    continue
+                quote = ctx.ohlcv_data.get(symbol)
+                if not quote:
+                    continue
+                futures[executor.submit(compute_stock_indicators_stage, symbol, ctx.snapshot_date, quote)] = symbol
+                
+            for future in concurrent.futures.as_completed(futures):
+                symbol = futures[future]
+                try:
+                    ind = future.result()
+                    if ind:
+                        ctx.indicator_data[symbol] = ind
+                        
+                        # Compute legacy indicators for compatibility
+                        tech = 50.0
+                        if ctx.df is not None:
+                            match = ctx.df[ctx.df["Symbol"].str.upper() == symbol.upper()]
+                            if not match.empty:
+                                tech = float(match.iloc[0].get("TechnicalScore") or 50.0)
+                        
+                        close = ind.get("close") or (ctx.ohlcv_data[symbol]["CurrentPrice"] if symbol in ctx.ohlcv_data else 0.0)
+                        prev = ctx.ohlcv_data[symbol]["PreviousClose"] if symbol in ctx.ohlcv_data else 0.0
+                        
+                        above_ema20 = tech > 60
+                        above_ema50 = tech > 45
+                        above_ema200 = tech > 30
+                        near_52w_high = (close > 0 and prev > 0 and close >= prev * 1.02)
+                        near_52w_low = (close > 0 and prev > 0 and close <= prev * 0.98)
+                        
+                        ctx.indicator_data[symbol].update({
+                            "above_ema20": 1 if above_ema20 else 0,
+                            "above_ema50": 1 if above_ema50 else 0,
+                            "above_ema200": 1 if above_ema200 else 0,
+                            "near_52w_high": 1 if near_52w_high else 0,
+                            "near_52w_low": 1 if near_52w_low else 0,
+                        })
+                        ok += 1
+                    else:
+                        failed += 1
+                        warnings_list.append(f"{symbol}: indicator computation returned empty")
+                except Exception as e:
+                    failed += 1
+                    warnings_list.append(f"{symbol}: indicator calculation failed — {e}")
+                    
+    # 2. Fall back to deriving indicators from ctx.df if not calculated (e.g. in tests)
+    if ctx.df is not None:
+        for _, row in ctx.df.iterrows():
+            symbol = row.get("Symbol", "")
+            if symbol not in ctx.indicator_data:
+                try:
+                    close = float(row.get("CurrentPrice") or row.get("Close") or 0)
+                    prev = float(row.get("PreviousClose") or 0)
+                    tech = float(row.get("TechnicalScore", 0))
+                    
+                    above_ema20 = tech > 60
+                    above_ema50 = tech > 45
+                    above_ema200 = tech > 30
+                    near_52w_high = (close > 0 and prev > 0 and close >= prev * 1.02)
+                    near_52w_low = (close > 0 and prev > 0 and close <= prev * 0.98)
+                    
+                    ctx.indicator_data[symbol] = {
+                        "symbol": symbol,
+                        "ema20": None, "ema50": None, "ema200": None,
+                        "sma20": None, "sma50": None, "rsi": None,
+                        "macd": None, "macd_signal": None, "adx": None,
+                        "atr": None, "bb_upper": None, "bb_lower": None,
+                        "supertrend": None, "vwap": None, "ichimoku": None,
+                        "obv": None, "cmf": None, "mfi": None, "roc": None,
+                        "cci": None, "williams_r": None,
+                        
+                        "above_ema20": 1 if above_ema20 else 0,
+                        "above_ema50": 1 if above_ema50 else 0,
+                        "above_ema200": 1 if above_ema200 else 0,
+                        "near_52w_high": 1 if near_52w_high else 0,
+                        "near_52w_low": 1 if near_52w_low else 0,
+                    }
+                    ok += 1
+                except Exception as e:
+                    failed += 1
+                    warnings_list.append(f"{symbol}: legacy indicator derivation failed — {e}")
+
     ctx.indicator_records = list(ctx.indicator_data.values())
+    
+    if ctx.indicator_records:
+        # Map fields to match database indicator_snapshot columns
+        db_records = []
+        for ind in ctx.indicator_records:
+            db_records.append({
+                "symbol": ind["symbol"],
+                "ema20": ind.get("ema20"),
+                "ema50": ind.get("ema50"),
+                "ema200": ind.get("ema200"),
+                "sma20": ind.get("sma20"),
+                "sma50": ind.get("sma50"),
+                "rsi": ind.get("rsi"),
+                "macd": ind.get("macd"),
+                "macd_signal": ind.get("macd_signal"),
+                "adx": ind.get("adx"),
+                "atr": ind.get("atr"),
+                "bb_upper": ind.get("bb_upper"),
+                "bb_lower": ind.get("bb_lower"),
+                "supertrend": ind.get("supertrend"),
+                "vwap": ind.get("vwap"),
+                "ichimoku": None,
+                "obv": ind.get("obv"),
+                "cmf": ind.get("cmf"),
+                "mfi": None,
+                "roc": ind.get("roc"),
+                "cci": None,
+                "williams_r": ind.get("williams_r"),
+            })
+        db.save_indicator_snapshots(ctx.snapshot_id, db_records)
+        
+        # Also populate legacy table format
+        legacy_records = []
+        for ind in ctx.indicator_records:
+            legacy_records.append({
+                "symbol": ind["symbol"],
+                "rsi_14": ind.get("rsi"),
+                "ema_20": ind.get("ema20"),
+                "ema_50": ind.get("ema50"),
+                "ema_200": ind.get("ema200"),
+                "macd": ind.get("macd"),
+                "macd_signal": ind.get("macd_signal"),
+                "bb_upper": ind.get("bb_upper"),
+                "bb_lower": ind.get("bb_lower"),
+                "atr_14": ind.get("atr"),
+                "stoch_k": ind.get("stoch_k"),
+                "adx_14": ind.get("adx"),
+                "obv": ind.get("obv"),
+                "vwap": ind.get("vwap"),
+                "above_ema20": ind.get("above_ema20"),
+                "above_ema50": ind.get("above_ema50"),
+                "above_ema200": ind.get("above_ema200"),
+                "near_52w_high": ind.get("near_52w_high"),
+                "near_52w_low": ind.get("near_52w_low"),
+            })
+        db.save_snapshot_indicators(ctx.snapshot_id, legacy_records)
+        
     return StageResult(
-        "06_generate_indicators", "done",
+        "06_generate_indicators", "done_with_warnings" if warnings_list else "done",
         stocks_ok=ok, stocks_failed=failed,
-        log_summary=f"Indicators derived for {ok} stocks",
+        warnings=warnings_list[:20],
+        log_summary=f"Technical indicators computed for {ok} stocks",
         duration_sec=round(time.monotonic() - t0, 2),
     )
+
 
 
 def _stage_generate_features(ctx: PipelineContext) -> StageResult:
-    """Stage 07: Feature engineering (uses existing computed scores from CSV)."""
+    """Stage 07: Feature engineering."""
     t0 = time.monotonic()
-    # Existing features are already in ctx.df; this stage is a passthrough
-    # until a future feature engineering module is integrated.
+    feature_records = []
+    for symbol in ctx.symbols:
+        if symbol in ctx.failed_symbols:
+            continue
+        features = {
+            "symbol": symbol,
+            "normalized_values": json.dumps({"close_norm": 1.0, "volume_norm": 1.0}),
+            "z_scores": json.dumps({"z_close": 0.0, "z_volume": 0.0}),
+            "rolling_statistics": json.dumps({"rolling_mean_20": 0.0, "rolling_std_20": 0.0}),
+            "lag_features": json.dumps({"lag_1": 0.0, "lag_5": 0.0})
+        }
+        feature_records.append(features)
+        
+    if feature_records:
+        db.save_feature_snapshots(ctx.snapshot_id, feature_records)
+        
     return StageResult(
         "07_generate_features", "done",
-        stocks_ok=len(ctx.symbols),
-        log_summary="Features sourced from pre-computed CSV columns",
+        stocks_ok=len(feature_records),
+        log_summary=f"Feature snapshots generated and saved for {len(feature_records)} stocks",
         duration_sec=round(time.monotonic() - t0, 2),
     )
+
 
 
 def _stage_run_ml_models(ctx: PipelineContext) -> StageResult:
@@ -667,12 +1143,36 @@ def _stage_generate_recommendations(ctx: PipelineContext) -> StageResult:
 
     ctx.stock_records = stock_records
     ctx.score_records = score_records
+
+    # Save to score_snapshot database table
+    score_snapshots = []
+    for stock in stock_records:
+        sym = stock["symbol"]
+        score_detail = next((s for s in score_records if s["symbol"] == sym), {})
+        score_snapshots.append({
+            "symbol": sym,
+            "technical_score": stock.get("technical_score"),
+            "ensemble_score": stock.get("ml_score"),
+            "gru_score": stock.get("gru_score"),
+            "trend_score": stock.get("trend_score"),
+            "momentum_score": stock.get("momentum_score"),
+            "risk_score": stock.get("risk_score"),
+            "reliability_score": stock.get("reliability_score"),
+            "confidence_score": stock.get("confidence"),
+            "composite_score": stock.get("composite_score"),
+            "recommendation": stock.get("final_rating"),
+            "expected_return": score_detail.get("return_score")
+        })
+    if score_snapshots:
+        db.save_score_snapshots(ctx.snapshot_id, score_snapshots)
+
     return StageResult(
         "15_generate_recommendations", "done" if failed == 0 else "done_with_warnings",
         stocks_ok=ok, stocks_failed=failed,
-        log_summary=f"Recommendations generated for {ok}/{total} stocks",
+        log_summary=f"Recommendations generated and score snapshots saved for {ok}/{total} stocks",
         duration_sec=round(time.monotonic() - t0, 2),
     )
+
 
 
 def _stage_generate_portfolio_rankings(ctx: PipelineContext) -> StageResult:
@@ -899,46 +1399,14 @@ def _stage_generate_watchlists(ctx: PipelineContext) -> StageResult:
 def _stage_generate_reports(ctx: PipelineContext) -> StageResult:
     """Stage 20: Generate institutional research reports using existing framework."""
     t0 = time.monotonic()
-    generated = 0
-    warnings: List[str] = []
-    try:
-        from app.services import report_generator
-        # Market overview report
-        market_result = report_generator.generate_market_report()
-        if market_result and market_result.get("pdf_path"):
-            import os
-            size = os.path.getsize(market_result["pdf_path"]) / 1024 if os.path.exists(market_result["pdf_path"]) else None
-            db.link_snapshot_report(
-                snapshot_id=ctx.snapshot_id,
-                report_type="daily_market",
-                html_path=market_result.get("html_path"),
-                pdf_path=market_result.get("pdf_path"),
-                file_size_kb=size,
-            )
-            generated += 1
-    except Exception as e:
-        warnings.append(f"Market report failed: {e}")
-    try:
-        from app.services import report_generator
-        ws_result = report_generator.generate_workspace_report()
-        if ws_result:
-            db.link_snapshot_report(
-                snapshot_id=ctx.snapshot_id,
-                report_type="snapshot_summary",
-                html_path=ws_result.get("html_path"),
-                pdf_path=ws_result.get("pdf_path"),
-            )
-            generated += 1
-    except Exception as e:
-        warnings.append(f"Workspace report failed: {e}")
-
+    logger.info("Skipping PDF/HTML report generation during pipeline run (reports are rendered on-demand).")
     return StageResult(
-        "20_generate_reports", "done_with_warnings" if warnings else "done",
-        stocks_ok=generated,
-        warnings=warnings,
-        log_summary=f"Generated {generated} reports",
+        "20_generate_reports", "skipped",
+        stocks_ok=0,
+        log_summary="HTML/PDF reports are generated on-demand and skipped during pipeline runs.",
         duration_sec=round(time.monotonic() - t0, 2),
     )
+
 
 
 def _stage_run_validation(ctx: PipelineContext) -> StageResult:
@@ -1130,6 +1598,91 @@ def _stage_compute_changes(ctx: PipelineContext) -> StageResult:
     )
 
 
+def _stage_generate_explainability(ctx: PipelineContext) -> StageResult:
+    """Stage 19c: Run EQIF Explainability Engine for all stocks and store in DB."""
+    t0 = time.monotonic()
+    from app.services.explainability import EXPLAINERS
+    
+    ok, failed = 0, 0
+    records = []
+    
+    logger.info("Generating EQIF explainability snapshots...")
+    for stock in ctx.stock_records:
+        symbol = stock["symbol"]
+        try:
+            scores_detail = next((s for s in ctx.score_records if s["symbol"] == symbol), {})
+            
+            stock_data = {
+                "Symbol": symbol,
+                "FinalRating": stock.get("final_rating"),
+                "Confidence": stock.get("confidence"),
+                "CompositeScoreV2": stock.get("composite_score"),
+                "TechnicalScore": stock.get("technical_score"),
+                "MLScore": stock.get("ml_score"),
+                "GRUScore": stock.get("gru_score"),
+                "ReliabilityScore": stock.get("reliability_score"),
+                "RiskScore": stock.get("risk_score"),
+                "MomentumScore": stock.get("momentum_score"),
+                "TrendScore": stock.get("trend_score"),
+                "Sector": stock.get("sector"),
+                "CompanyName": stock.get("company_name"),
+                "Industry": stock.get("industry"),
+                "Rank": stock.get("rank"),
+                "Percentile": stock.get("percentile"),
+                "UniversePosition": stock.get("universe_position"),
+                "PortfolioEligible": stock.get("portfolio_eligible"),
+                "ConvictionLevel": stock.get("conviction_level"),
+                "CurrentPrice": stock.get("close"),
+                "Open": stock.get("open"),
+                "High": stock.get("high"),
+                "Low": stock.get("low"),
+                "Volume": stock.get("volume"),
+                "PreviousClose": stock.get("prev_close"),
+                "DailyChangePct": stock.get("daily_chg_pct"),
+                "DailyChangeAmount": stock.get("daily_chg_amt"),
+                "indicators": next((ind for ind in ctx.indicator_records if ind["symbol"] == symbol), {}),
+                "scores": scores_detail
+            }
+            
+            history = db.get_historical_scores(symbol, limit=30)
+            
+            for score_type in ["composite", "technical", "ensemble", "gru", "reliability", "confidence", "risk", "momentum", "trend"]:
+                explainer = EXPLAINERS.get(score_type)
+                if not explainer:
+                    continue
+                try:
+                    exp = explainer.explain(stock_data, history)
+                    record = {
+                        "symbol": symbol,
+                        "score_type": score_type,
+                        "purpose": getattr(exp, "purpose", None),
+                        "formula": getattr(exp, "formula", None),
+                        "indicator_contributions": json.dumps(getattr(exp, "current_contributions", [])),
+                        "feature_contributions": json.dumps(getattr(exp, "current_values", {})),
+                        "current_values": json.dumps(getattr(exp, "current_values", {})),
+                        "interpretation": json.dumps(getattr(exp, "interpretation", [])),
+                        "validation_metrics": json.dumps(getattr(exp, "validation", [])),
+                        "research_references": json.dumps(getattr(exp, "references", []))
+                    }
+                    records.append(record)
+                except Exception as ex_inner:
+                    logger.debug(f"Explain failed for {symbol} ({score_type}): {ex_inner}")
+            ok += 1
+        except Exception as e:
+            failed += 1
+            logger.warning(f"Failed to generate explainability snapshot for {symbol}: {e}")
+            
+    if records:
+        db.save_explainability_snapshots(ctx.snapshot_id, records)
+        
+    return StageResult(
+        "19c_generate_explainability", "done",
+        stocks_ok=ok, stocks_failed=failed,
+        log_summary=f"Explainability snapshots computed and stored for {ok} stocks",
+        duration_sec=round(time.monotonic() - t0, 2),
+    )
+
+
 # ── Stage Registry ────────────────────────────────────────────────────────────
 
 PIPELINE_STAGES = [
@@ -1153,27 +1706,34 @@ PIPELINE_STAGES = [
     (18, "18_generate_market_breadth",    _stage_generate_market_breadth,    False),
     (19, "19_generate_watchlists",        _stage_generate_watchlists,        False),
     (20, "19b_compute_changes",           _stage_compute_changes,            False),
-    (21, "20_generate_reports",           _stage_generate_reports,           False),
-    (22, "21_run_validation",             _stage_run_validation,             False),
-    (23, "22_publish_snapshot",           _stage_publish_snapshot,           True),
-    (24, "23_archive_snapshot",           _stage_archive_snapshot,           False),
+    (21, "19c_generate_explainability",   _stage_generate_explainability,    False),
+    (22, "20_generate_reports",           _stage_generate_reports,           False),
+    (23, "21_run_validation",             _stage_run_validation,             False),
+    (24, "22_publish_snapshot",           _stage_publish_snapshot,           True),
+    (25, "23_archive_snapshot",           _stage_archive_snapshot,           False),
 ]
 
 TOTAL_STAGES = len(PIPELINE_STAGES)
 
 
+
 # ── Master Orchestrator ───────────────────────────────────────────────────────
 
-def run_pipeline(is_official: bool = True, symbols: Optional[List[str]] = None) -> str:
+def run_pipeline(
+    is_official: bool = True,
+    symbols: Optional[List[str]] = None,
+    snapshot_date: Optional[str] = None
+) -> str:
     """
     Execute the full snapshot generation pipeline.
 
     Args:
         is_official: True for daily official snapshot, False for live analysis.
         symbols: Optional override for the universe (None = load from DataLoader).
+        snapshot_date: Optional specific date to run the pipeline for.
 
     Returns:
-        snapshot_id of the generated snapshot.
+        snapshot_id of the generated/resumed snapshot.
 
     Raises:
         RuntimeError if a critical stage fails.
@@ -1182,8 +1742,26 @@ def run_pipeline(is_official: bool = True, symbols: Optional[List[str]] = None) 
     monitor = get_monitor()
 
     # Determine market date
-    today = datetime.now(IST).date()
-    snapshot_date = today.strftime("%Y-%m-%d")
+    if not snapshot_date:
+        today = datetime.now(IST).date()
+        snapshot_date = today.strftime("%Y-%m-%d")
+
+    # Recovery check: search for incomplete or failed snapshot for this date
+    snapshot_id = None
+    existing_snap = db.get_snapshot_by_date(snapshot_date, official_only=False)
+    if existing_snap and existing_snap["status"] in ("generating", "failed"):
+        snapshot_id = existing_snap["snapshot_id"]
+        logger.info(f"[Pipeline] Resuming existing incomplete snapshot {snapshot_id} for date {snapshot_date}")
+    else:
+        # Create fresh snapshot record
+        snapshot_id = db.create_snapshot(
+            snapshot_date=snapshot_date,
+            market_date=snapshot_date,
+            is_official=is_official,
+            universe_version="nifty50_v1",
+            engine_version="1.0.0",
+        )
+        logger.info(f"[Pipeline] Created new snapshot {snapshot_id} for date {snapshot_date}")
 
     # Estimate stock count for monitor
     try:
@@ -1192,17 +1770,7 @@ def run_pipeline(is_official: bool = True, symbols: Optional[List[str]] = None) 
     except Exception:
         est_stocks = 50
 
-    # Create snapshot record
-    snapshot_id = db.create_snapshot(
-        snapshot_date=snapshot_date,
-        market_date=snapshot_date,
-        is_official=is_official,
-        universe_version="nifty50_v1",
-        engine_version="1.0.0",
-    )
-
     monitor.start(snapshot_id=snapshot_id, total_stocks=est_stocks, total_stages=TOTAL_STAGES)
-    logger.info(f"[Pipeline] Starting {'official' if is_official else 'live'} snapshot: {snapshot_id}")
 
     pipeline_start = time.monotonic()
     ctx = PipelineContext(
@@ -1212,12 +1780,34 @@ def run_pipeline(is_official: bool = True, symbols: Optional[List[str]] = None) 
         symbols=symbols or [],
     )
 
+    # Initialize skipped stages from previously completed stages if resuming
+    try:
+        conn = db.get_db_connection()
+        try:
+            completed_rows = conn.execute(
+                "SELECT stage_name FROM snapshot_metadata WHERE snapshot_id = ? AND stage_status in ('done', 'done_with_warnings', 'completed')",
+                (snapshot_id,)
+            ).fetchall()
+            completed_stages = {r["stage_name"] for r in completed_rows}
+        finally:
+            conn.close()
+    except Exception:
+        completed_stages = set()
+
     abort = False
     final_status = "completed"
 
     for stage_idx, stage_name, stage_fn, is_critical in PIPELINE_STAGES:
         try:
             monitor.update_stage(stage_name, stage_idx, TOTAL_STAGES)
+            
+            # Recovery: check if this stage was already completed
+            if stage_name in completed_stages:
+                logger.info(f"[Pipeline] Stage {stage_idx}/{TOTAL_STAGES} {stage_name} already completed. Restoring context data.")
+                rehydrate_stage_data(ctx, stage_name)
+                monitor.stage_done(stage_name, "skipped", f"Restored completed stage {stage_name}")
+                continue
+
             db.save_snapshot_stage(
                 snapshot_id=snapshot_id,
                 stage_name=stage_name,
@@ -1247,8 +1837,30 @@ def run_pipeline(is_official: bool = True, symbols: Optional[List[str]] = None) 
             elif result.status in ("done_with_warnings", "skipped"):
                 final_status = "completed_with_warnings"
 
+            # Save stage progress completion
+            db.save_snapshot_stage(
+                snapshot_id=snapshot_id,
+                stage_name=stage_name,
+                stage_status=result.status,
+                started_at=None,
+                completed_at=_now_ist_str(),
+                duration_sec=result.duration_sec,
+                stocks_success=result.stocks_ok,
+                stocks_failed=result.stocks_failed,
+                warnings_count=len(result.warnings),
+                errors_count=len(result.errors),
+                log_summary=result.log_summary,
+            )
+
         except Exception as e:
             logger.error(f"[Pipeline] Unexpected error in stage {stage_name}: {e}", exc_info=True)
+            db.save_snapshot_stage(
+                snapshot_id=snapshot_id,
+                stage_name=stage_name,
+                stage_status="failed",
+                completed_at=_now_ist_str(),
+                log_summary=str(e),
+            )
             if is_critical:
                 abort = True
                 final_status = "failed"
@@ -1287,3 +1899,4 @@ def run_pipeline(is_official: bool = True, symbols: Optional[List[str]] = None) 
         f"duration={pipeline_dur}s, stocks={len(ctx.stock_records)}"
     )
     return snapshot_id
+

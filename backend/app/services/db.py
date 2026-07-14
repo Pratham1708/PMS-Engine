@@ -1,642 +1,283 @@
 """
-db.py — SQLite Connection and Schema Initialization.
-Manages the application's local SQLite database.
+db.py — Persistent Database Gateway supporting PostgreSQL & SQLite.
+Handles connection pooling, session management, transactions, and auto-reconnect.
+Includes transparent SQLite-to-PostgreSQL SQL query translation for legacy compatibility.
 """
 
 import os
-import sqlite3
+import re
+import uuid
 import logging
+import sqlite3
 from typing import Optional, List, Dict, Any
+
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker, scoped_session
+
+from app.config import settings
+from app.models.orm import Base, SECURITY_MASTER_SEED
 
 logger = logging.getLogger(__name__)
 
-# Locate database inside backend data directory
+# Determine active database configuration
+DATABASE_URL = getattr(settings, "database_url", "")
+IS_POSTGRES = DATABASE_URL.startswith("postgresql")
+
+# Connection Pool settings
+engine = None
+SessionLocal = None
+
 DB_DIR = os.path.abspath(
     os.path.join(os.path.dirname(__file__), "..", "..", "data")
 )
 DB_PATH = os.path.join(DB_DIR, "pms_engine.db")
 
+if IS_POSTGRES:
+    logger.info("Database: Configuring production PostgreSQL connection pool.")
+    engine = create_engine(
+        DATABASE_URL,
+        pool_size=10,
+        max_overflow=20,
+        pool_recycle=1800,
+        pool_pre_ping=True,  # Automatic reconnect / check if connection is alive
+    )
+    SessionLocal = scoped_session(sessionmaker(autocommit=False, autoflush=False, bind=engine))
+else:
+    logger.info(f"Database: Configuring local development SQLite at {DB_PATH}")
+    os.makedirs(DB_DIR, exist_ok=True)
+    sqlite_url = f"sqlite:///{DB_PATH}"
+    engine = create_engine(
+        sqlite_url,
+        connect_args={"check_same_thread": False}
+    )
+    SessionLocal = scoped_session(sessionmaker(autocommit=False, autoflush=False, bind=engine))
 
-def get_db_connection() -> sqlite3.Connection:
-    """Return a connection to the SQLite database."""
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    return conn
+
+# ── SQL Dialect Translation Layer ───────────────────────────────────────────
+
+def translate_sqlite_to_pg(sql: str) -> str:
+    """Translate standard SQLite SQL statements into PostgreSQL dialect."""
+    if not sql:
+        return sql
+
+    # 1. Translate parameter markers (? -> %s)
+    # Be careful to handle string literals if any exist, but for simple parameter markers:
+    sql_pg = sql.replace('?', '%s')
+
+    # 2. Translate named parameters (:name -> %(name)s)
+    sql_pg = re.sub(r'(?<!:):([a-zA-Z0-9_]+)', r'%(\1)s', sql_pg)
+
+    # 3. Translate SQLite date/time functions
+    sql_pg = re.sub(r'datetime\((.*?)\)', r'\1', sql_pg, flags=re.IGNORECASE)
+
+    # 4. Translate SQLite INSERT OR IGNORE INTO
+    if "INSERT OR IGNORE INTO" in sql_pg.upper():
+        sql_pg = re.sub(
+            r'INSERT\s+OR\s+IGNORE\s+INTO\s+',
+            'INSERT INTO ',
+            sql_pg,
+            flags=re.IGNORECASE
+        )
+        sql_pg += " ON CONFLICT DO NOTHING"
+
+    # 5. Translate SQLite INSERT OR REPLACE INTO (ON CONFLICT DO UPDATE)
+    if "INSERT OR REPLACE INTO" in sql_pg.upper():
+        match = re.search(
+            r'INSERT\s+OR\s+REPLACE\s+INTO\s+(\w+)\s*\((.*?)\)\s*VALUES\s*(.*)',
+            sql_pg,
+            flags=re.IGNORECASE | re.DOTALL
+        )
+        if match:
+            table_name = match.group(1).lower()
+            columns_str = match.group(2)
+            values_str = match.group(3)
+
+            conflict_targets = {
+                "my_stocks": "symbol",
+                "report_history": "report_id",
+                "snapshot_stock": "snapshot_id, symbol",
+                "snapshot_indicator": "snapshot_id, symbol",
+                "snapshot_score": "snapshot_id, symbol",
+                "snapshot_sector": "snapshot_id, sector",
+                "snapshot_market": "snapshot_id",
+                "lab_reports": "report_id",
+                "lab_rec_audit": "analysis_id, horizon_days",
+                "indicator_snapshot": "snapshot_id, symbol",
+                "feature_snapshot": "snapshot_id, symbol",
+                "score_snapshot": "snapshot_id, symbol",
+                "explainability_snapshot": "snapshot_id, symbol",
+                "report_snapshot": "snapshot_id"
+            }
+            conflict_target = conflict_targets.get(table_name)
+            if conflict_target:
+                cols = [c.strip() for c in columns_str.split(',')]
+                conflict_cols = [c.strip().lower() for c in conflict_target.split(',')]
+                update_cols = [c for c in cols if c.lower() not in conflict_cols]
+                update_set_clause = ", ".join([f"{c} = EXCLUDED.{c}" for c in update_cols])
+                sql_pg = f"INSERT INTO {table_name} ({columns_str}) VALUES {values_str} ON CONFLICT ({conflict_target}) DO UPDATE SET {update_set_clause}"
+            else:
+                sql_pg = f"INSERT INTO {table_name} ({columns_str}) VALUES {values_str}"
+
+    return sql_pg
 
 
-# ── Security Master Seed Data ──
-# Nifty 50 + 67 additional popular Indian stocks = 117 total
-SECURITY_MASTER_SEED = [
-    # ── Nifty 50 ──
-    ("RELIANCE.NS", "Reliance Industries Ltd", "Energy", "Oil & Gas Refining"),
-    ("TCS.NS", "Tata Consultancy Services Ltd", "Technology", "IT Services"),
-    ("HDFCBANK.NS", "HDFC Bank Ltd", "Financial Services", "Private Banks"),
-    ("INFY.NS", "Infosys Ltd", "Technology", "IT Services"),
-    ("ICICIBANK.NS", "ICICI Bank Ltd", "Financial Services", "Private Banks"),
-    ("HINDUNILVR.NS", "Hindustan Unilever Ltd", "Consumer Staples", "FMCG"),
-    ("ITC.NS", "ITC Ltd", "Consumer Staples", "FMCG"),
-    ("SBIN.NS", "State Bank of India", "Financial Services", "Public Banks"),
-    ("BHARTIARTL.NS", "Bharti Airtel Ltd", "Communication", "Telecom"),
-    ("KOTAKBANK.NS", "Kotak Mahindra Bank Ltd", "Financial Services", "Private Banks"),
-    ("LT.NS", "Larsen & Toubro Ltd", "Industrials", "Construction & Engineering"),
-    ("AXISBANK.NS", "Axis Bank Ltd", "Financial Services", "Private Banks"),
-    ("ASIANPAINT.NS", "Asian Paints Ltd", "Consumer Discretionary", "Paints"),
-    ("MARUTI.NS", "Maruti Suzuki India Ltd", "Consumer Discretionary", "Automobiles"),
-    ("TITAN.NS", "Titan Company Ltd", "Consumer Discretionary", "Jewellery"),
-    ("SUNPHARMA.NS", "Sun Pharmaceutical Industries Ltd", "Healthcare", "Pharmaceuticals"),
-    ("BAJFINANCE.NS", "Bajaj Finance Ltd", "Financial Services", "NBFCs"),
-    ("WIPRO.NS", "Wipro Ltd", "Technology", "IT Services"),
-    ("ULTRACEMCO.NS", "UltraTech Cement Ltd", "Materials", "Cement"),
-    ("HCLTECH.NS", "HCL Technologies Ltd", "Technology", "IT Services"),
-    ("NESTLEIND.NS", "Nestle India Ltd", "Consumer Staples", "FMCG"),
-    ("POWERGRID.NS", "Power Grid Corp of India Ltd", "Utilities", "Power Transmission"),
-    ("NTPC.NS", "NTPC Ltd", "Utilities", "Power Generation"),
-    ("TECHM.NS", "Tech Mahindra Ltd", "Technology", "IT Services"),
-    ("M&M.NS", "Mahindra & Mahindra Ltd", "Consumer Discretionary", "Automobiles"),
-    ("ONGC.NS", "Oil & Natural Gas Corp Ltd", "Energy", "Oil & Gas Exploration"),
-    ("TATAMOTORS.NS", "Tata Motors Ltd", "Consumer Discretionary", "Automobiles"),
-    ("JSWSTEEL.NS", "JSW Steel Ltd", "Materials", "Steel"),
-    ("ADANIENT.NS", "Adani Enterprises Ltd", "Industrials", "Conglomerate"),
-    ("ADANIPORTS.NS", "Adani Ports & SEZ Ltd", "Industrials", "Port Services"),
-    ("BAJAJFINSV.NS", "Bajaj Finserv Ltd", "Financial Services", "Holding Company"),
-    ("TATASTEEL.NS", "Tata Steel Ltd", "Materials", "Steel"),
-    ("COALINDIA.NS", "Coal India Ltd", "Energy", "Coal Mining"),
-    ("HINDALCO.NS", "Hindalco Industries Ltd", "Materials", "Aluminium"),
-    ("GRASIM.NS", "Grasim Industries Ltd", "Materials", "Cement & Textiles"),
-    ("CIPLA.NS", "Cipla Ltd", "Healthcare", "Pharmaceuticals"),
-    ("DIVISLAB.NS", "Divi's Laboratories Ltd", "Healthcare", "Pharmaceuticals"),
-    ("DRREDDY.NS", "Dr. Reddy's Laboratories Ltd", "Healthcare", "Pharmaceuticals"),
-    ("EICHERMOT.NS", "Eicher Motors Ltd", "Consumer Discretionary", "Automobiles"),
-    ("APOLLOHOSP.NS", "Apollo Hospitals Enterprise Ltd", "Healthcare", "Hospitals"),
-    ("SBILIFE.NS", "SBI Life Insurance Co Ltd", "Financial Services", "Insurance"),
-    ("BRITANNIA.NS", "Britannia Industries Ltd", "Consumer Staples", "FMCG"),
-    ("INDUSINDBK.NS", "IndusInd Bank Ltd", "Financial Services", "Private Banks"),
-    ("HEROMOTOCO.NS", "Hero MotoCorp Ltd", "Consumer Discretionary", "Automobiles"),
-    ("BPCL.NS", "Bharat Petroleum Corp Ltd", "Energy", "Oil & Gas Refining"),
-    ("TATACONSUM.NS", "Tata Consumer Products Ltd", "Consumer Staples", "FMCG"),
-    ("BAJAJ-AUTO.NS", "Bajaj Auto Ltd", "Consumer Discretionary", "Automobiles"),
-    ("SHRIRAMFIN.NS", "Shriram Finance Ltd", "Financial Services", "NBFCs"),
-    ("HDFCLIFE.NS", "HDFC Life Insurance Co Ltd", "Financial Services", "Insurance"),
-    ("LTIM.NS", "LTIMindtree Ltd", "Technology", "IT Services"),
+class CompatibleRow(dict):
+    """A dictionary subclass that also allows positional/index access (e.g., row[0])."""
+    def __init__(self, data, tuple_data=None):
+        super().__init__(data)
+        self._tuple = tuple_data if tuple_data is not None else tuple(data.values())
 
-    # ── Additional Popular Indian Stocks ──
-    ("ZOMATO.NS", "Zomato Ltd", "Consumer Discretionary", "Internet & E-Commerce"),
-    ("ONE97COMM.NS", "Paytm (One97 Communications Ltd)", "Technology", "Fintech"),
-    ("FSN.NS", "Nykaa (FSN E-Commerce Ventures Ltd)", "Consumer Discretionary", "E-Commerce"),
-    ("DMART.NS", "Avenue Supermarts Ltd (DMart)", "Consumer Staples", "Retail"),
-    ("HAL.NS", "Hindustan Aeronautics Ltd", "Industrials", "Aerospace & Defence"),
-    ("BEL.NS", "Bharat Electronics Ltd", "Industrials", "Defence Electronics"),
-    ("IRCTC.NS", "Indian Railway Catering & Tourism Corp", "Industrials", "Travel & Tourism"),
-    ("JIOFIN.NS", "Jio Financial Services Ltd", "Financial Services", "NBFCs"),
-    ("SUZLON.NS", "Suzlon Energy Ltd", "Utilities", "Renewable Energy"),
-    ("LICI.NS", "Life Insurance Corp of India", "Financial Services", "Insurance"),
-    ("MRF.NS", "MRF Ltd", "Consumer Discretionary", "Tyres"),
-    ("PIDILITIND.NS", "Pidilite Industries Ltd", "Materials", "Adhesives & Chemicals"),
-    ("SIEMENS.NS", "Siemens Ltd", "Industrials", "Electrical Equipment"),
-    ("ABB.NS", "ABB India Ltd", "Industrials", "Electrical Equipment"),
-    ("HAVELLS.NS", "Havells India Ltd", "Consumer Discretionary", "Electrical Equipment"),
-    ("VOLTAS.NS", "Voltas Ltd", "Consumer Discretionary", "Consumer Electronics"),
-    ("TRENT.NS", "Trent Ltd", "Consumer Discretionary", "Retail"),
-    ("PAGEIND.NS", "Page Industries Ltd", "Consumer Discretionary", "Textiles"),
-    ("GODREJCP.NS", "Godrej Consumer Products Ltd", "Consumer Staples", "FMCG"),
-    ("MARICO.NS", "Marico Ltd", "Consumer Staples", "FMCG"),
-    ("COLPAL.NS", "Colgate-Palmolive (India) Ltd", "Consumer Staples", "FMCG"),
-    ("DABUR.NS", "Dabur India Ltd", "Consumer Staples", "FMCG"),
-    ("BIOCON.NS", "Biocon Ltd", "Healthcare", "Biotechnology"),
-    ("LUPIN.NS", "Lupin Ltd", "Healthcare", "Pharmaceuticals"),
-    ("TORNTPHARM.NS", "Torrent Pharmaceuticals Ltd", "Healthcare", "Pharmaceuticals"),
-    ("AUROPHARMA.NS", "Aurobindo Pharma Ltd", "Healthcare", "Pharmaceuticals"),
-    ("PERSISTENT.NS", "Persistent Systems Ltd", "Technology", "IT Services"),
-    ("COFORGE.NS", "Coforge Ltd", "Technology", "IT Services"),
-    ("MPHASIS.NS", "Mphasis Ltd", "Technology", "IT Services"),
-    ("LTTS.NS", "L&T Technology Services Ltd", "Technology", "IT Services"),
-    ("INDIGO.NS", "InterGlobe Aviation Ltd (IndiGo)", "Industrials", "Airlines"),
-    ("TATAELXSI.NS", "Tata Elxsi Ltd", "Technology", "IT Services"),
-    ("POLYCAB.NS", "Polycab India Ltd", "Industrials", "Cables & Wires"),
-    ("CUMMINSIND.NS", "Cummins India Ltd", "Industrials", "Industrial Engines"),
-    ("BALKRISIND.NS", "Balkrishna Industries Ltd", "Consumer Discretionary", "Tyres"),
-    ("PIIND.NS", "PI Industries Ltd", "Materials", "Agrochemicals"),
-    ("SOLARINDS.NS", "Solar Industries India Ltd", "Industrials", "Explosives"),
-    ("TATAPOWER.NS", "Tata Power Co Ltd", "Utilities", "Power Generation"),
-    ("ADANIPOWER.NS", "Adani Power Ltd", "Utilities", "Power Generation"),
-    ("ADANIGREEN.NS", "Adani Green Energy Ltd", "Utilities", "Renewable Energy"),
-    ("ADANIENSOL.NS", "Adani Energy Solutions Ltd", "Utilities", "Power Transmission"),
-    ("VEDL.NS", "Vedanta Ltd", "Materials", "Mining & Metals"),
-    ("JINDALSTEL.NS", "Jindal Steel & Power Ltd", "Materials", "Steel"),
-    ("SAIL.NS", "Steel Authority of India Ltd", "Materials", "Steel"),
-    ("NMDC.NS", "NMDC Ltd", "Materials", "Mining"),
-    ("IRFC.NS", "Indian Railway Finance Corp Ltd", "Financial Services", "NBFCs"),
-    ("PNB.NS", "Punjab National Bank", "Financial Services", "Public Banks"),
-    ("BANKBARODA.NS", "Bank of Baroda", "Financial Services", "Public Banks"),
-    ("CANBK.NS", "Canara Bank", "Financial Services", "Public Banks"),
-    ("IDFCFIRSTB.NS", "IDFC First Bank Ltd", "Financial Services", "Private Banks"),
-    ("FEDERALBNK.NS", "Federal Bank Ltd", "Financial Services", "Private Banks"),
-    ("BANDHANBNK.NS", "Bandhan Bank Ltd", "Financial Services", "Private Banks"),
-    ("YESBANK.NS", "Yes Bank Ltd", "Financial Services", "Private Banks"),
-    ("MANAPPURAM.NS", "Manappuram Finance Ltd", "Financial Services", "NBFCs"),
-    ("MUTHOOTFIN.NS", "Muthoot Finance Ltd", "Financial Services", "NBFCs"),
-    ("SRF.NS", "SRF Ltd", "Materials", "Chemicals"),
-    ("UPL.NS", "UPL Ltd", "Materials", "Agrochemicals"),
-    ("DEEPAKNTR.NS", "Deepak Nitrite Ltd", "Materials", "Chemicals"),
-    ("ATUL.NS", "Atul Ltd", "Materials", "Chemicals"),
-    ("ASTRAL.NS", "Astral Ltd", "Industrials", "Pipes & Fittings"),
-    ("CROMPTON.NS", "Crompton Greaves Consumer Electricals", "Consumer Discretionary", "Electrical Equipment"),
-    ("WHIRLPOOL.NS", "Whirlpool of India Ltd", "Consumer Discretionary", "Consumer Electronics"),
-    ("BATAINDIA.NS", "Bata India Ltd", "Consumer Discretionary", "Footwear"),
-    ("VBL.NS", "Varun Beverages Ltd", "Consumer Staples", "Beverages"),
-    ("CONCOR.NS", "Container Corp of India Ltd", "Industrials", "Logistics"),
-    ("DLF.NS", "DLF Ltd", "Real Estate", "Real Estate Development"),
-    ("GODREJPROP.NS", "Godrej Properties Ltd", "Real Estate", "Real Estate Development"),
-    ("OBEROIRLTY.NS", "Oberoi Realty Ltd", "Real Estate", "Real Estate Development"),
-    ("PRESTIGE.NS", "Prestige Estates Projects Ltd", "Real Estate", "Real Estate Development"),
-]
+    def __getitem__(self, key):
+        if isinstance(key, int):
+            return self._tuple[key]
+        return super().__getitem__(key)
 
+
+class DBCursorWrapper:
+    """Wrapper around raw DB cursors to enforce dict-like row formatting and query translation."""
+    def __init__(self, raw_cursor, is_postgres: bool):
+        self.raw_cursor = raw_cursor
+        self.is_postgres = is_postgres
+
+    def execute(self, sql: str, params: Any = None):
+        sql_to_run = translate_sqlite_to_pg(sql) if self.is_postgres else sql
+        if params is not None:
+            self.raw_cursor.execute(sql_to_run, params)
+        else:
+            self.raw_cursor.execute(sql_to_run)
+        return self
+
+    def executemany(self, sql: str, params_list: List[Any]):
+        sql_to_run = translate_sqlite_to_pg(sql) if self.is_postgres else sql
+        self.raw_cursor.executemany(sql_to_run, params_list)
+        return self
+
+    def fetchone(self) -> Optional[CompatibleRow]:
+        row = self.raw_cursor.fetchone()
+        if row is None:
+            return None
+        return CompatibleRow(dict(row), tuple(row))
+
+    def fetchall(self) -> List[CompatibleRow]:
+        rows = self.raw_cursor.fetchall()
+        return [CompatibleRow(dict(r), tuple(r)) for r in rows]
+
+    @property
+    def lastrowid(self):
+        return getattr(self.raw_cursor, "lastrowid", None)
+
+    def close(self):
+        self.raw_cursor.close()
+
+
+
+class DBConnectionWrapper:
+    """Wrapper around raw SQLite or PostgreSQL connection objects."""
+    def __init__(self, raw_conn, is_postgres: bool):
+        self.raw_conn = raw_conn
+        self.is_postgres = is_postgres
+
+    def cursor(self) -> DBCursorWrapper:
+        if self.is_postgres:
+            import psycopg2.extras
+            cursor = self.raw_conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        else:
+            cursor = self.raw_conn.cursor()
+        return DBCursorWrapper(cursor, self.is_postgres)
+
+    def execute(self, sql: str, params: Any = None) -> DBCursorWrapper:
+        cursor = self.cursor()
+        cursor.execute(sql, params)
+        return cursor
+
+    def executemany(self, sql: str, params_list: List[Any]) -> DBCursorWrapper:
+        cursor = self.cursor()
+        cursor.executemany(sql, params_list)
+        return cursor
+
+    def commit(self):
+        self.raw_conn.commit()
+
+    def rollback(self):
+        try:
+            self.raw_conn.rollback()
+        except Exception:
+            pass
+
+    def close(self):
+        self.raw_conn.close()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if exc_type:
+            self.rollback()
+        else:
+            self.commit()
+        self.close()
+
+
+def get_db_connection() -> DBConnectionWrapper:
+    """Return a wrapper connection for SQLite or PostgreSQL (for raw SQL compatibility)."""
+    if IS_POSTGRES:
+        conn = engine.raw_connection()
+        return DBConnectionWrapper(conn, is_postgres=True)
+    else:
+        conn = sqlite3.connect(DB_PATH)
+        conn.row_factory = sqlite3.Row
+        return DBConnectionWrapper(conn, is_postgres=False)
+
+
+def get_db_session():
+    """Return a thread-scoped SQLAlchemy Session instance."""
+    return SessionLocal()
+
+
+# ── Database Initialization ──
 
 def init_db() -> None:
-    """Create database tables if they do not exist."""
-    # Ensure data directory exists
-    os.makedirs(DB_DIR, exist_ok=True)
-    
-    logger.info(f"Initializing SQLite database at: {DB_PATH}")
-    
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    
+    """Create all database tables and seed them with Security Master data."""
+    logger.info("Initializing database schemas...")
     try:
-        # Table 1: my_stocks (user research universe)
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS my_stocks (
-                symbol TEXT PRIMARY KEY,
-                added_at TEXT NOT NULL
-            )
-        """)
+        # Create all tables (legacy and new)
+        Base.metadata.create_all(bind=engine)
         
-        # Table 2: analysis_history (user-driven analysis runs)
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS analysis_history (
-                analysis_id TEXT PRIMARY KEY,
-                symbol TEXT NOT NULL,
-                rating TEXT NOT NULL,
-                confidence REAL NOT NULL,
-                composite_score REAL NOT NULL,
-                analyzed_at TEXT NOT NULL
-            )
-        """)
-        
-        # Table 3: security_master (expanded stock universe)
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS security_master (
-                symbol TEXT PRIMARY KEY,
-                company_name TEXT NOT NULL,
-                sector TEXT DEFAULT '—',
-                industry TEXT DEFAULT '—'
-            )
-        """)
-        
-        # Table 4: report_history (Phase 12C Research Reports)
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS report_history (
-                report_id TEXT PRIMARY KEY,
-                report_type TEXT NOT NULL,
-                symbol TEXT,
-                generated_at TEXT NOT NULL,
-                analysis_id TEXT,
-                file_path TEXT NOT NULL,
-                report_version TEXT DEFAULT '1.0'
-            )
-        """)
-        
-        # Seed the security master with 117 Indian stocks
-        cursor.executemany(
-            "INSERT OR IGNORE INTO security_master (symbol, company_name, sector, industry) VALUES (?, ?, ?, ?)",
-            SECURITY_MASTER_SEED
-        )
-
-        # ── Phase 12 Quant Research Laboratory Tables ──────────────────────
-
-        # Table 5: lab_experiments — master experiment registry
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS lab_experiments (
-                experiment_id        TEXT PRIMARY KEY,
-                lab_module           TEXT NOT NULL,
-                name                 TEXT NOT NULL,
-                symbol               TEXT,
-                params_json          TEXT,
-                version              INTEGER DEFAULT 1,
-                status               TEXT DEFAULT 'pending',
-                started_at           TEXT,
-                completed_at         TEXT,
-                error_msg            TEXT,
-                reproducibility_seed INTEGER DEFAULT 42
-            )
-        """)
-
-        # Table 6: lab_metrics — key-value metric store (many per experiment)
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS lab_metrics (
-                id            INTEGER PRIMARY KEY AUTOINCREMENT,
-                experiment_id TEXT NOT NULL,
-                metric_name   TEXT NOT NULL,
-                metric_value  REAL,
-                metric_str    TEXT,
-                FOREIGN KEY (experiment_id) REFERENCES lab_experiments(experiment_id)
-            )
-        """)
-
-        # Table 7: lab_charts — JSON chart data blobs (one per chart type per experiment)
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS lab_charts (
-                id               INTEGER PRIMARY KEY AUTOINCREMENT,
-                experiment_id    TEXT NOT NULL,
-                chart_type       TEXT NOT NULL,
-                chart_data_json  TEXT NOT NULL,
-                FOREIGN KEY (experiment_id) REFERENCES lab_experiments(experiment_id)
-            )
-        """)
-
-        # Table 8: lab_rec_audit — recommendation audit records (one per rec × horizon)
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS lab_rec_audit (
-                id              INTEGER PRIMARY KEY AUTOINCREMENT,
-                analysis_id     TEXT NOT NULL,
-                symbol          TEXT NOT NULL,
-                rating          TEXT NOT NULL,
-                composite_score REAL,
-                analyzed_at     TEXT NOT NULL,
-                horizon_days    INTEGER NOT NULL,
-                forward_return  REAL,
-                validated       INTEGER,
-                validated_at    TEXT,
-                UNIQUE(analysis_id, horizon_days)
-            )
-        """)
-
-        # Table 9: lab_reports — lab-specific generated reports
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS lab_reports (
-                report_id     TEXT PRIMARY KEY,
-                experiment_id TEXT,
-                report_type   TEXT NOT NULL,
-                generated_at  TEXT NOT NULL,
-                html_path     TEXT NOT NULL,
-                pdf_path      TEXT
-            )
-        """)
-
-        # Table 10: lab_weight_snapshots — composite weight optimization snapshots
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS lab_weight_snapshots (
-                id            INTEGER PRIMARY KEY AUTOINCREMENT,
-                experiment_id TEXT NOT NULL,
-                w_technical   REAL,
-                w_ml          REAL,
-                w_gru         REAL,
-                w_reliability REAL,
-                target_metric TEXT,
-                metric_value  REAL,
-                recorded_at   TEXT
-            )
-        """)
-
-        # Alter table statements to add incremental fields for versioning and pipeline state
-        for col_def in [
-            ("engine_version", "TEXT"),
-            ("dataset_version", "TEXT"),
-            ("model_version", "TEXT"),
-            ("indicator_version", "TEXT"),
-            ("pipeline_stage", "TEXT DEFAULT 'Idea'"),
-            ("is_paused", "INTEGER DEFAULT 0")
-        ]:
-            try:
-                cursor.execute(f"ALTER TABLE lab_experiments ADD COLUMN {col_def[0]} {col_def[1]}")
-            except sqlite3.OperationalError:
-                pass  # column already exists
-
-        # Table 11: lab_drift_alerts
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS lab_drift_alerts (
-                id            INTEGER PRIMARY KEY AUTOINCREMENT,
-                alert_type    TEXT NOT NULL,
-                metric_name   TEXT NOT NULL,
-                threshold     REAL,
-                current_value REAL,
-                message       TEXT,
-                recorded_at   TEXT
-            )
-        """)
-
-        # ── Phase 13 Daily Research snapshot & publishing platform tables ────
-
-        # Table 12: snapshots (Master snapshot registry)
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS snapshots (
-                snapshot_id           TEXT PRIMARY KEY,
-                snapshot_date         TEXT NOT NULL,
-                market_date           TEXT NOT NULL,
-                generated_at          TEXT NOT NULL,
-                is_official           INTEGER DEFAULT 1,
-                status                TEXT DEFAULT 'generating',
-                stocks_processed      INTEGER DEFAULT 0,
-                stocks_failed         INTEGER DEFAULT 0,
-                universe_version      TEXT,
-                engine_version        TEXT,
-                indicator_version     TEXT,
-                scoring_version       TEXT,
-                ml_model_version      TEXT,
-                feature_version       TEXT,
-                software_build        TEXT,
-                pipeline_started_at   TEXT,
-                pipeline_ended_at     TEXT,
-                pipeline_duration_sec REAL,
-                validation_passed     INTEGER DEFAULT 0,
-                validation_score      REAL,
-                published_at          TEXT,
-                notes                 TEXT
-            )
-        """)
-
-        # Table 13: snapshot_stock (Per-stock price + scores + rating)
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS snapshot_stock (
-                id                 INTEGER PRIMARY KEY AUTOINCREMENT,
-                snapshot_id        TEXT NOT NULL,
-                symbol             TEXT NOT NULL,
-                company_name       TEXT,
-                sector             TEXT,
-                industry           TEXT,
-                open               REAL,
-                high               REAL,
-                low                REAL,
-                close              REAL,
-                volume             INTEGER,
-                prev_close         REAL,
-                daily_chg_pct      REAL,
-                daily_chg_amt      REAL,
-                week52_high        REAL,
-                week52_low         REAL,
-                technical_score    REAL,
-                ml_score           REAL,
-                gru_score          REAL,
-                risk_score         REAL,
-                momentum_score     REAL,
-                trend_score        REAL,
-                confidence         REAL,
-                composite_score    REAL,
-                reliability_score  REAL,
-                final_rating       TEXT,
-                portfolio_eligible INTEGER,
-                conviction_level   TEXT,
-                rank               INTEGER,
-                percentile         REAL,
-                universe_position  TEXT,
-                data_source        TEXT,
-                download_status    TEXT,
-                data_warnings      TEXT,
-                UNIQUE(snapshot_id, symbol),
-                FOREIGN KEY (snapshot_id) REFERENCES snapshots(snapshot_id) ON DELETE CASCADE
-            )
-        """)
-
-        # Table 14: snapshot_indicator (Derived indicator values)
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS snapshot_indicator (
-                id            INTEGER PRIMARY KEY AUTOINCREMENT,
-                snapshot_id   TEXT NOT NULL,
-                symbol        TEXT NOT NULL,
-                rsi_14        REAL,
-                ema_20        REAL,
-                ema_50        REAL,
-                ema_200       REAL,
-                macd          REAL,
-                macd_signal   REAL,
-                bb_upper      REAL,
-                bb_lower      REAL,
-                atr_14        REAL,
-                stoch_k       REAL,
-                adx_14        REAL,
-                obv           REAL,
-                vwap          REAL,
-                above_ema20   INTEGER,
-                above_ema50   INTEGER,
-                above_ema200  INTEGER,
-                near_52w_high INTEGER,
-                near_52w_low  INTEGER,
-                UNIQUE(snapshot_id, symbol),
-                FOREIGN KEY (snapshot_id) REFERENCES snapshots(snapshot_id) ON DELETE CASCADE
-            )
-        """)
-
-        # Table 15: snapshot_score (Attributed score weights & details)
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS snapshot_score (
-                id                   INTEGER PRIMARY KEY AUTOINCREMENT,
-                snapshot_id          TEXT NOT NULL,
-                symbol               TEXT NOT NULL,
-                trend_component      REAL,
-                momentum_component   REAL,
-                volatility_component REAL,
-                volume_component     REAL,
-                lgbm_signal          REAL,
-                rf_signal            REAL,
-                xgb_signal           REAL,
-                gru_hold             REAL,
-                gru_long             REAL,
-                gru_short            REAL,
-                return_score         REAL,
-                primary_driver       TEXT,
-                secondary_driver     TEXT,
-                w_technical          REAL,
-                w_ml                 REAL,
-                w_gru                REAL,
-                w_reliability        REAL,
-                UNIQUE(snapshot_id, symbol),
-                FOREIGN KEY (snapshot_id) REFERENCES snapshots(snapshot_id) ON DELETE CASCADE
-            )
-        """)
-
-        # Table 16: snapshot_sector (Aggregated sector performance stats)
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS snapshot_sector (
-                id                  INTEGER PRIMARY KEY AUTOINCREMENT,
-                snapshot_id         TEXT NOT NULL,
-                sector              TEXT NOT NULL,
-                stock_count         INTEGER,
-                avg_composite       REAL,
-                avg_confidence      REAL,
-                avg_technical       REAL,
-                avg_momentum        REAL,
-                avg_trend           REAL,
-                avg_risk            REAL,
-                strong_buy_count    INTEGER,
-                buy_count           INTEGER,
-                hold_count          INTEGER,
-                sell_count          INTEGER,
-                strong_sell_count   INTEGER,
-                bullish_pct         REAL,
-                bearish_pct         REAL,
-                sector_rank         INTEGER,
-                top_stock           TEXT,
-                weakest_stock       TEXT,
-                avg_daily_chg_pct   REAL,
-                UNIQUE(snapshot_id, sector),
-                FOREIGN KEY (snapshot_id) REFERENCES snapshots(snapshot_id) ON DELETE CASCADE
-            )
-        """)
-
-        # Table 17: snapshot_market (Universe-wide breadth metrics)
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS snapshot_market (
-                id                      INTEGER PRIMARY KEY AUTOINCREMENT,
-                snapshot_id             TEXT NOT NULL UNIQUE,
-                total_stocks            INTEGER,
-                advancing_stocks        INTEGER,
-                declining_stocks        INTEGER,
-                unchanged_stocks        INTEGER,
-                advance_decline_ratio   REAL,
-                advance_volume          INTEGER,
-                decline_volume          INTEGER,
-                stocks_above_ema20      INTEGER,
-                stocks_above_ema50      INTEGER,
-                stocks_above_ema200     INTEGER,
-                pct_above_ema20         REAL,
-                pct_above_ema50         REAL,
-                pct_above_ema200        REAL,
-                week52_high_count       INTEGER,
-                week52_low_count        INTEGER,
-                avg_composite           REAL,
-                avg_confidence          REAL,
-                avg_rsi                 REAL,
-                avg_momentum            REAL,
-                avg_daily_chg_pct       REAL,
-                bullish_pct             REAL,
-                bearish_pct             REAL,
-                market_regime           TEXT,
-                strong_buy_count        INTEGER,
-                buy_count               INTEGER,
-                hold_count              INTEGER,
-                sell_count              INTEGER,
-                strong_sell_count       INTEGER,
-                india_vix               REAL,
-                pcr                     REAL,
-                fii_activity            REAL,
-                dii_activity            REAL,
-                FOREIGN KEY (snapshot_id) REFERENCES snapshots(snapshot_id) ON DELETE CASCADE
-            )
-        """)
-
-        # Table 18: snapshot_watchlist (Automatic smart watchlist items)
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS snapshot_watchlist (
-                id             INTEGER PRIMARY KEY AUTOINCREMENT,
-                snapshot_id    TEXT NOT NULL,
-                watchlist_name TEXT NOT NULL,
-                symbol         TEXT NOT NULL,
-                rank_in_list   INTEGER,
-                score_used     REAL,
-                reason         TEXT,
-                UNIQUE(snapshot_id, watchlist_name, symbol),
-                FOREIGN KEY (snapshot_id) REFERENCES snapshots(snapshot_id) ON DELETE CASCADE
-            )
-        """)
-
-        # Table 19: snapshot_change (Recommendation diff records)
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS snapshot_change (
-                id                   INTEGER PRIMARY KEY AUTOINCREMENT,
-                snapshot_id          TEXT NOT NULL,
-                prev_snapshot_id     TEXT,
-                symbol               TEXT NOT NULL,
-                change_type          TEXT NOT NULL,
-                prev_rating          TEXT,
-                new_rating           TEXT,
-                composite_diff       REAL,
-                confidence_diff      REAL,
-                technical_diff       REAL,
-                ml_diff              REAL,
-                momentum_diff        REAL,
-                trend_diff           REAL,
-                risk_diff            REAL,
-                primary_driver       TEXT,
-                secondary_driver     TEXT,
-                is_significant       INTEGER,
-                FOREIGN KEY (snapshot_id) REFERENCES snapshots(snapshot_id) ON DELETE CASCADE
-            )
-        """)
-
-        # Table 20: snapshot_report (Snapshot report files registry)
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS snapshot_report (
-                id             INTEGER PRIMARY KEY AUTOINCREMENT,
-                snapshot_id    TEXT NOT NULL,
-                report_type    TEXT NOT NULL,
-                symbol         TEXT,
-                html_path      TEXT,
-                pdf_path       TEXT,
-                generated_at   TEXT,
-                file_size_kb   REAL,
-                FOREIGN KEY (snapshot_id) REFERENCES snapshots(snapshot_id) ON DELETE CASCADE
-            )
-        """)
-
-        # Table 21: snapshot_validation (Quality validation rules results)
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS snapshot_validation (
-                id             INTEGER PRIMARY KEY AUTOINCREMENT,
-                snapshot_id    TEXT NOT NULL,
-                check_name     TEXT NOT NULL,
-                status         TEXT,
-                detail         TEXT,
-                affected_count INTEGER,
-                threshold      REAL,
-                actual_value   REAL,
-                FOREIGN KEY (snapshot_id) REFERENCES snapshots(snapshot_id) ON DELETE CASCADE
-            )
-        """)
-
-        # Table 22: snapshot_metadata (Detailed pipeline metrics & timings)
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS snapshot_metadata (
-                id              INTEGER PRIMARY KEY AUTOINCREMENT,
-                snapshot_id     TEXT NOT NULL,
-                stage_name      TEXT NOT NULL,
-                stage_status    TEXT,
-                started_at      TEXT,
-                completed_at    TEXT,
-                duration_sec    REAL,
-                stocks_success  INTEGER,
-                stocks_failed   INTEGER,
-                warnings_count  INTEGER,
-                errors_count    INTEGER,
-                log_summary     TEXT,
-                FOREIGN KEY (snapshot_id) REFERENCES snapshots(snapshot_id) ON DELETE CASCADE
-            )
-        """)
-
-        conn.commit()
-
-
-        # Ensure lab reports directory exists
-        lab_reports_dir = os.path.join(DB_DIR, "reports", "lab")
-        os.makedirs(lab_reports_dir, exist_ok=True)
-
-        # Log how many stocks are in the security master
-        count = cursor.execute("SELECT COUNT(*) FROM security_master").fetchone()[0]
-        logger.info(f"Database tables initialized successfully. Security Master: {count} stocks. Lab tables: ready.")
+        # Seed security master if empty
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        try:
+            r = cursor.execute("SELECT COUNT(*) FROM security_master").fetchone()
+            count = r[list(r.keys())[0]] if r else 0
+            if count == 0:
+                logger.info(f"Seeding security_master with {len(SECURITY_MASTER_SEED)} stocks...")
+                cursor.executemany(
+                    "INSERT INTO security_master (symbol, company_name, sector, industry, exchange) VALUES (?, ?, ?, ?, 'NSE')",
+                    [(s[0], s[1], s[2], s[3]) for s in SECURITY_MASTER_SEED]
+                )
+                conn.commit()
+            logger.info("Database schemas initialized and seeded successfully.")
+        finally:
+            conn.close()
     except Exception as e:
-        logger.error(f"Error initializing database: {e}")
+        logger.error(f"Error during database initialization: {e}", exc_info=True)
         raise e
-    finally:
-        conn.close()
 
 
 # ── Security Master Query Functions ──
 
 def search_security_master(query: str) -> List[Dict[str, Any]]:
-    """Search security master by symbol or company name (case-insensitive LIKE)."""
+    """Search security master by symbol or company name."""
     conn = get_db_connection()
     try:
         term = f"%{query.strip()}%"
         rows = conn.execute(
+            """
+            SELECT symbol, company_name, sector, industry, exchange, isin, market_cap_category 
+            FROM security_master
+            WHERE symbol ILIKE ? OR company_name ILIKE ?
+            ORDER BY symbol ASC
+            """ if IS_POSTGRES else
             """
             SELECT symbol, company_name, sector, industry 
             FROM security_master
@@ -654,7 +295,6 @@ def is_in_security_master(symbol: str) -> bool:
     """Check if a symbol exists in the security master."""
     conn = get_db_connection()
     try:
-        # Try exact match first, then with .NS suffix
         sym = symbol.strip().upper()
         row = conn.execute(
             "SELECT 1 FROM security_master WHERE UPPER(symbol) = ?",
@@ -662,7 +302,6 @@ def is_in_security_master(symbol: str) -> bool:
         ).fetchone()
         if row:
             return True
-        # Try with .NS suffix
         if not sym.endswith(".NS"):
             row = conn.execute(
                 "SELECT 1 FROM security_master WHERE UPPER(symbol) = ?",
@@ -685,7 +324,6 @@ def get_security_master_entry(symbol: str) -> Optional[Dict[str, Any]]:
         ).fetchone()
         if row:
             return dict(row)
-        # Try with .NS suffix
         if not sym.endswith(".NS"):
             row = conn.execute(
                 "SELECT symbol, company_name, sector, industry FROM security_master WHERE UPPER(symbol) = ?",
@@ -711,9 +349,8 @@ def add_report_to_history(
 ) -> None:
     """Insert a generated report record into database history."""
     conn = get_db_connection()
-    cursor = conn.cursor()
     try:
-        cursor.execute(
+        conn.execute(
             """
             INSERT OR REPLACE INTO report_history 
             (report_id, report_type, symbol, generated_at, analysis_id, file_path, report_version) 
@@ -722,7 +359,6 @@ def add_report_to_history(
             (report_id, report_type, symbol, generated_at, analysis_id, file_path, report_version)
         )
         conn.commit()
-        logger.info(f"Recorded report {report_id} of type {report_type} in history")
     finally:
         conn.close()
 
@@ -745,7 +381,7 @@ def list_reports_from_history() -> List[Dict[str, Any]]:
     conn = get_db_connection()
     try:
         rows = conn.execute(
-            "SELECT * FROM report_history ORDER BY datetime(generated_at) DESC, generated_at DESC"
+            "SELECT * FROM report_history ORDER BY generated_at DESC"
         ).fetchall()
         return [dict(row) for row in rows]
     finally:
@@ -761,7 +397,7 @@ def get_latest_report(report_type: str, symbol: Optional[str] = None) -> Optiona
                 """
                 SELECT * FROM report_history 
                 WHERE report_type = ? AND UPPER(symbol) = ? 
-                ORDER BY datetime(generated_at) DESC, generated_at DESC LIMIT 1
+                ORDER BY generated_at DESC LIMIT 1
                 """,
                 (report_type, symbol.upper())
             ).fetchone()
@@ -770,7 +406,7 @@ def get_latest_report(report_type: str, symbol: Optional[str] = None) -> Optiona
                 """
                 SELECT * FROM report_history 
                 WHERE report_type = ? 
-                ORDER BY datetime(generated_at) DESC, generated_at DESC LIMIT 1
+                ORDER BY generated_at DESC LIMIT 1
                 """,
                 (report_type,)
             ).fetchone()
@@ -779,11 +415,7 @@ def get_latest_report(report_type: str, symbol: Optional[str] = None) -> Optiona
         conn.close()
 
 
-# ── Phase 13 Snapshot Helper Functions ─────────────────────────────────────
-
-import uuid
-import json
-
+# ── Phase 13 Snapshot Helper Functions ──
 
 def _now_ist() -> str:
     """Return current IST datetime as ISO string."""
@@ -798,27 +430,38 @@ def create_snapshot(
     is_official: bool = True,
     universe_version: str = "nifty50_v1",
     engine_version: str = "1.0.0",
+    pipeline_run_id: Optional[str] = None,
+    indicator_version: str = "1.0.0",
+    scoring_version: str = "1.0.0",
+    ml_model_version: str = "gru_v1",
+    feature_version: str = "1.0.0",
+    software_build: str = "2026.07.14",
 ) -> str:
     """Create a new snapshot record and return its snapshot_id."""
     snapshot_id = str(uuid.uuid4())
+    if not pipeline_run_id:
+        pipeline_run_id = str(uuid.uuid4())
     now = _now_ist()
     conn = get_db_connection()
     try:
         conn.execute(
             """
             INSERT INTO snapshots
-            (snapshot_id, snapshot_date, market_date, generated_at, is_official,
-             status, universe_version, engine_version, pipeline_started_at)
-            VALUES (?, ?, ?, ?, ?, 'generating', ?, ?, ?)
+            (snapshot_id, pipeline_run_id, snapshot_date, market_date, generated_at, is_official,
+             status, universe_version, engine_version, indicator_version, scoring_version,
+             ml_model_version, feature_version, software_build, pipeline_started_at)
+            VALUES (?, ?, ?, ?, ?, ?, 'generating', ?, ?, ?, ?, ?, ?, ?, ?)
             """,
-            (snapshot_id, snapshot_date, market_date, now,
-             1 if is_official else 0, universe_version, engine_version, now)
+            (snapshot_id, pipeline_run_id, snapshot_date, market_date, now,
+             1 if is_official else 0, universe_version, engine_version,
+             indicator_version, scoring_version, ml_model_version,
+             feature_version, software_build, now)
         )
         conn.commit()
-        logger.info(f"[Snapshot] Created snapshot {snapshot_id} for {snapshot_date}")
         return snapshot_id
     finally:
         conn.close()
+
 
 
 def update_snapshot_status(
@@ -894,7 +537,6 @@ def save_snapshot_stage(
     """Insert or update a pipeline stage record in snapshot_metadata."""
     conn = get_db_connection()
     try:
-        # Try update first, then insert
         rows = conn.execute(
             "SELECT id FROM snapshot_metadata WHERE snapshot_id = ? AND stage_name = ?",
             (snapshot_id, stage_name)
@@ -924,6 +566,19 @@ def save_snapshot_stage(
                  duration_sec, stocks_success, stocks_failed, warnings_count, errors_count, log_summary)
             )
         conn.commit()
+    finally:
+        conn.close()
+
+
+def get_snapshot_stage(snapshot_id: str, stage_name: str) -> Optional[Dict[str, Any]]:
+    """Return pipeline stage timeline status for a snapshot."""
+    conn = get_db_connection()
+    try:
+        row = conn.execute(
+            "SELECT * FROM snapshot_metadata WHERE snapshot_id = ? AND stage_name = ?",
+            (snapshot_id, stage_name)
+        ).fetchone()
+        return dict(row) if row else None
     finally:
         conn.close()
 
@@ -973,7 +628,6 @@ def save_snapshot_stocks(snapshot_id: str, records: List[Dict[str, Any]]) -> int
         return len(records)
     finally:
         conn.close()
-
 
 
 def save_snapshot_indicators(snapshot_id: str, records: List[Dict[str, Any]]) -> int:
@@ -1047,7 +701,6 @@ def save_snapshot_scores(snapshot_id: str, records: List[Dict[str, Any]]) -> int
         return len(records)
     finally:
         conn.close()
-
 
 
 def save_snapshot_sector(snapshot_id: str, records: List[Dict[str, Any]]) -> int:
@@ -1203,7 +856,7 @@ def link_snapshot_report(
         conn.close()
 
 
-# ── Snapshot Query Functions ─────────────────────────────────────────────────
+# ── Snapshot Query Functions ──
 
 def get_latest_snapshot(official_only: bool = True) -> Optional[Dict[str, Any]]:
     """Return the most recent completed snapshot record."""
@@ -1547,3 +1200,177 @@ def get_historical_scores(symbol: str, limit: int = 30) -> List[Dict[str, Any]]:
     finally:
         conn.close()
 
+
+# ── New Phase 13A Schema CRUD Methods ──
+
+def save_market_daily(records: List[Dict[str, Any]]) -> int:
+    """Save daily OHLCV quotes to market_daily table."""
+    if not records:
+        return 0
+    conn = get_db_connection()
+    try:
+        conn.executemany(
+            """
+            INSERT OR REPLACE INTO market_daily
+            (symbol, trading_date, open, high, low, close, adjusted_close, volume, delivery_volume, vwap, previous_close, last_trading_date)
+            VALUES (:symbol, :trading_date, :open, :high, :low, :close, :adjusted_close, :volume, :delivery_volume, :vwap, :previous_close, :last_trading_date)
+            """,
+            records
+        )
+        conn.commit()
+        return len(records)
+    finally:
+        conn.close()
+
+
+def save_indicator_snapshots(snapshot_id: str, records: List[Dict[str, Any]]) -> int:
+    """Save technical indicator computations to indicator_snapshot table."""
+    if not records:
+        return 0
+    conn = get_db_connection()
+    try:
+        conn.executemany(
+            """
+            INSERT OR REPLACE INTO indicator_snapshot
+            (snapshot_id, symbol, ema20, ema50, ema200, sma20, sma50, rsi, macd, macd_signal, adx, atr, bb_upper, bb_lower, supertrend, vwap, ichimoku, obv, cmf, mfi, roc, cci, williams_r)
+            VALUES (:snapshot_id, :symbol, :ema20, :ema50, :ema200, :sma20, :sma50, :rsi, :macd, :macd_signal, :adx, :atr, :bb_upper, :bb_lower, :supertrend, :vwap, :ichimoku, :obv, :cmf, :mfi, :roc, :cci, :williams_r)
+            """,
+            [{**r, "snapshot_id": snapshot_id} for r in records]
+        )
+        conn.commit()
+        return len(records)
+    finally:
+        conn.close()
+
+
+def save_feature_snapshots(snapshot_id: str, records: List[Dict[str, Any]]) -> int:
+    """Save engineered feature mappings to feature_snapshot table."""
+    if not records:
+        return 0
+    conn = get_db_connection()
+    try:
+        conn.executemany(
+            """
+            INSERT OR REPLACE INTO feature_snapshot
+            (snapshot_id, symbol, normalized_values, z_scores, rolling_statistics, lag_features)
+            VALUES (:snapshot_id, :symbol, :normalized_values, :z_scores, :rolling_statistics, :lag_features)
+            """,
+            [{**r, "snapshot_id": snapshot_id} for r in records]
+        )
+        conn.commit()
+        return len(records)
+    finally:
+        conn.close()
+
+
+def save_score_snapshots(snapshot_id: str, records: List[Dict[str, Any]], strategy_id: str = "pms_default") -> int:
+    """Save score records to score_snapshot table."""
+    if not records:
+        return 0
+    conn = get_db_connection()
+    try:
+        conn.executemany(
+            """
+            INSERT OR REPLACE INTO score_snapshot
+            (snapshot_id, symbol, strategy_id, technical_score, ensemble_score, gru_score, trend_score, momentum_score, risk_score, reliability_score, confidence_score, composite_score, recommendation, expected_return, custom_metrics)
+            VALUES (:snapshot_id, :symbol, :strategy_id, :technical_score, :ensemble_score, :gru_score, :trend_score, :momentum_score, :risk_score, :reliability_score, :confidence_score, :composite_score, :recommendation, :expected_return, :custom_metrics)
+            """,
+            [{**r, "snapshot_id": snapshot_id, "strategy_id": r.get("strategy_id") or strategy_id, "custom_metrics": r.get("custom_metrics")} for r in records]
+        )
+        conn.commit()
+        return len(records)
+    finally:
+        conn.close()
+
+
+def save_explainability_snapshots(snapshot_id: str, records: List[Dict[str, Any]], strategy_id: str = "pms_default") -> int:
+    """Save explainability details to explainability_snapshot table."""
+    if not records:
+        return 0
+    conn = get_db_connection()
+    try:
+        conn.executemany(
+            """
+            INSERT OR REPLACE INTO explainability_snapshot
+            (snapshot_id, symbol, strategy_id, score_type, purpose, formula, indicator_contributions, feature_contributions, current_values, interpretation, validation_metrics, research_references)
+            VALUES (:snapshot_id, :symbol, :strategy_id, :score_type, :purpose, :formula, :indicator_contributions, :feature_contributions, :current_values, :interpretation, :validation_metrics, :research_references)
+            """,
+            [{**r, "snapshot_id": snapshot_id, "strategy_id": r.get("strategy_id") or strategy_id} for r in records]
+        )
+        conn.commit()
+        return len(records)
+    finally:
+        conn.close()
+
+
+
+def save_report_snapshots(snapshot_id: str, records: List[Dict[str, Any]]) -> int:
+    """Save report snapshot files registry to report_snapshot table."""
+    if not records:
+        return 0
+    conn = get_db_connection()
+    try:
+        conn.executemany(
+            """
+            INSERT OR REPLACE INTO report_snapshot
+            (snapshot_id, html_report_path, pdf_report_path, generation_timestamp, status)
+            VALUES (:snapshot_id, :html_report_path, :pdf_report_path, :generation_timestamp, :status)
+            """,
+            [{**r, "snapshot_id": snapshot_id} for r in records]
+        )
+        conn.commit()
+        return len(records)
+    finally:
+        conn.close()
+
+
+def get_indicator_snapshot(snapshot_id: str, symbol: str) -> Optional[Dict[str, Any]]:
+    """Query a single indicator snapshot from database."""
+    conn = get_db_connection()
+    try:
+        row = conn.execute(
+            "SELECT * FROM indicator_snapshot WHERE snapshot_id = ? AND UPPER(symbol) = UPPER(?)",
+            (snapshot_id, symbol)
+        ).fetchone()
+        return dict(row) if row else None
+    finally:
+        conn.close()
+
+
+def get_feature_snapshot(snapshot_id: str, symbol: str) -> Optional[Dict[str, Any]]:
+    """Query a single feature snapshot from database."""
+    conn = get_db_connection()
+    try:
+        row = conn.execute(
+            "SELECT * FROM feature_snapshot WHERE snapshot_id = ? AND UPPER(symbol) = UPPER(?)",
+            (snapshot_id, symbol)
+        ).fetchone()
+        return dict(row) if row else None
+    finally:
+        conn.close()
+
+
+def get_score_snapshot(snapshot_id: str, symbol: str) -> Optional[Dict[str, Any]]:
+    """Query a single score snapshot from database."""
+    conn = get_db_connection()
+    try:
+        row = conn.execute(
+            "SELECT * FROM score_snapshot WHERE snapshot_id = ? AND UPPER(symbol) = UPPER(?)",
+            (snapshot_id, symbol)
+        ).fetchone()
+        return dict(row) if row else None
+    finally:
+        conn.close()
+
+
+def get_explainability_snapshot(snapshot_id: str, symbol: str) -> Optional[Dict[str, Any]]:
+    """Query explainability details from database."""
+    conn = get_db_connection()
+    try:
+        row = conn.execute(
+            "SELECT * FROM explainability_snapshot WHERE snapshot_id = ? AND UPPER(symbol) = UPPER(?)",
+            (snapshot_id, symbol)
+        ).fetchone()
+        return dict(row) if row else None
+    finally:
+        conn.close()

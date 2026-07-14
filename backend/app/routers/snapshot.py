@@ -47,6 +47,7 @@ router = APIRouter(tags=["snapshot"])
 def _meta_from_db(row: dict) -> SnapshotMeta:
     return SnapshotMeta(
         snapshot_id=row["snapshot_id"],
+        pipeline_run_id=row.get("pipeline_run_id"),
         snapshot_date=row["snapshot_date"],
         market_date=row["market_date"],
         generated_at=row["generated_at"],
@@ -243,6 +244,99 @@ async def get_snapshot_status():
         data_freshness=freshness,
         pipeline_available=(monitor.status != "running"),
     )
+
+
+@router.get("/snapshot/freshness")
+async def get_snapshot_freshness():
+    """
+    Expose data freshness information (latest trading date, last successful pipeline run, pipeline status)
+    so the frontend can display when the data was last updated.
+    """
+    summary = db.get_snapshot_status_summary()
+    latest_row = summary.get("latest_snapshot")
+    latest_meta = _meta_from_db(latest_row) if latest_row else None
+    
+    if not latest_meta:
+        return {
+            "latest_trading_date": None,
+            "last_successful_run": None,
+            "pipeline_status": "no_data",
+            "data_freshness": "no_data",
+        }
+        
+    return {
+        "latest_trading_date": latest_meta.snapshot_date,
+        "last_successful_run": latest_meta.published_at or latest_meta.pipeline_ended_at or latest_meta.generated_at,
+        "pipeline_status": latest_meta.status,
+        "data_freshness": _compute_freshness(latest_meta.snapshot_date),
+    }
+
+
+@router.get("/system/status")
+async def get_system_status():
+    """
+    Return comprehensive system health and dashboard details, including:
+      - Database status & connection status (PostgreSQL/SQLite)
+      - Scheduler status (cron scheduler running, active jobs)
+      - Last successful pipeline run metadata
+      - Latest trading date
+      - Freshness details
+    """
+    from app.services.scheduler import _scheduler
+    
+    # 1. Database Health Check
+    db_alive = False
+    db_dialect = "SQLite" if not db.DATABASE_URL else "PostgreSQL"
+    try:
+        conn = db.get_db_connection()
+        row = conn.execute("SELECT 1").fetchone()
+        if row and row[0] == 1:
+            db_alive = True
+        conn.close()
+    except Exception as e:
+        logger.error(f"Database health check failed: {e}")
+
+    # 2. Scheduler Health Check
+    sched_running = _scheduler.running if hasattr(_scheduler, "running") else False
+    active_jobs = []
+    if sched_running:
+        for job in _scheduler.get_jobs():
+            active_jobs.append({
+                "id": job.id,
+                "next_run_time": str(job.next_run_time) if job.next_run_time else None
+            })
+
+    # 3. Snapshot and Pipeline Freshness
+    summary = db.get_snapshot_status_summary()
+    latest_row = summary.get("latest_snapshot")
+    latest_meta = _meta_from_db(latest_row) if latest_row else None
+    
+    freshness = _compute_freshness(latest_meta.snapshot_date) if latest_meta else "no_data"
+    
+    return {
+        "database": {
+            "status": "healthy" if db_alive else "unhealthy",
+            "dialect": db_dialect,
+            "connected": db_alive
+        },
+        "scheduler": {
+            "status": "running" if sched_running else "stopped",
+            "running": sched_running,
+            "active_jobs": active_jobs
+        },
+        "freshness": {
+            "latest_trading_date": latest_meta.snapshot_date if latest_meta else None,
+            "last_successful_run": latest_meta.published_at or latest_meta.pipeline_ended_at or latest_meta.generated_at if latest_meta else None,
+            "data_freshness": freshness,
+            "pipeline_status": latest_meta.status if latest_meta else "no_data",
+            "pipeline_duration_sec": latest_meta.pipeline_duration_sec if latest_meta else None,
+            "total_stocks": latest_meta.stocks_processed if latest_meta else 0,
+            "failed_stocks": latest_meta.stocks_failed if latest_meta else 0,
+            "universe_version": latest_meta.universe_version if latest_meta else None,
+            "engine_version": latest_meta.engine_version if latest_meta else None,
+        }
+    }
+
 
 
 # ── Latest Snapshot Endpoints ─────────────────────────────────────────────────

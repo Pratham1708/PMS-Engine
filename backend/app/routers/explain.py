@@ -56,13 +56,86 @@ async def explain_score(
         
     explainer = EXPLAINERS[normalized_type]
     
-    # 1. Base stock data container
+    # Try serving from pre-calculated explainability_snapshot first
+    if symbol:
+        canonical_symbol = get_canonical_symbol(symbol)
+        latest_snap = db.get_latest_snapshot()
+        if latest_snap:
+            snap_id = latest_snap["snapshot_id"]
+            conn = db.get_db_connection()
+            try:
+                row = conn.execute(
+                    """
+                    SELECT * FROM explainability_snapshot 
+                    WHERE snapshot_id = ? AND UPPER(symbol) = UPPER(?) AND LOWER(score_type) = LOWER(?)
+                    """,
+                    (snap_id, canonical_symbol, normalized_type)
+                ).fetchone()
+                if row:
+                    import json
+                    from app.models.schemas import Contribution, ValidationMetric, ResearchReference, ScoreInterpretation
+                    
+                    def load_json(val, default):
+                        if not val:
+                            return default
+                        try:
+                            return json.loads(val)
+                        except Exception:
+                            return default
+
+                    contribs = load_json(row.get("indicator_contributions"), [])
+                    val_metrics = load_json(row.get("validation_metrics"), [])
+                    refs = load_json(row.get("research_references"), [])
+                    interpretations = load_json(row.get("interpretation"), [])
+                    feat_vals = load_json(row.get("current_values"), {})
+                    
+                    current_contributions = [Contribution(**c) for c in contribs]
+                    validation = [ValidationMetric(**v) for v in val_metrics]
+                    references = [ResearchReference(**r) for r in refs]
+                    interpretation = [ScoreInterpretation(**i) for i in interpretations]
+                    
+                    stock_detail = stock_service.get_stock(canonical_symbol)
+                    current_value = 0.0
+                    if stock_detail:
+                        score_field_map = {
+                            "composite": "CompositeScoreV2",
+                            "technical": "TechnicalScore",
+                            "ensemble": "MLScore",
+                            "gru": "GRUScore",
+                            "reliability": "ReliabilityScore",
+                            "confidence": "Confidence",
+                            "risk": "RiskScore",
+                            "momentum": "MomentumScore",
+                            "trend": "TrendScore"
+                        }
+                        f = score_field_map.get(normalized_type)
+                        if f and hasattr(stock_detail, f):
+                            current_value = getattr(stock_detail, f)
+                            
+                    logger.info(f"Serving pre-calculated explainability snapshot for {canonical_symbol} ({score_type})")
+                    return ExplainScoreResponse(
+                        score_type=score_type,
+                        purpose=row.get("purpose") or "",
+                        formula=row.get("formula") or "",
+                        current_value=float(current_value) if current_value is not None else 0.0,
+                        current_values=feat_vals,
+                        current_contributions=current_contributions,
+                        interpretation=interpretation,
+                        validation=validation,
+                        references=references,
+                        limitations=[]
+                    )
+            except Exception as e:
+                logger.warning(f"Error querying explainability_snapshot from database: {e}", exc_info=True)
+            finally:
+                conn.close()
+
+    # Fallback to runtime calculation
     stock_data = {}
     history = []
     
     if symbol:
         canonical_symbol = get_canonical_symbol(symbol)
-        # Fetch stock details from stock_service (which handles snapshot and cache fallback)
         stock_detail = stock_service.get_stock(canonical_symbol)
         if not stock_detail:
             raise HTTPException(
@@ -71,41 +144,24 @@ async def explain_score(
             )
             
         stock_data = stock_detail.model_dump()
-        
-        # Load historical scores (up to last 30 snapshots)
         history = db.get_historical_scores(canonical_symbol, limit=30)
         
-        # Query indicators and weights if database has snapshots
         latest_snap = db.get_latest_snapshot()
         if latest_snap:
             snap_id = latest_snap["snapshot_id"]
             stock_data["indicators"] = get_indicators_for_stock(snap_id, canonical_symbol)
             stock_data["scores"] = get_scores_detail_for_stock(snap_id, canonical_symbol)
             
-        # Map GRU probabilities directly if present in DB
         scores_dict = stock_data.get("scores") or {}
         stock_data["GRU_LONG"] = scores_dict.get("gru_long") or stock_data.get("GRU_LONG")
         stock_data["GRU_HOLD"] = scores_dict.get("gru_hold") or stock_data.get("GRU_HOLD")
         stock_data["GRU_SHORT"] = scores_dict.get("gru_short") or stock_data.get("GRU_SHORT")
         stock_data["ReturnScore"] = scores_dict.get("return_score") or stock_data.get("ReturnScore")
         
-        logger.info(
-            f"[API ROUTE DEBUG] Loaded stock detail payload for symbol {symbol}: "
-            f"TechnicalScore={stock_data.get('TechnicalScore')}, "
-            f"MLScore={stock_data.get('MLScore')}, GRUScore={stock_data.get('GRUScore')}, "
-            f"ReliabilityScore={stock_data.get('ReliabilityScore')}"
-        )
+        logger.info(f"Fallback: calculating runtime explanation for {symbol} ({score_type})")
 
-            
-    # 2. Run explanation generation
     try:
         response = explainer.explain(stock_data, history)
-        logger.info(
-            f"[API ROUTE DEBUG] Explainer [{score_type}] completed successfully. "
-            f"current_value={response.current_value}, "
-            f"current_values={response.current_values}, "
-            f"contributions_count={len(response.current_contributions)}"
-        )
         return response
     except Exception as e:
         logger.error(f"Failed to generate explainability payload for {score_type}: {e}", exc_info=True)
@@ -113,4 +169,5 @@ async def explain_score(
             status_code=500,
             detail=f"Internal explainability computation error: {str(e)}"
         )
+
 
