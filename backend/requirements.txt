@@ -13,3 +13,6 @@ xhtml2pdf>=0.2.17
 matplotlib>=3.9.0
 mplfinance>=0.12.10b0
 apscheduler>=3.10.0
+SQLAlchemy>=2.0.0
+alembic>=1.10.0
+psycopg2-binary>=2.9.0
