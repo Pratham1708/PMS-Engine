@@ -1,6 +1,7 @@
 from typing import List, Dict, Any
 from app.models.schemas import Contribution, ValidationMetric, ResearchReference, ScoreInterpretation, ExplainScoreResponse
-from .base import BaseExplainer
+from .base import BaseExplainer, enrich_runtime_contributions
+from app.services.explainability.registry import MOMENTUM_WEIGHTS
 
 class MomentumExplainer(BaseExplainer):
     def get_purpose(self) -> str:
@@ -47,10 +48,13 @@ class MomentumExplainer(BaseExplainer):
         tech_val = stock_data.get("TechnicalScore", 0.0)
         ml_val = stock_data.get("MLScore", 0.0)
         
+        w_tech = MOMENTUM_WEIGHTS["technical"]
+        w_ml = MOMENTUM_WEIGHTS["ml"]
+        
         # Calculate momentum score based on the formula
         momentum_score = stock_data.get("MomentumScore")
         if momentum_score is None:
-            momentum_score = tech_val * 0.8 + ml_val * 0.2
+            momentum_score = tech_val * w_tech + ml_val * w_ml
             
         symbol = stock_data.get("Symbol")
         
@@ -58,27 +62,50 @@ class MomentumExplainer(BaseExplainer):
         for h in history:
             hist_context.append({
                 "date": h.get("snapshot_date"),
-                "value": h.get("momentum_score") or (h.get("technical_score", 0.0) * 0.8 + h.get("ml_score", 0.0) * 0.2)
+                "value": h.get("momentum_score") or (h.get("technical_score", 0.0) * w_tech + h.get("ml_score", 0.0) * w_ml)
             })
             
+        tech_contrib = tech_val * w_tech
+        ml_contrib = ml_val * w_ml
+        
         contributions = [
             Contribution(
                 name="Technical Score Component",
                 value=round(tech_val, 2),
-                weight=0.80,
-                contribution=round(tech_val * 0.80, 2),
+                weight=w_tech,
+                contribution=round(tech_contrib, 2),
                 direction="positive" if tech_val > 0 else ("negative" if tech_val < 0 else "neutral"),
                 description=f"Standard indicators score contributing 80% to overall momentum."
             ),
             Contribution(
                 name="Ensemble ML Score Component",
                 value=round(ml_val, 2),
-                weight=0.20,
-                contribution=round(ml_val * 0.20, 2),
+                weight=w_ml,
+                contribution=round(ml_contrib, 2),
                 direction="positive" if ml_val > 0 else ("negative" if ml_val < 0 else "neutral"),
                 description=f"Tree ensemble predictions contributing 20% to overall momentum."
             )
         ]
+
+        # Structured feature attributions
+        runtime_categories = [
+            {
+                "category": "Technical Trend Overlay (80%)",
+                "subtotal": tech_contrib,
+                "features": [
+                    {"feature_key": "technical_score", "current_value": f"{tech_val:+.2f}", "normalized_value": tech_val, "weight": w_tech, "contribution": tech_contrib, "effect": "positive" if tech_val > 0 else "negative", "confidence": "High"}
+                ]
+            },
+            {
+                "category": "Machine Learning Forecast (20%)",
+                "subtotal": ml_contrib,
+                "features": [
+                    {"feature_key": "ml_score", "current_value": f"{ml_val:+.2f}", "normalized_value": ml_val, "weight": w_ml, "contribution": ml_contrib, "effect": "positive" if ml_val > 0 else "negative", "confidence": "High"}
+                ]
+            }
+        ]
+        
+        feature_attributions = enrich_runtime_contributions(runtime_categories)
 
         # Dynamic Explanation
         explanation_parts = []
@@ -100,14 +127,14 @@ class MomentumExplainer(BaseExplainer):
 
         # "Why Not?" Explanation
         why_not_parts = []
-        if momentum_score < 70:
-            why_not_parts.append("The Momentum Score is not rated peak acceleration because:")
-            if tech_val < 60:
-                why_not_parts.append(f"- Technical score of {tech_val:.1f} is moderate or weak, indicating moving average or oscillator resistances.")
+        if momentum_score < 40:
+            why_not_parts.append("The Momentum Score was not upgraded because:")
+            if tech_val < 30:
+                why_not_parts.append(f"- Classical technical indicators ({tech_val:.1f}) demonstrate weak momentum or local selling pressure.")
             if ml_val < 30:
-                why_not_parts.append(f"- Ensemble ML return bias of {ml_val:.1f} is conservative, reflecting moderate predictive conviction.")
+                why_not_parts.append(f"- Machine learning ensemble models ({ml_val:.1f}) predict intermediate headwinds or neutral return distributions.")
         else:
-            why_not_parts.append("The Momentum Score is at high acceleration. Price breakout is strongly supported by unified quant signals.")
+            why_not_parts.append("Momentum parameters are fully optimized. Both technical trend acceleration and ML forecasts confirm constructive momentum setup.")
             
         why_not_text = " ".join(why_not_parts)
 
@@ -117,14 +144,16 @@ class MomentumExplainer(BaseExplainer):
             current_value=round(momentum_score, 2),
             purpose=self.get_purpose(),
             formula=self.get_formula(),
-            factors=["Technical Score Overlay", "Machine Learning Forecast Blending"],
+            factors=["Technical Indicator Overlay", "Ensemble ML Score Component"],
             validation=self.get_validation(),
             interpretation=self.get_interpretation(),
             limitations=self.get_limitations(),
             references=self.get_references(),
-            current_values={"TechnicalScore": tech_val, "MLScore": ml_val},
+            current_values={"TechnicalScore": tech_val, "MLScore": ml_val} if tech_val is not None else None,
             current_contributions=contributions,
             dynamic_explanation=dynamic_text,
             why_not=why_not_text,
-            historical_context=hist_context
+            historical_context=hist_context,
+            explanation_type="global_importance",
+            feature_attributions=feature_attributions
         )

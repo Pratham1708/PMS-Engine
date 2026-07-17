@@ -1,6 +1,7 @@
 from typing import List, Dict, Any
 from app.models.schemas import Contribution, ValidationMetric, ResearchReference, ScoreInterpretation, ExplainScoreResponse
-from .base import BaseExplainer
+from .base import BaseExplainer, enrich_runtime_contributions
+from app.services.explainability.registry import COMPOSITE_WEIGHTS
 
 class CompositeExplainer(BaseExplainer):
     def get_purpose(self) -> str:
@@ -54,11 +55,11 @@ class CompositeExplainer(BaseExplainer):
             
         scores_detail = stock_data.get("scores", {})
         
-        # Read dynamic weights
-        w_tech = scores_detail.get("w_technical", 0.40)
-        w_ml = scores_detail.get("w_ml", 0.35)
-        w_gru = scores_detail.get("w_gru", 0.15)
-        w_reliability = scores_detail.get("w_reliability", 0.10)
+        # Read dynamic weights with fallbacks from scoring_config.py
+        w_tech = scores_detail.get("w_technical") or COMPOSITE_WEIGHTS["technical"]
+        w_ml = scores_detail.get("w_ml") or COMPOSITE_WEIGHTS["ml"]
+        w_gru = scores_detail.get("w_gru") or COMPOSITE_WEIGHTS["gru"]
+        w_reliability = scores_detail.get("w_reliability") or COMPOSITE_WEIGHTS["reliability"]
         
         # Read sub-scores
         tech = stock_data.get("TechnicalScore", 0.0)
@@ -73,12 +74,17 @@ class CompositeExplainer(BaseExplainer):
             f"w_tech={w_tech}, w_ml={w_ml}, w_gru={w_gru}, w_reliability={w_reliability}"
         )
         
+        tech_contrib = tech * w_tech
+        ml_contrib = ml * w_ml
+        gru_contrib = gru * w_gru
+        reliability_contrib = reliability * w_reliability
+        
         contributions = [
             Contribution(
                 name="Technical Score Component",
                 value=round(tech, 2),
                 weight=w_tech,
-                contribution=round(tech * w_tech, 2),
+                contribution=round(tech_contrib, 2),
                 direction="positive" if tech > 0 else ("negative" if tech < 0 else "neutral"),
                 description=f"Trend and momentum oscillators, weighted at {int(w_tech*100)}%."
             ),
@@ -86,7 +92,7 @@ class CompositeExplainer(BaseExplainer):
                 name="Ensemble ML Score Component",
                 value=round(ml, 2),
                 weight=w_ml,
-                contribution=round(ml * w_ml, 2),
+                contribution=round(ml_contrib, 2),
                 direction="positive" if ml > 0 else ("negative" if ml < 0 else "neutral"),
                 description=f"Tree ensemble classifiers consensus, weighted at {int(w_ml*100)}%."
             ),
@@ -94,51 +100,81 @@ class CompositeExplainer(BaseExplainer):
                 name="GRU Deep Learning Component",
                 value=round(gru, 2),
                 weight=w_gru,
-                contribution=round(gru * w_gru, 2),
+                contribution=round(gru_contrib, 2),
                 direction="positive" if gru > 0 else ("negative" if gru < 0 else "neutral"),
                 description=f"Neural sequence lookback momentum, weighted at {int(w_gru*100)}%."
             ),
             Contribution(
-                name="Model Scoring Reliability Component",
+                name="System Reliability Index",
                 value=round(reliability, 2),
                 weight=w_reliability,
-                contribution=round(reliability * w_reliability, 2),
-                direction="positive" if reliability >= 70 else "neutral",
-                description=f"Telemetry data integrity rating, weighted at {int(w_reliability*100)}%."
+                contribution=round(reliability_contrib, 2),
+                direction="positive" if reliability > 50 else "negative",
+                description=f"Operational data and consensus check telemetry, weighted at {int(w_reliability*100)}%."
             )
         ]
+
+        # Structured feature attributions
+        runtime_categories = [
+            {
+                "category": "Technical Overlay",
+                "subtotal": tech_contrib,
+                "features": [
+                    {"feature_key": "technical_score", "current_value": f"{tech:+.2f}", "normalized_value": tech, "weight": w_tech, "contribution": tech_contrib, "effect": "positive" if tech > 0 else "negative", "confidence": "High"}
+                ]
+            },
+            {
+                "category": "Supervised Machine Learning",
+                "subtotal": ml_contrib,
+                "features": [
+                    {"feature_key": "ml_score", "current_value": f"{ml:+.2f}", "normalized_value": ml, "weight": w_ml, "contribution": ml_contrib, "effect": "positive" if ml > 0 else "negative", "confidence": "High"}
+                ]
+            },
+            {
+                "category": "Deep Temporal Forecasting",
+                "subtotal": gru_contrib,
+                "features": [
+                    {"feature_key": "gru_score", "current_value": f"{gru:+.2f}", "normalized_value": gru, "weight": w_gru, "contribution": gru_contrib, "effect": "positive" if gru > 0 else "negative", "confidence": "High"}
+                ]
+            },
+            {
+                "category": "System Telemetry Audit",
+                "subtotal": reliability_contrib,
+                "features": [
+                    {"feature_key": "reliability_score", "current_value": f"{reliability:.1f}", "normalized_value": reliability, "weight": w_reliability, "contribution": reliability_contrib, "effect": "positive" if reliability > 50 else "negative", "confidence": "High"}
+                ]
+            }
+        ]
+        
+        feature_attributions = enrich_runtime_contributions(runtime_categories)
 
         # Dynamic Explanation
         explanation_parts = []
         explanation_parts.append(
-            f"The master Composite Score for {symbol} is {composite_score:.1f}, "
-            f"computed by applying regime-specific weights. Under the current market regime, "
-            f"the system assigns weights of: Technical ({int(w_tech*100)}%), ML Ensemble ({int(w_ml*100)}%), "
-            f"GRU Recurrent ({int(w_gru*100)}%), and Reliability ({int(w_reliability*100)}%)."
+            f"The composite decision engine synthesizes all scoring models into a single value of {composite_score:.2f} "
+            f"using the active macro-regime weight configuration."
         )
-        if composite_score >= 35.0:
-            explanation_parts.append("The constructive score places the stock in the BUY/STRONG BUY category, indicating aligned upward momentum across all underlying models.")
-        elif composite_score <= -15.0:
-            explanation_parts.append("The negative score triggers a SELL/STRONG SELL signal, reflecting severe breakdown in technical trend and model agreement.")
+        if composite_score >= 35:
+            explanation_parts.append("The combined signal is bullish, satisfying portfolio entry triggers.")
+        elif composite_score <= -15:
+            explanation_parts.append("The combined signal is bearish, indicating portfolio reduction parameters are active.")
         else:
-            explanation_parts.append("The score is in a neutral consolidation band, representing sideways price movement with standard rebalancing thresholds.")
+            explanation_parts.append("The blended outlook is neutral, indicating holding pattern fits standard allocations.")
             
         dynamic_text = " ".join(explanation_parts)
 
         # "Why Not?" Explanation
         why_not_parts = []
-        if composite_score < 35.0:
-            why_not_parts.append("The Composite rating did not reach STRONG BUY or BUY rating because:")
-            if tech < 40.0:
-                why_not_parts.append(f"- Technical Trend Score of {tech:.1f} is moderate or weak, indicating overhead resistance layers.")
-            if ml < 15.0:
-                why_not_parts.append(f"- Ensemble ML Forecast bias of {ml:.1f} remains too conservative to support an expansion.")
-            if gru < 15.0:
-                why_not_parts.append(f"- GRU Recurrent Sequence Score of {gru:.1f} indicates sequential momentum consolidation.")
-            if reliability < 65.0:
-                why_not_parts.append(f"- Scoring Reliability index of {reliability:.1f} is below average, indicating high market noise.")
+        if composite_score < 35:
+            why_not_parts.append("The Composite Score was not rated BUY or STRONG BUY (>35) because:")
+            if tech < 20:
+                why_not_parts.append(f"- Technical momentum ({tech:.1f}) is neutral or weak.")
+            if ml < 20:
+                why_not_parts.append(f"- Supervised classification returns ({ml:.1f}) demonstrate intermediate resistance.")
+            if gru < 20:
+                why_not_parts.append(f"- Neural recurrent sequential forecasts ({gru:.1f}) do not exhibit strong accumulation parameters.")
         else:
-            why_not_parts.append("The Composite score is fully optimized and exceeds the BUY rating thresholds. The stock represents a high conviction allocation candidate.")
+            why_not_parts.append("Composite rating triggers are fully optimized. All sub-engine criteria confirm high alpha potential.")
             
         why_not_text = " ".join(why_not_parts)
 
@@ -148,23 +184,16 @@ class CompositeExplainer(BaseExplainer):
             current_value=round(composite_score, 2),
             purpose=self.get_purpose(),
             formula=self.get_formula(),
-            factors=["Technical Score (40%)", "Ensemble ML Score (35%)", "GRU Temporal Score (15%)", "Reliability Index (10%)"],
+            factors=["Technical Score Overlay", "Machine Learning Forecast", "Neural Sequence Lookback", "Telemetry Reliability"],
             validation=self.get_validation(),
             interpretation=self.get_interpretation(),
             limitations=self.get_limitations(),
             references=self.get_references(),
-            current_values={
-                "w_technical": w_tech,
-                "w_ml": w_ml,
-                "w_gru": w_gru,
-                "w_reliability": w_reliability,
-                "technical_score": tech,
-                "ml_score": ml,
-                "gru_score": gru,
-                "reliability_score": reliability
-            },
+            current_values={"TechnicalScore": tech, "MLScore": ml, "GRUScore": gru, "ReliabilityScore": reliability} if tech is not None else None,
             current_contributions=contributions,
             dynamic_explanation=dynamic_text,
             why_not=why_not_text,
-            historical_context=hist_context
+            historical_context=hist_context,
+            explanation_type="global_importance",
+            feature_attributions=feature_attributions
         )

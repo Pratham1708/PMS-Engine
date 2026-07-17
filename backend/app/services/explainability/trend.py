@@ -1,6 +1,7 @@
 from typing import List, Dict, Any
 from app.models.schemas import Contribution, ValidationMetric, ResearchReference, ScoreInterpretation, ExplainScoreResponse
-from .base import BaseExplainer
+from .base import BaseExplainer, enrich_runtime_contributions
+from app.services.explainability.registry import TREND_WEIGHTS
 
 class TrendExplainer(BaseExplainer):
     def get_purpose(self) -> str:
@@ -54,9 +55,12 @@ class TrendExplainer(BaseExplainer):
         gru_val = stock_data.get("GRUScore", 0.0)
         tech_val = stock_data.get("TechnicalScore", 0.0)
         
+        w_gru = TREND_WEIGHTS["gru"]
+        w_tech = TREND_WEIGHTS["technical"]
+        
         trend_score = stock_data.get("TrendScore")
         if trend_score is None:
-            trend_score = gru_val * 0.6 + tech_val * 0.4
+            trend_score = gru_val * w_gru + tech_val * w_tech
             
         symbol = stock_data.get("Symbol")
         
@@ -64,27 +68,50 @@ class TrendExplainer(BaseExplainer):
         for h in history:
             hist_context.append({
                 "date": h.get("snapshot_date"),
-                "value": h.get("trend_score") or (h.get("gru_score", 0.0) * 0.6 + h.get("technical_score", 0.0) * 0.4)
+                "value": h.get("trend_score") or (h.get("gru_score", 0.0) * w_gru + h.get("technical_score", 0.0) * w_tech)
             })
             
+        gru_contrib = gru_val * w_gru
+        tech_contrib = tech_val * w_tech
+        
         contributions = [
             Contribution(
                 name="GRU Deep Sequence Component",
                 value=round(gru_val, 2),
-                weight=0.60,
-                contribution=round(gru_val * 0.60, 2),
+                weight=w_gru,
+                contribution=round(gru_contrib, 2),
                 direction="positive" if gru_val > 0 else ("negative" if gru_val < 0 else "neutral"),
                 description=f"Neural network sequence pattern score representing 60% of structural trend."
             ),
             Contribution(
                 name="Technical Score Component",
                 value=round(tech_val, 2),
-                weight=0.40,
-                contribution=round(tech_val * 0.40, 2),
+                weight=w_tech,
+                contribution=round(tech_contrib, 2),
                 direction="positive" if tech_val > 0 else ("negative" if tech_val < 0 else "neutral"),
                 description=f"Classical trend following indicator overlays representing 40% of structural trend."
             )
         ]
+
+        # Structured feature attributions
+        runtime_categories = [
+            {
+                "category": "Neural Sequence Overlay (60%)",
+                "subtotal": gru_contrib,
+                "features": [
+                    {"feature_key": "gru_score", "current_value": f"{gru_val:+.2f}", "normalized_value": gru_val, "weight": w_gru, "contribution": gru_contrib, "effect": "positive" if gru_val > 0 else "negative", "confidence": "High"}
+                ]
+            },
+            {
+                "category": "Classical Trend Filters (40%)",
+                "subtotal": tech_contrib,
+                "features": [
+                    {"feature_key": "technical_score", "current_value": f"{tech_val:+.2f}", "normalized_value": tech_val, "weight": w_tech, "contribution": tech_contrib, "effect": "positive" if tech_val > 0 else "negative", "confidence": "High"}
+                ]
+            }
+        ]
+        
+        feature_attributions = enrich_runtime_contributions(runtime_categories)
 
         # Dynamic Explanation
         explanation_parts = []
@@ -98,22 +125,22 @@ class TrendExplainer(BaseExplainer):
         if trend_score >= 20:
             explanation_parts.append(f"A trend score of {trend_score:.1f} highlights emerging trend persistence.")
         elif trend_score <= -20:
-            explanation_parts.append(f"A negative trend score of {trend_score:.1f} warns of technical distribution boundaries.")
+            explanation_parts.append(f"A negative trend score of {trend_score:.1f} warns of technical distribution and trend decay.")
         else:
-            explanation_parts.append(f"The neutral trend score of {trend_score:.1f} signals a rangebound consolidation cycle.")
+            explanation_parts.append(f"A neutral trend score of {trend_score:.1f} reflects sideways rangebound characteristics.")
             
         dynamic_text = " ".join(explanation_parts)
 
         # "Why Not?" Explanation
         why_not_parts = []
-        if trend_score < 60:
-            why_not_parts.append("The Trend Score is not rated peak structural uptrend because:")
-            if gru_val < 40:
-                why_not_parts.append(f"- GRU sequence pattern score of {gru_val:.1f} is moderate or weak, indicating sequence accumulation is not fully established.")
-            if tech_val < 50:
-                why_not_parts.append(f"- Classical technical score of {tech_val:.1f} indicates key moving average levels are acting as local overhead resistance.")
+        if trend_score < 40:
+            why_not_parts.append("The structural Trend Score was not rated peak bullish because:")
+            if gru_val < 30:
+                why_not_parts.append(f"- Recurrent neural GRU predictions ({gru_val:.1f}) are not yet confirming strong sequential accumulation.")
+            if tech_val < 30:
+                why_not_parts.append(f"- Classical technical indicators ({tech_val:.1f}) demonstrate intermediate moving average drag or local overhead resistance.")
         else:
-            why_not_parts.append("The Trend Score is at highly constructive levels. Both temporal neural patterns and moving average matrices support trend persistence.")
+            why_not_parts.append("Trend parameters are fully optimized. Both neural sequence forecasts and classical indicators confirm robust, persistent structural trend alignment.")
             
         why_not_text = " ".join(why_not_parts)
 
@@ -123,14 +150,16 @@ class TrendExplainer(BaseExplainer):
             current_value=round(trend_score, 2),
             purpose=self.get_purpose(),
             formula=self.get_formula(),
-            factors=["GRU Deep Learning Sequence", "Exponential & Simple Moving Averages", "ADX Trend Strength Metrics"],
+            factors=["Neural Sequence Component (GRU)", "Technical Score Overlay"],
             validation=self.get_validation(),
             interpretation=self.get_interpretation(),
             limitations=self.get_limitations(),
             references=self.get_references(),
-            current_values={"GRUScore": gru_val, "TechnicalScore": tech_val},
+            current_values={"GRUScore": gru_val, "TechnicalScore": tech_val} if gru_val is not None else None,
             current_contributions=contributions,
             dynamic_explanation=dynamic_text,
             why_not=why_not_text,
-            historical_context=hist_context
+            historical_context=hist_context,
+            explanation_type="global_importance",
+            feature_attributions=feature_attributions
         )

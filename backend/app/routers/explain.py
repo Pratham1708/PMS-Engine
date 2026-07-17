@@ -1,14 +1,33 @@
 import logging
+import json
 from typing import Optional, List
 from fastapi import APIRouter, HTTPException, Query
 
-from app.models.schemas import ExplainScoreResponse
+from app.models.schemas import (
+    ExplainScoreResponse,
+    NormalizationExplain,
+    ResearchReference as ResearchReferenceSchema,
+    FeatureMetadata,
+    FeatureAttribution,
+    CategoryContribution,
+    Contribution,
+    ValidationMetric,
+    ScoreInterpretation
+)
 from app.services import db, stock_service
 from app.services.explainability import EXPLAINERS
+from app.services.explainability.base import enrich_runtime_contributions
+from app.services.explainability.registry import (
+    METADATA_REGISTRY,
+    FORMULA_REGISTRY,
+    NORMALIZATION_REGISTRY,
+    REFERENCE_REGISTRY
+)
 from app.services.user_stock_service import get_canonical_symbol
 
 logger = logging.getLogger(__name__)
 router = APIRouter(tags=["explain"])
+
 
 def get_indicators_for_stock(snapshot_id: str, symbol: str) -> dict:
     conn = db.get_db_connection()
@@ -93,7 +112,29 @@ async def explain_score(
                     validation = [ValidationMetric(**v) for v in val_metrics]
                     references = [ResearchReference(**r) for r in refs]
                     interpretation = [ScoreInterpretation(**i) for i in interpretations]
+
+                    # Load the feature contributions column
+                    feat_contribs_json = row.get("feature_contributions")
+                    feature_attributions = None
+                    explanation_type = "global_importance"
+                    dynamic_explanation = ""
+                    why_not = ""
                     
+                    if feat_contribs_json:
+                        try:
+                            feat_contribs_data = json.loads(feat_contribs_json)
+                            if isinstance(feat_contribs_data, dict):
+                                explanation_type = feat_contribs_data.get("explanation_type", "global_importance")
+                                dynamic_explanation = feat_contribs_data.get("dynamic_explanation") or ""
+                                why_not = feat_contribs_data.get("why_not") or ""
+                                runtime_categories = feat_contribs_data.get("categories", [])
+                                feature_attributions = enrich_runtime_contributions(runtime_categories)
+                            elif isinstance(feat_contribs_data, list):
+                                # If legacy format, wrap it
+                                feature_attributions = enrich_runtime_contributions(feat_contribs_data)
+                        except Exception as ex:
+                            logger.warning(f"Failed to parse or enrich feature contributions: {ex}")
+
                     stock_detail = stock_service.get_stock(canonical_symbol)
                     current_value = 0.0
                     if stock_detail:
@@ -115,6 +156,7 @@ async def explain_score(
                     logger.info(f"Serving pre-calculated explainability snapshot for {canonical_symbol} ({score_type})")
                     return ExplainScoreResponse(
                         score_type=score_type,
+                        symbol=canonical_symbol,
                         purpose=row.get("purpose") or "",
                         formula=row.get("formula") or "",
                         current_value=float(current_value) if current_value is not None else 0.0,
@@ -123,7 +165,12 @@ async def explain_score(
                         interpretation=interpretation,
                         validation=validation,
                         references=references,
-                        limitations=[]
+                        limitations=[],
+                        factors=[],
+                        dynamic_explanation=dynamic_explanation,
+                        why_not=why_not,
+                        explanation_type=explanation_type,
+                        feature_attributions=feature_attributions
                     )
             except Exception as e:
                 logger.warning(f"Error querying explainability_snapshot from database: {e}", exc_info=True)

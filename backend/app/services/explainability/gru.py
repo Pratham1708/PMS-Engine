@@ -1,6 +1,7 @@
 from typing import List, Dict, Any
 from app.models.schemas import Contribution, ValidationMetric, ResearchReference, ScoreInterpretation, ExplainScoreResponse
-from .base import BaseExplainer
+from .base import BaseExplainer, enrich_runtime_contributions
+from app.services.explainability.registry import GRU_WEIGHTS, GRU_PATTERN_WEIGHTS
 
 class GruExplainer(BaseExplainer):
     def get_purpose(self) -> str:
@@ -70,46 +71,84 @@ class GruExplainer(BaseExplainer):
         hold_prob = stock_data.get("GRU_HOLD")
         short_prob = stock_data.get("GRU_SHORT")
         
+        # Safe default values
+        p_long_val = float(long_prob) if long_prob is not None else 33.3
+        p_hold_val = float(hold_prob) if hold_prob is not None else 33.3
+        p_short_val = float(short_prob) if short_prob is not None else 33.3
+        
+        w_long = GRU_WEIGHTS["p_long"]
+        w_hold = GRU_WEIGHTS["p_hold"]
+        w_short = GRU_WEIGHTS["p_short"]
+        
+        long_contrib = p_long_val * w_long
+        hold_contrib = p_hold_val * w_hold
+        short_contrib = p_short_val * w_short
+        
         if long_prob is not None and hold_prob is not None and short_prob is not None:
             has_real_probs = True
             
-            # Format as contribution entries
             contributions.append(Contribution(
                 name="Long Probability (P_Long)",
-                value=round(long_prob, 2),
-                weight=None,
-                contribution=round(long_prob, 2),
-                direction="positive" if long_prob > short_prob else "neutral",
-                description=f"Neural network probability mapping positive sequential price continuation ({long_prob:.1f}%)."
+                value=round(p_long_val, 2),
+                weight=w_long,
+                contribution=round(long_contrib, 2),
+                direction="positive" if p_long_val > p_short_val else "neutral",
+                description=f"Neural network probability mapping positive sequential price continuation ({p_long_val:.1f}%)."
             ))
             contributions.append(Contribution(
                 name="Hold Probability (P_Hold)",
-                value=round(hold_prob, 2),
-                weight=None,
-                contribution=round(hold_prob, 2),
+                value=round(p_hold_val, 2),
+                weight=w_hold,
+                contribution=round(hold_contrib, 2),
                 direction="neutral",
-                description=f"Neural network probability mapping sideways consolidation sequence ({hold_prob:.1f}%)."
+                description=f"Neural network probability mapping sideways consolidation sequence ({p_hold_val:.1f}%)."
             ))
             contributions.append(Contribution(
                 name="Short Probability (P_Short)",
-                value=round(short_prob, 2),
-                weight=None,
-                contribution=round(short_prob, 2),
-                direction="negative" if short_prob > long_prob else "neutral",
-                description=f"Neural network probability mapping negative sequential price continuation ({short_prob:.1f}%)."
+                value=round(p_short_val, 2),
+                weight=w_short,
+                contribution=round(short_contrib, 2),
+                direction="negative" if p_short_val > p_long_val else "neutral",
+                description=f"Neural network probability mapping negative sequential price continuation ({p_short_val:.1f}%)."
             ))
+
+        # Structured feature attributions
+        runtime_categories = [
+            {
+                "category": "Neural Probability Channels (100%)",
+                "subtotal": long_contrib + short_contrib,
+                "features": [
+                    {"feature_key": "p_long", "current_value": f"{p_long_val:.1f}%", "normalized_value": p_long_val, "weight": w_long, "contribution": long_contrib, "effect": "positive" if p_long_val > p_short_val else "neutral", "confidence": "High"},
+                    {"feature_key": "p_hold", "current_value": f"{p_hold_val:.1f}%", "normalized_value": p_hold_val, "weight": w_hold, "contribution": hold_contrib, "effect": "neutral", "confidence": "High"},
+                    {"feature_key": "p_short", "current_value": f"{p_short_val:.1f}%", "normalized_value": p_short_val, "weight": w_short, "contribution": short_contrib, "effect": "negative" if p_short_val > p_long_val else "neutral", "confidence": "High"},
+                ]
+            },
+            {
+                "category": "Temporal Sequence Activation Patterns",
+                "subtotal": 0.0,
+                "features": [
+                    {"feature_key": "higher_highs", "current_value": "22% Weight", "normalized_value": 0.0, "weight": 0.0, "contribution": 0.0, "effect": "neutral", "confidence": "Medium"},
+                    {"feature_key": "higher_lows", "current_value": "18% Weight", "normalized_value": 0.0, "weight": 0.0, "contribution": 0.0, "effect": "neutral", "confidence": "Medium"},
+                    {"feature_key": "volume_expansion", "current_value": "12% Weight", "normalized_value": 0.0, "weight": 0.0, "contribution": 0.0, "effect": "neutral", "confidence": "Medium"},
+                    {"feature_key": "volatility_compression", "current_value": "9% Weight", "normalized_value": 0.0, "weight": 0.0, "contribution": 0.0, "effect": "neutral", "confidence": "Medium"},
+                    {"feature_key": "trend_persistence", "current_value": "39% Weight", "normalized_value": 0.0, "weight": 0.0, "contribution": 0.0, "effect": "neutral", "confidence": "Medium"}
+                ]
+            }
+        ]
+        
+        feature_attributions = enrich_runtime_contributions(runtime_categories)
 
         # Dynamic Explanation
         explanation_parts = []
         if has_real_probs:
             explanation_parts.append(
                 f"The GRU sequence scanner has analyzed the last 30 sessions of pricing data. "
-                f"The model identifies a sequence probability mapping of {long_prob:.1f}% Long, "
-                f"{hold_prob:.1f}% Hold, and {short_prob:.1f}% Short."
+                f"The model identifies a sequence probability mapping of {p_long_val:.1f}% Long, "
+                f"{p_hold_val:.1f}% Hold, and {p_short_val:.1f}% Short."
             )
-            if long_prob > 40:
+            if p_long_val > 40:
                 explanation_parts.append("The recurrent neural layers detect sequential accumulation patterns that historically precede positive tactical breakthroughs.")
-            elif short_prob > 40:
+            elif p_short_val > 40:
                 explanation_parts.append("The network detects structural distribution sequences, warning of potential tactical selling pressure.")
             else:
                 explanation_parts.append("The network does not identify a dominant sequential pattern, indicating a balanced consolidation phase.")
@@ -123,12 +162,12 @@ class GruExplainer(BaseExplainer):
         if gru_score < 40:
             why_not_parts.append("The GRU sequential score was not rated high conviction bullish because:")
             if has_real_probs:
-                if long_prob < 40:
-                    why_not_parts.append(f"- Long probability ({long_prob:.1f}%) is below the high conviction threshold (40.0%).")
-                if short_prob > 30:
-                    why_not_parts.append(f"- Short probability ({short_prob:.1f}%) remains elevated, reflecting persistent seller footprint in the 30-day sequence.")
-                if hold_prob > 40:
-                    why_not_parts.append(f"- Hold probability ({hold_prob:.1f}%) is high, suggesting price is likely to remain in a sideways range.")
+                if p_long_val < 40:
+                    why_not_parts.append(f"- Long probability ({p_long_val:.1f}%) is below the high conviction threshold (40.0%).")
+                if p_short_val > 30:
+                    why_not_parts.append(f"- Short probability ({p_short_val:.1f}%) remains elevated, reflecting persistent seller footprint in the 30-day sequence.")
+                if p_hold_val > 40:
+                    why_not_parts.append(f"- Hold probability ({p_hold_val:.1f}%) is high, suggesting price is likely to remain in a sideways range.")
             else:
                 why_not_parts.append("- The recurrent layers did not detect high-amplitude sequential trends during the last scanning pass.")
         else:
@@ -142,14 +181,16 @@ class GruExplainer(BaseExplainer):
             current_value=round(gru_score, 2),
             purpose=self.get_purpose(),
             formula=self.get_formula(),
-            factors=["Lookback Horizon (30d)", "Softmax Long Probability", "Softmax Hold Probability", "Softmax Short Probability"],
+            factors=["GRU Long Probability", "GRU Short Probability", "GRU Hold Probability"],
             validation=self.get_validation(),
             interpretation=self.get_interpretation(),
             limitations=self.get_limitations(),
             references=self.get_references(),
-            current_values={"GRU_LONG": long_prob, "GRU_HOLD": hold_prob, "GRU_SHORT": short_prob} if has_real_probs else None,
+            current_values={"GRU_LONG": p_long_val, "GRU_HOLD": p_hold_val, "GRU_SHORT": p_short_val} if has_real_probs else None,
             current_contributions=contributions,
             dynamic_explanation=dynamic_text,
             why_not=why_not_text,
-            historical_context=hist_context
+            historical_context=hist_context,
+            explanation_type="global_importance",
+            feature_attributions=feature_attributions
         )

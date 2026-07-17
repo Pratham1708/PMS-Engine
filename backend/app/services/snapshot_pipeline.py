@@ -952,8 +952,11 @@ def _stage_generate_momentum_scores(ctx: PipelineContext) -> StageResult:
     if ctx.df is None:
         return StageResult("11_generate_momentum_scores", "skipped", duration_sec=time.monotonic() - t0)
     if "MomentumScore" not in ctx.df.columns:
-        ctx.df["MomentumScore"] = (ctx.df["TechnicalScore"].fillna(0) * 0.8 +
-                                   ctx.df["MLScore"].fillna(0) * 0.2)
+        from app.services.explainability.registry.scoring_config import MOMENTUM_WEIGHTS
+        w_tech = MOMENTUM_WEIGHTS["technical"]
+        w_ml = MOMENTUM_WEIGHTS["ml"]
+        ctx.df["MomentumScore"] = (ctx.df["TechnicalScore"].fillna(0) * w_tech +
+                                   ctx.df["MLScore"].fillna(0) * w_ml)
     ok = ctx.df["MomentumScore"].notna().sum()
     return StageResult(
         "11_generate_momentum_scores", "done",
@@ -969,8 +972,11 @@ def _stage_generate_trend_scores(ctx: PipelineContext) -> StageResult:
     if ctx.df is None:
         return StageResult("12_generate_trend_scores", "skipped", duration_sec=time.monotonic() - t0)
     if "TrendScore" not in ctx.df.columns:
-        ctx.df["TrendScore"] = (ctx.df["GRUScore"].fillna(0) * 0.6 +
-                                ctx.df["TechnicalScore"].fillna(0) * 0.4)
+        from app.services.explainability.registry.scoring_config import TREND_WEIGHTS
+        w_gru = TREND_WEIGHTS["gru"]
+        w_tech = TREND_WEIGHTS["technical"]
+        ctx.df["TrendScore"] = (ctx.df["GRUScore"].fillna(0) * w_gru +
+                                ctx.df["TechnicalScore"].fillna(0) * w_tech)
     ok = ctx.df["TrendScore"].notna().sum()
     return StageResult(
         "12_generate_trend_scores", "done",
@@ -1652,13 +1658,40 @@ def _stage_generate_explainability(ctx: PipelineContext) -> StageResult:
                     continue
                 try:
                     exp = explainer.explain(stock_data, history)
+                    feat_contrib_data = {}
+                    if getattr(exp, "feature_attributions", None):
+                        runtime_categories = []
+                        for cat in exp.feature_attributions:
+                            runtime_features = []
+                            for f in cat.features:
+                                runtime_features.append({
+                                    "feature_key": f.feature_key,
+                                    "current_value": f.current_value,
+                                    "normalized_value": f.normalized_value,
+                                    "weight": f.weight,
+                                    "contribution": f.contribution,
+                                    "effect": f.effect,
+                                    "confidence": f.confidence
+                                })
+                            runtime_categories.append({
+                                "category": cat.category,
+                                "subtotal": cat.subtotal,
+                                "features": runtime_features
+                            })
+                        feat_contrib_data = {
+                            "explanation_type": getattr(exp, "explanation_type", "global_importance"),
+                            "dynamic_explanation": getattr(exp, "dynamic_explanation", ""),
+                            "why_not": getattr(exp, "why_not", ""),
+                            "categories": runtime_categories
+                        }
+
                     record = {
                         "symbol": symbol,
                         "score_type": score_type,
                         "purpose": getattr(exp, "purpose", None),
                         "formula": getattr(exp, "formula", None),
                         "indicator_contributions": json.dumps(getattr(exp, "current_contributions", [])),
-                        "feature_contributions": json.dumps(getattr(exp, "current_values", {})),
+                        "feature_contributions": json.dumps(feat_contrib_data),
                         "current_values": json.dumps(getattr(exp, "current_values", {})),
                         "interpretation": json.dumps(getattr(exp, "interpretation", [])),
                         "validation_metrics": json.dumps(getattr(exp, "validation", [])),

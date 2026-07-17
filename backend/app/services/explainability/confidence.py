@@ -1,6 +1,7 @@
 from typing import List, Dict, Any
 from app.models.schemas import Contribution, ValidationMetric, ResearchReference, ScoreInterpretation, ExplainScoreResponse
-from .base import BaseExplainer
+from .base import BaseExplainer, enrich_runtime_contributions
+from app.services.explainability.registry import CONFIDENCE_WEIGHTS
 
 class ConfidenceExplainer(BaseExplainer):
     def get_purpose(self) -> str:
@@ -54,6 +55,9 @@ class ConfidenceExplainer(BaseExplainer):
                 "value": h.get("confidence")
             })
             
+        w_baseline = CONFIDENCE_WEIGHTS["baseline"]
+        w_consensus = CONFIDENCE_WEIGHTS["consensus_boost"]
+        
         # Determine agree count dynamically based on the scores
         agree_count = max(
             sum(1 for x in [tech_val, ml_val, gru_val] if x > 0),
@@ -61,24 +65,49 @@ class ConfidenceExplainer(BaseExplainer):
         )
         consensus_boost = 15.0 if agree_count == 3 else (5.0 if agree_count == 2 else -10.0)
         
+        baseline_val = confidence - consensus_boost
+        
+        baseline_contrib = baseline_val * w_baseline
+        consensus_contrib = consensus_boost * w_consensus
+        
         contributions = [
             Contribution(
                 name="Baseline Model Confidence",
-                value=round(confidence - consensus_boost, 2),
-                weight=None,
-                contribution=round(confidence - consensus_boost, 2),
+                value=round(baseline_val, 2),
+                weight=w_baseline,
+                contribution=round(baseline_contrib, 2),
                 direction="positive",
                 description="Historical baseline model confidence rating prior to consensus check."
             ),
             Contribution(
                 name="Consensus Alignment Boost",
                 value=round(consensus_boost, 2),
-                weight=None,
-                contribution=round(consensus_boost, 2),
+                weight=w_consensus,
+                contribution=round(consensus_contrib, 2),
                 direction="positive" if consensus_boost > 0 else "negative",
                 description=f"Consensus adjustment based on {agree_count}/3 sub-engines aligning in sign direction."
             )
         ]
+
+        # Structured feature attributions
+        runtime_categories = [
+            {
+                "category": "Baseline Calibration (70%)",
+                "subtotal": baseline_contrib,
+                "features": [
+                    {"feature_key": "baseline", "current_value": f"{baseline_val:.1f}%", "normalized_value": baseline_val, "weight": w_baseline, "contribution": baseline_contrib, "effect": "positive", "confidence": "High"}
+                ]
+            },
+            {
+                "category": "Consensus Alignment (30%)",
+                "subtotal": consensus_contrib,
+                "features": [
+                    {"feature_key": "consensus_boost", "current_value": f"{consensus_boost:+.1f}%", "normalized_value": consensus_boost, "weight": w_consensus, "contribution": consensus_contrib, "effect": "positive" if consensus_boost > 0 else "negative", "confidence": "High"}
+                ]
+            }
+        ]
+        
+        feature_attributions = enrich_runtime_contributions(runtime_categories)
 
         # Dynamic Explanation
         explanation_parts = []
@@ -98,12 +127,13 @@ class ConfidenceExplainer(BaseExplainer):
         # "Why Not?" Explanation
         why_not_parts = []
         if confidence < 80:
-            why_not_parts.append("The Confidence rating was not upgraded to High Conviction because:")
+            why_not_parts.append("The model conviction was not upgraded to High Conviction because:")
             if agree_count < 3:
-                why_not_parts.append(f"- Sub-engine consensus is not unified (agreement is only {agree_count}/3).")
-            why_not_parts.append("- Recent pricing swings have introduced minor divergence between deep temporal sequences and classical moving averages.")
+                why_not_parts.append(f"- Sub-engine alignment ({agree_count}/3) does not reflect complete directional consensus.")
+            if baseline_val < 70:
+                why_not_parts.append(f"- Baseline historical model confidence ({baseline_val:.1f}%) is limited by regime volatility parameters.")
         else:
-            why_not_parts.append("The rating carries the highest conviction possible. All internal classifiers and sequence models are in complete harmony.")
+            why_not_parts.append("All conviction parameters are fully optimized. Complete consensus and baseline checks are aligned.")
             
         why_not_text = " ".join(why_not_parts)
 
@@ -113,14 +143,16 @@ class ConfidenceExplainer(BaseExplainer):
             current_value=round(confidence, 2),
             purpose=self.get_purpose(),
             formula=self.get_formula(),
-            factors=["Consensus Level (Sub-engine agreement)", "Baseline Classifier conviction", "Expected Probability calibration"],
+            factors=["Baseline Model Calibration", "Consensus sign alignment"],
             validation=self.get_validation(),
             interpretation=self.get_interpretation(),
             limitations=self.get_limitations(),
             references=self.get_references(),
-            current_values={"agreement_count": agree_count, "consensus_boost": consensus_boost},
+            current_values={"TechnicalScore": tech_val, "MLScore": ml_val, "GRUScore": gru_val} if tech_val is not None else None,
             current_contributions=contributions,
             dynamic_explanation=dynamic_text,
             why_not=why_not_text,
-            historical_context=hist_context
+            historical_context=hist_context,
+            explanation_type="global_importance",
+            feature_attributions=feature_attributions
         )

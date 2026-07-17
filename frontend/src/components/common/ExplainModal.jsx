@@ -22,6 +22,16 @@ export default function ExplainModal({ scoreType, symbol, defaultTab = 'why', on
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
+  const [expandedCats, setExpandedCats] = useState({});
+  const [expandedFeats, setExpandedFeats] = useState({});
+
+  const toggleCat = (catName) => {
+    setExpandedCats(prev => ({ ...prev, [catName]: !prev[catName] }));
+  };
+
+  const toggleFeat = (featKey) => {
+    setExpandedFeats(prev => ({ ...prev, [featKey]: !prev[featKey] }));
+  };
 
   useEffect(() => {
     setLoading(true);
@@ -103,6 +113,56 @@ export default function ExplainModal({ scoreType, symbol, defaultTab = 'why', on
           </p>
           <p style={{ margin: '4px 0 0 0', fontSize: '12px', fontWeight: 'bold', color: data.contribution > 0 ? '#10b981' : data.contribution < 0 ? '#ef4444' : '#fff' }}>
             Blended Impact: {data.contribution != null ? (data.contribution > 0 ? '+' : '') + data.contribution.toFixed(2) : 'Unavailable'}
+          </p>
+        </div>
+      );
+    }
+    return null;
+  };
+
+  const flatAttributions = (categories) => {
+    if (!categories) return [];
+    let list = [];
+    categories.forEach(cat => {
+      if (cat.features) {
+        cat.features.forEach(f => {
+          list.push({
+            name: f.name,
+            contribution: f.contribution,
+            weight: f.weight
+          });
+        });
+      }
+    });
+    return list.sort((a, b) => Math.abs(b.contribution) - Math.abs(a.contribution));
+  };
+
+  const CustomAttributionTooltip = ({ active, payload }) => {
+    if (active && payload && payload.length) {
+      const d = payload[0].payload;
+      return (
+        <div style={{ background: '#0a1628', border: '1px solid rgba(255,255,255,0.1)', padding: '10px', borderRadius: '4px', maxWidth: '280px' }}>
+          <p style={{ margin: 0, fontSize: '12px', fontWeight: 'bold', color: '#e2e8f0' }}>{d.name}</p>
+          <p style={{ margin: '4px 0 0 0', fontSize: '11px', color: '#94a3b8' }}>
+            Weight: {(d.weight * 100).toFixed(1)}%
+          </p>
+          <p style={{ margin: '4px 0 0 0', fontSize: '12px', fontWeight: 'bold', color: d.contribution >= 0 ? '#10b981' : '#ef4444' }}>
+            Attribution: {d.contribution >= 0 ? '+' : ''}{d.contribution.toFixed(2)} points
+          </p>
+        </div>
+      );
+    }
+    return null;
+  };
+
+  const CustomCategoryTooltip = ({ active, payload }) => {
+    if (active && payload && payload.length) {
+      const d = payload[0].payload;
+      return (
+        <div style={{ background: '#0a1628', border: '1px solid rgba(255,255,255,0.1)', padding: '10px', borderRadius: '4px' }}>
+          <p style={{ margin: 0, fontSize: '12px', fontWeight: 'bold', color: '#e2e8f0' }}>{d.category}</p>
+          <p style={{ margin: '4px 0 0 0', fontSize: '12px', fontWeight: 'bold', color: d.subtotal >= 0 ? '#10b981' : '#ef4444' }}>
+            Subtotal: {d.subtotal >= 0 ? '+' : ''}{d.subtotal.toFixed(2)} points
           </p>
         </div>
       );
@@ -232,7 +292,8 @@ export default function ExplainModal({ scoreType, symbol, defaultTab = 'why', on
 
           {/* Tab 2: Breakdown */}
           {activeTab === 'breakdown' && (
-            <div className="tab-pane fade-in">
+            <div className="tab-pane fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              
               {scoreType === 'composite' ? (
                 /* Sankey Flow for Composite */
                 <SankeyFlow 
@@ -246,77 +307,226 @@ export default function ExplainModal({ scoreType, symbol, defaultTab = 'why', on
                   wReliability={data.current_values?.w_reliability}
                   composite={currentVal}
                 />
-
               ) : (
-                /* Standard Bar Chart for others */
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '24px' }}>
+                /* Attribution Visualizations Side-by-Side */
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
                   
-                  {/* Contributions Table */}
-                  <div className="card" style={{ padding: '16px', background: 'rgba(255,255,255,0.01)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '8px' }}>
-                    <h4 style={{ color: '#fff', margin: '0 0 12px 0', fontSize: '14px' }}>Factor Inputs</h4>
-                    
-                    {data.current_contributions.length === 0 ? (
-                      <div style={{ padding: '24px', textAlign: 'center', color: '#fb7185', background: 'rgba(239, 44, 44, 0.05)', borderRadius: '4px' }}>
-                        ⚠️ Contribution currently unavailable. Calculated during live analysis only.
-                      </div>
-                    ) : (
-                      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
-                        <thead>
-                          <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.1)', color: 'var(--text-muted)' }}>
-                            <th style={{ textAlign: 'left', padding: '8px' }}>Variable</th>
-                            <th style={{ textAlign: 'right', padding: '8px' }}>Value</th>
-                            <th style={{ textAlign: 'right', padding: '8px' }}>Blended Score</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {data.current_contributions.map((con, idx) => (
-                            <tr key={idx} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                              <td style={{ padding: '8px', color: '#fff', fontWeight: 500 }}>{con.name}</td>
-                              <td style={{ padding: '8px', textAlign: 'right', color: 'var(--text-muted)' }}>
-                                {con.value !== null ? con.value.toFixed(2) : '—'}
-                              </td>
-                              <td style={{ 
-                                padding: '8px', 
-                                textAlign: 'right', 
-                                fontWeight: 'bold',
-                                color: con.contribution > 0 ? '#10b981' : con.contribution < 0 ? '#ef4444' : '#fff' 
-                              }}>
-                                {con.contribution !== null ? (con.contribution > 0 ? '+' : '') + con.contribution.toFixed(2) : '—'}
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    )}
+                  {/* Chart 1: Feature Attribution Bars */}
+                  <div className="card" style={chartCardStyle}>
+                    <h4 style={chartTitleStyle}>Feature Impact Attribution</h4>
+                    <div style={{ height: '240px' }}>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart
+                          data={flatAttributions(data.feature_attributions)}
+                          layout="vertical"
+                          margin={{ top: 10, right: 20, left: 10, bottom: 5 }}
+                        >
+                          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                          <XAxis type="number" stroke="#94a3b8" fontSize={10} />
+                          <YAxis dataKey="name" type="category" stroke="#94a3b8" fontSize={10} width={120} tickLine={false} />
+                          <Tooltip content={<CustomAttributionTooltip />} />
+                          <ReferenceLine x={0} stroke="rgba(255,255,255,0.2)" />
+                          <Bar dataKey="contribution" radius={[0, 4, 4, 0]}>
+                            {flatAttributions(data.feature_attributions).map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={entry.contribution >= 0 ? '#10b981' : '#ef4444'} />
+                            ))}
+                          </Bar>
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
                   </div>
 
-                  {/* Contributions Visual Chart */}
-                  {data.current_contributions.length > 0 && (
-                    <div className="card" style={{ padding: '16px', background: 'rgba(255,255,255,0.01)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '8px' }}>
-                      <h4 style={{ color: '#fff', margin: '0 0 12px 0', fontSize: '14px' }}>Visual Attribution Waterfall</h4>
-                      <div style={{ width: '100%', height: '200px' }}>
-                        <ResponsiveContainer>
-                          <BarChart data={data.current_contributions} layout="vertical" margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
-                            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                            <XAxis type="number" stroke="#94a3b8" fontSize={9} />
-                            <YAxis dataKey="name" type="category" stroke="#94a3b8" fontSize={9} width={100} />
-                            <Tooltip content={<CustomBarTooltip />} />
-                            <ReferenceLine x={0} stroke="rgba(255,255,255,0.2)" />
-                            <Bar dataKey="contribution">
-                              {data.current_contributions.map((entry, index) => (
-                                <Cell key={`cell-${index}`} fill={entry.contribution >= 0 ? '#10b981' : '#ef4444'} />
-                              ))}
-                            </Bar>
-                          </BarChart>
-                        </ResponsiveContainer>
-                      </div>
+                  {/* Chart 2: Category subtotals */}
+                  <div className="card" style={chartCardStyle}>
+                    <h4 style={chartTitleStyle}>Category Attribution Subtotals</h4>
+                    <div style={{ height: '240px' }}>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart
+                          data={data.feature_attributions || []}
+                          margin={{ top: 10, right: 10, left: -20, bottom: 5 }}
+                        >
+                          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                          <XAxis dataKey="category" stroke="#94a3b8" fontSize={9} tickLine={false} />
+                          <YAxis stroke="#94a3b8" fontSize={10} />
+                          <Tooltip content={<CustomCategoryTooltip />} />
+                          <ReferenceLine y={0} stroke="rgba(255,255,255,0.2)" />
+                          <Bar dataKey="subtotal" radius={[4, 4, 0, 0]}>
+                            {(data.feature_attributions || []).map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={entry.subtotal >= 0 ? '#818cf8' : '#fb7185'} />
+                            ))}
+                          </Bar>
+                        </BarChart>
+                      </ResponsiveContainer>
                     </div>
-                  )}
+                  </div>
+
                 </div>
               )}
 
+              {/* Expandable Nesting Hierarchy Table */}
+              <div className="card" style={{ padding: '20px', background: 'rgba(255,255,255,0.01)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '8px' }}>
+                <h4 style={{ color: '#fff', margin: '0 0 16px 0', fontSize: '15px', fontWeight: 'bold' }}>Factor Attribution Hierarchy</h4>
+                
+                {(!data.feature_attributions || data.feature_attributions.length === 0) ? (
+                  <div style={{ padding: '24px', textAlign: 'center', color: '#fb7185', background: 'rgba(239, 44, 44, 0.05)', borderRadius: '4px' }}>
+                    ⚠️ Nested attribution details are currently unavailable for this score snapshot.
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {data.feature_attributions.map((cat) => {
+                      const isCatExpanded = !!expandedCats[cat.category];
+                      return (
+                        <div key={cat.category} style={{ border: '1px solid rgba(255,255,255,0.05)', borderRadius: '6px', overflow: 'hidden' }}>
+                          
+                          {/* Category Header Row */}
+                          <div 
+                            style={{ 
+                              display: 'flex', 
+                              justifyContent: 'space-between', 
+                              alignItems: 'center', 
+                              padding: '12px 16px', 
+                              background: isCatExpanded ? 'rgba(129, 140, 248, 0.08)' : 'rgba(255,255,255,0.02)', 
+                              cursor: 'pointer',
+                              transition: 'background 0.2s'
+                            }}
+                            onClick={() => toggleCat(cat.category)}
+                          >
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                              <span style={{ color: '#818cf8', fontSize: '14px', fontWeight: 'bold' }}>
+                                {isCatExpanded ? '▼' : '▶'}
+                              </span>
+                              <span style={{ color: '#fff', fontWeight: 600, fontSize: '13px' }}>{cat.category}</span>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                              <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Subtotal Impact:</span>
+                              <strong style={{ 
+                                fontSize: '13px', 
+                                color: cat.subtotal >= 0 ? '#10b981' : '#ef4444' 
+                              }}>
+                                {cat.subtotal >= 0 ? '+' : ''}{cat.subtotal.toFixed(2)}
+                              </strong>
+                            </div>
+                          </div>
+
+                          {/* Nested Features List */}
+                          {isCatExpanded && (
+                            <div style={{ background: 'rgba(0,0,0,0.1)', padding: '8px 12px' }}>
+                              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
+                                <thead>
+                                  <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', color: 'var(--text-muted)' }}>
+                                    <th style={{ textAlign: 'left', padding: '6px 8px' }}>Factor Name</th>
+                                    <th style={{ textAlign: 'right', padding: '6px 8px' }}>Current Value</th>
+                                    <th style={{ textAlign: 'right', padding: '6px 8px' }}>Normalized</th>
+                                    <th style={{ textAlign: 'right', padding: '6px 8px' }}>Weight</th>
+                                    <th style={{ textAlign: 'right', padding: '6px 8px' }}>Contribution</th>
+                                    <th style={{ textAlign: 'center', padding: '6px 8px' }}>Confidence</th>
+                                    <th style={{ width: '100px' }}></th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {cat.features.map((feat) => {
+                                    const isFeatExpanded = !!expandedFeats[feat.feature_key];
+                                    return (
+                                      <React.Fragment key={feat.feature_key}>
+                                        <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.02)' }}>
+                                          <td style={{ padding: '8px', color: '#fff', fontWeight: 500 }}>{feat.name}</td>
+                                          <td style={{ padding: '8px', textAlign: 'right', color: 'var(--text-muted)' }}>{feat.current_value}</td>
+                                          <td style={{ padding: '8px', textAlign: 'right', color: 'var(--text-muted)' }}>{feat.normalized_value >= 0 ? '+' : ''}{feat.normalized_value.toFixed(0)}</td>
+                                          <td style={{ padding: '8px', textAlign: 'right', color: 'var(--text-muted)' }}>{(feat.weight * 100).toFixed(1)}%</td>
+                                          <td style={{ 
+                                            padding: '8px', 
+                                            textAlign: 'right', 
+                                            fontWeight: 'bold',
+                                            color: feat.contribution > 0 ? '#10b981' : feat.contribution < 0 ? '#ef4444' : '#fff' 
+                                          }}>
+                                            {feat.contribution >= 0 ? '+' : ''}{feat.contribution.toFixed(2)}
+                                          </td>
+                                          <td style={{ padding: '8px', textAlign: 'center' }}>
+                                            <span style={getConfBadgeStyle(feat.confidence)}>
+                                              {feat.confidence}
+                                            </span>
+                                          </td>
+                                          <td style={{ padding: '8px', textAlign: 'center' }}>
+                                            <button 
+                                              style={detailsBtnStyle}
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                toggleFeat(feat.feature_key);
+                                              }}
+                                            >
+                                              {isFeatExpanded ? 'Hide Details ▲' : 'Details ▼'}
+                                            </button>
+                                          </td>
+                                        </tr>
+
+                                        {/* Dropdown Card for Feature Details */}
+                                        {isFeatExpanded && (
+                                          <tr>
+                                            <td colSpan={7} style={{ padding: '12px 16px', background: 'rgba(0, 0, 0, 0.25)', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
+                                              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                                  <span style={dataSourceTagStyle}>{feat.metadata?.data_source || 'Telemetry'}</span>
+                                                  <span style={{ color: '#fff', fontSize: '12px', fontWeight: 600 }}>{feat.explanation}</span>
+                                                </div>
+                                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginTop: '6px' }}>
+                                                  <div style={detailBoxStyle}>
+                                                    <strong style={detailHeaderStyle}>Mathematical Equations</strong>
+                                                    <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'monospace' }}>
+                                                      Plain: {feat.metadata?.plain_formula || 'N/A'}
+                                                    </div>
+                                                    <div style={{ fontSize: '11px', color: '#a5b4fc', marginTop: '4px', fontFamily: 'monospace' }}>
+                                                      LaTeX: {feat.metadata?.latex_formula || 'N/A'}
+                                                    </div>
+                                                  </div>
+                                                  <div style={detailBoxStyle}>
+                                                    <strong style={detailHeaderStyle}>Normalization Bounds</strong>
+                                                    <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                                                      Method: {feat.metadata?.normalization?.method || 'N/A'} (Range: {feat.metadata?.normalization?.range || 'N/A'})
+                                                    </div>
+                                                    <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>
+                                                      Logic: {feat.metadata?.normalization?.logic || 'N/A'}
+                                                    </div>
+                                                  </div>
+                                                </div>
+                                                <div style={{ ...detailBoxStyle, marginTop: '4px' }}>
+                                                  <strong style={detailHeaderStyle}>Research Reference Citation</strong>
+                                                  <div style={{ fontSize: '11px', color: '#818cf8', fontWeight: 600 }}>
+                                                    {feat.metadata?.reference?.paper || 'PMS Standard Quantitative Guidelines'} ({feat.metadata?.reference?.year || 2026})
+                                                  </div>
+                                                  <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                                                    Author: {feat.metadata?.reference?.author || 'PMS Team'}
+                                                  </div>
+                                                  {feat.metadata?.reference?.link && (
+                                                    <a 
+                                                      href={feat.metadata.reference.link} 
+                                                      target="_blank" 
+                                                      rel="noopener noreferrer" 
+                                                      style={{ fontSize: '10px', color: '#6366f1', textDecoration: 'none', display: 'inline-block', marginTop: '4px' }}
+                                                    >
+                                                      Link to Publication ↗
+                                                    </a>
+                                                  )}
+                                                </div>
+                                              </div>
+                                            </td>
+                                          </tr>
+                                        )}
+                                      </React.Fragment>
+                                    );
+                                  })}
+                                </tbody>
+                              </table>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
               {/* Recommendation Journey Sequence Block */}
-              <div className="card" style={{ padding: '16px', background: 'rgba(5, 10, 20, 0.4)', border: '1px solid rgba(255, 255, 255, 0.05)', borderRadius: '8px', marginTop: '16px' }}>
+              <div className="card" style={{ padding: '16px', background: 'rgba(5, 10, 20, 0.4)', border: '1px solid rgba(255, 255, 255, 0.05)', borderRadius: '8px' }}>
                 <h4 style={{ color: '#fff', margin: '0 0 12px 0', fontSize: '14px' }}>🛤️ Full Recommendation Journey</h4>
                 <div style={{ display: 'flex', gap: '8px', alignItems: 'center', overflowX: 'auto', paddingBottom: '8px' }}>
                   <div style={journeyStepStyle}>
@@ -344,6 +554,7 @@ export default function ExplainModal({ scoreType, symbol, defaultTab = 'why', on
                   </div>
                 </div>
               </div>
+
             </div>
           )}
 
@@ -547,4 +758,72 @@ const journeyStepStyle = {
   flexDirection: 'column',
   alignItems: 'center',
   textAlign: 'center'
+};
+
+const chartCardStyle = {
+  padding: '16px',
+  background: 'rgba(255,255,255,0.01)',
+  border: '1px solid rgba(255,255,255,0.05)',
+  borderRadius: '8px'
+};
+
+const chartTitleStyle = {
+  color: '#fff',
+  margin: '0 0 12px 0',
+  fontSize: '13px',
+  fontWeight: 'bold',
+  letterSpacing: '0.5px'
+};
+
+const detailsBtnStyle = {
+  background: 'rgba(129, 140, 248, 0.1)',
+  border: '1px solid rgba(129, 140, 248, 0.2)',
+  color: '#a5b4fc',
+  padding: '4px 8px',
+  borderRadius: '4px',
+  fontSize: '10px',
+  cursor: 'pointer',
+  whiteSpace: 'nowrap'
+};
+
+const getConfBadgeStyle = (conf) => {
+  const isHigh = conf === 'High';
+  const isMed = conf === 'Medium';
+  return {
+    background: isHigh ? 'rgba(16, 185, 129, 0.1)' : isMed ? 'rgba(245, 158, 11, 0.1)' : 'rgba(239, 44, 44, 0.1)',
+    border: isHigh ? '1px solid rgba(16, 185, 129, 0.2)' : isMed ? '1px solid rgba(245, 158, 11, 0.2)' : '1px solid rgba(239, 44, 44, 0.2)',
+    color: isHigh ? '#10b981' : isMed ? '#f59e0b' : '#ef4444',
+    padding: '2px 6px',
+    borderRadius: '4px',
+    fontSize: '10px',
+    fontWeight: 'bold'
+  };
+};
+
+const dataSourceTagStyle = {
+  background: 'rgba(255,255,255,0.05)',
+  border: '1px solid rgba(255,255,255,0.1)',
+  color: '#94a3b8',
+  padding: '1px 6px',
+  borderRadius: '4px',
+  fontSize: '9px',
+  textTransform: 'uppercase',
+  fontWeight: 'bold'
+};
+
+const detailBoxStyle = {
+  background: 'rgba(0,0,0,0.15)',
+  border: '1px solid rgba(255,255,255,0.03)',
+  borderRadius: '4px',
+  padding: '8px 12px'
+};
+
+const detailHeaderStyle = {
+  display: 'block',
+  color: '#fff',
+  fontSize: '10px',
+  fontWeight: 'bold',
+  textTransform: 'uppercase',
+  letterSpacing: '0.5px',
+  marginBottom: '4px'
 };

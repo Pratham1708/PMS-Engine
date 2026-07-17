@@ -1,6 +1,12 @@
 from typing import List, Dict, Any, Optional
 from app.models.schemas import Contribution, ValidationMetric, ResearchReference, ScoreInterpretation, ExplainScoreResponse
-from .base import BaseExplainer
+from .base import BaseExplainer, enrich_runtime_contributions
+from app.services.explainability.registry import (
+    TECHNICAL_WEIGHTS,
+    TECHNICAL_TREND_WEIGHTS,
+    TECHNICAL_MOMENTUM_WEIGHTS,
+    TECHNICAL_VOLATILITY_WEIGHTS
+)
 
 class TechnicalExplainer(BaseExplainer):
     def get_purpose(self) -> str:
@@ -54,10 +60,8 @@ class TechnicalExplainer(BaseExplainer):
     def explain(self, stock_data: Dict[str, Any], history: List[Dict[str, Any]]) -> ExplainScoreResponse:
         tech_score = stock_data.get("TechnicalScore", 0.0)
         indicators = stock_data.get("indicators", {})
-        scores_detail = stock_data.get("scores", {})
         symbol = stock_data.get("Symbol")
         
-        # Historical context mapping
         hist_context = []
         for h in history:
             hist_context.append({
@@ -65,104 +69,201 @@ class TechnicalExplainer(BaseExplainer):
                 "value": h.get("technical_score")
             })
             
-        # Determine contributions
         contributions = []
         has_real_indicators = False
         
-        # Check if we have computed indicator results from snapshots or live analysis
+        # Default runtime values for features
+        above20 = indicators.get("above_ema20", 0) == 1
+        above50 = indicators.get("above_ema50", 0) == 1
+        above200 = indicators.get("above_ema200", 0) == 1
+        adx = float(indicators.get("adx", 20.0) or 20.0)
+        supertrend_bullish = indicators.get("supertrend_signal", 1) == 1
+        
+        rsi = float(indicators.get("rsi_14", 50.0) or 50.0)
+        macd = float(indicators.get("macd", 0.0) or 0.0)
+        macd_sig = float(indicators.get("macd_signal", 0.0) or 0.0)
+        stoch_k = float(indicators.get("stoch_k", 50.0) or 50.0)
+        cci = float(indicators.get("cci", 0.0) or 0.0)
+        roc = float(indicators.get("roc", 0.0) or 0.0)
+        williams_r = float(indicators.get("williams_r", -50.0) or -50.0)
+        
+        bb_upper = indicators.get("bb_upper")
+        bb_lower = indicators.get("bb_lower")
+        close = stock_data.get("CurrentPrice") or stock_data.get("Close") or 100.0
+        atr = float(indicators.get("atr", 1.0) or 1.0)
+        atr_percentile = float(indicators.get("atr_percentile", 50.0) or 50.0)
+        
         if indicators and any(indicators.values()):
             has_real_indicators = True
+
+        # Calculate values matching weights strictly from scoring_config
+        # 1. Trend (30%)
+        ema20_val = 100.0 if above20 else -100.0
+        ema50_val = 100.0 if above50 else -100.0
+        ema200_val = 100.0 if above200 else -100.0
+        adx_val = 100.0 if adx > 25 else -100.0
+        supertrend_val = 100.0 if supertrend_bullish else -100.0
+        
+        w_ema20 = TECHNICAL_TREND_WEIGHTS["ema20"]
+        w_ema50 = TECHNICAL_TREND_WEIGHTS["ema50"]
+        w_ema200 = TECHNICAL_TREND_WEIGHTS["ema200"]
+        w_adx = TECHNICAL_TREND_WEIGHTS["adx"]
+        w_supertrend = TECHNICAL_TREND_WEIGHTS["supertrend"]
+        
+        ema20_contrib = ema20_val * w_ema20
+        ema50_contrib = ema50_val * w_ema50
+        ema200_contrib = ema200_val * w_ema200
+        adx_contrib = adx_val * w_adx
+        supertrend_contrib = supertrend_val * w_supertrend
+        
+        trend_subtotal = ema20_contrib + ema50_contrib + ema200_contrib + adx_contrib + supertrend_contrib
+
+        # 2. Momentum (20%)
+        macd_val = 100.0 if macd > macd_sig else -100.0
+        stoch_val = (stoch_k - 50.0) * 2.0
+        cci_val = max(min(cci, 100.0), -100.0)
+        roc_val = max(min(roc * 5.0, 100.0), -100.0)
+        williams_val = (williams_r + 50.0) * 2.0
+        
+        w_macd = TECHNICAL_MOMENTUM_WEIGHTS["macd"]
+        w_stoch = TECHNICAL_MOMENTUM_WEIGHTS["stoch_k"]
+        w_cci = TECHNICAL_MOMENTUM_WEIGHTS["cci"]
+        w_roc = TECHNICAL_MOMENTUM_WEIGHTS["roc"]
+        w_williams = TECHNICAL_MOMENTUM_WEIGHTS["williams_r"]
+        
+        # Distribute momentum weight (20% total) equally or by config
+        macd_contrib = macd_val * w_macd
+        stoch_contrib = stoch_val * w_stoch
+        cci_contrib = cci_val * w_cci
+        roc_contrib = roc_val * w_roc
+        williams_contrib = williams_val * w_williams
+        
+        momentum_subtotal = macd_contrib + stoch_contrib + cci_contrib + roc_contrib + williams_contrib
+
+        # 3. RSI (15%)
+        rsi_val = (rsi - 50.0) * 2.0
+        rsi_contrib = rsi_val * TECHNICAL_WEIGHTS["rsi"]
+
+        # 4. Volatility (15%)
+        bb_width_val = 0.0
+        if bb_upper is not None and bb_lower is not None and close is not None:
+            bb_width = bb_upper - bb_lower
+            bb_mid = (bb_upper + bb_lower) / 2.0
+            bb_width_val = (close - bb_mid) / bb_width * 400.0 if bb_width > 0 else 0.0
+            bb_width_val = max(min(bb_width_val, 100.0), -100.0)
             
-            # 1. Trend Alignment
-            above20 = indicators.get("above_ema20", 0) == 1
-            above50 = indicators.get("above_ema50", 0) == 1
-            above200 = indicators.get("above_ema200", 0) == 1
-            
-            trend_val = 30.0 if (above20 and above50) else (-30.0 if (not above20 and not above50) else 0.0)
-            contributions.append(Contribution(
+        atr_val = (atr_percentile - 50.0) * 2.0
+        
+        w_bb = TECHNICAL_VOLATILITY_WEIGHTS["bb_width"]
+        w_atr = TECHNICAL_VOLATILITY_WEIGHTS["atr_percentile"]
+        
+        bb_contrib = bb_width_val * w_bb
+        atr_contrib = atr_val * w_atr
+        volatility_subtotal = bb_contrib + atr_contrib
+
+        # 5. Historical Baseline (20%)
+        historical_subtotal = 0.0
+
+        # Construct legacy flat contributions
+        contributions = [
+            Contribution(
                 name="Moving Average Alignment",
                 value=None,
                 weight=30.0,
-                contribution=trend_val,
-                direction="positive" if trend_val > 0 else ("negative" if trend_val < 0 else "neutral"),
-                description="Price compared to short and medium-term Exponential Moving Averages (EMA 9 vs EMA 21)."
-            ))
-            
-            # 2. MACD Momentum
-            macd = indicators.get("macd")
-            macd_sig = indicators.get("macd_signal")
-            if macd is not None and macd_sig is not None:
-                macd_val = 20.0 if macd > macd_sig else -20.0
-                contributions.append(Contribution(
-                    name="MACD Crossover",
-                    value=round(macd - macd_sig, 4),
-                    weight=20.0,
-                    contribution=macd_val,
-                    direction="positive" if macd_val > 0 else "negative",
-                    description=f"MACD line ({round(macd,3)}) vs Signal line ({round(macd_sig,3)})."
-                ))
-            
-            # 3. RSI
-            rsi = indicators.get("rsi_14")
-            if rsi is not None:
-                rsi_sig = (rsi - 50.0) / 20.0
-                rsi_contrib = round(rsi_sig * 15.0, 2)
-                contributions.append(Contribution(
-                    name="RSI Relative Strength",
-                    value=round(rsi, 2),
-                    weight=15.0,
-                    contribution=rsi_contrib,
-                    direction="positive" if rsi_contrib > 0 else ("negative" if rsi_contrib < 0 else "neutral"),
-                    description=f"RSI indicator values range from 0 to 100. Today's value is {round(rsi,1)}."
-                ))
-                
-            # 4. Volatility Bands (Bollinger bands)
-            bb_upper = indicators.get("bb_upper")
-            bb_lower = indicators.get("bb_lower")
-            close = stock_data.get("CurrentPrice") or stock_data.get("Close")
-            if bb_upper is not None and bb_lower is not None and close is not None:
-                bb_width = bb_upper - bb_lower
-                bb_mid = (bb_upper + bb_lower) / 2.0
-                bb_sig = (close - bb_mid) / bb_width * 4.0 if bb_width > 0 else 0.0
-                bb_contrib = round(bb_sig * 15.0, 2)
-                contributions.append(Contribution(
-                    name="Bollinger Band Position",
-                    value=round(close, 2),
-                    weight=15.0,
-                    contribution=bb_contrib,
-                    direction="positive" if bb_contrib > 0 else ("negative" if bb_contrib < 0 else "neutral"),
-                    description=f"Price position relative to the middle band."
-                ))
+                contribution=trend_subtotal,
+                direction="positive" if trend_subtotal > 0 else ("negative" if trend_subtotal < 0 else "neutral"),
+                description="Price compared to short and medium-term Exponential Moving Averages (EMA 20, 50, 200)."
+            ),
+            Contribution(
+                name="MACD Crossover",
+                value=round(macd - macd_sig, 4),
+                weight=20.0,
+                contribution=momentum_subtotal,
+                direction="positive" if momentum_subtotal > 0 else "negative",
+                description=f"MACD line ({round(macd,3)}) vs Signal line ({round(macd_sig,3)})."
+            ),
+            Contribution(
+                name="RSI Relative Strength",
+                value=round(rsi, 2),
+                weight=15.0,
+                contribution=rsi_contrib,
+                direction="positive" if rsi_contrib > 0 else ("negative" if rsi_contrib < 0 else "neutral"),
+                description=f"RSI indicator values range from 0 to 100. Today's value is {round(rsi,1)}."
+            ),
+            Contribution(
+                name="Bollinger Band Position",
+                value=round(close, 2),
+                weight=15.0,
+                contribution=volatility_subtotal,
+                direction="positive" if volatility_subtotal > 0 else ("negative" if volatility_subtotal < 0 else "neutral"),
+                description="Price position relative to the volatility bands."
+            )
+        ]
+
+        # Construct new structured feature attributions
+        runtime_categories = [
+            {
+                "category": "Trend Overlay (30%)",
+                "subtotal": trend_subtotal,
+                "features": [
+                    {"feature_key": "ema20", "current_value": "Bullish" if above20 else "Bearish", "normalized_value": ema20_val, "weight": w_ema20, "contribution": ema20_contrib, "effect": "positive" if above20 else "negative", "confidence": "High"},
+                    {"feature_key": "ema50", "current_value": "Bullish" if above50 else "Bearish", "normalized_value": ema50_val, "weight": w_ema50, "contribution": ema50_contrib, "effect": "positive" if above50 else "negative", "confidence": "High"},
+                    {"feature_key": "ema200", "current_value": "Bullish" if above200 else "Bearish", "normalized_value": ema200_val, "weight": w_ema200, "contribution": ema200_contrib, "effect": "positive" if above200 else "negative", "confidence": "High"},
+                    {"feature_key": "adx", "current_value": f"{adx:.1f}", "normalized_value": adx_val, "weight": w_adx, "contribution": adx_contrib, "effect": "positive" if adx > 25 else "neutral", "confidence": "Medium"},
+                    {"feature_key": "supertrend", "current_value": "Bullish" if supertrend_bullish else "Bearish", "normalized_value": supertrend_val, "weight": w_supertrend, "contribution": supertrend_contrib, "effect": "positive" if supertrend_bullish else "negative", "confidence": "High"},
+                ]
+            },
+            {
+                "category": "Momentum Oscillators (20%)",
+                "subtotal": momentum_subtotal,
+                "features": [
+                    {"feature_key": "macd", "current_value": f"{macd:.3f}", "normalized_value": macd_val, "weight": w_macd, "contribution": macd_contrib, "effect": "positive" if macd > macd_sig else "negative", "confidence": "High"},
+                    {"feature_key": "stoch_k", "current_value": f"{stoch_k:.1f}", "normalized_value": stoch_val, "weight": w_stoch, "contribution": stoch_contrib, "effect": "positive" if stoch_k > 50 else "negative", "confidence": "Medium"},
+                    {"feature_key": "cci", "current_value": f"{cci:.1f}", "normalized_value": cci_val, "weight": w_cci, "contribution": cci_contrib, "effect": "positive" if cci > 0 else "negative", "confidence": "Low"},
+                    {"feature_key": "roc", "current_value": f"{roc:.2f}%", "normalized_value": roc_val, "weight": w_roc, "contribution": roc_contrib, "effect": "positive" if roc > 0 else "negative", "confidence": "Medium"},
+                    {"feature_key": "williams_r", "current_value": f"{williams_r:.1f}", "normalized_value": williams_val, "weight": w_williams, "contribution": williams_contrib, "effect": "positive" if williams_r > -50 else "negative", "confidence": "Medium"},
+                ]
+            },
+            {
+                "category": "RSI Relative Strength (15%)",
+                "subtotal": rsi_contrib,
+                "features": [
+                    {"feature_key": "rsi", "current_value": f"{rsi:.1f}", "normalized_value": rsi_val, "weight": TECHNICAL_WEIGHTS["rsi"], "contribution": rsi_contrib, "effect": "positive" if rsi > 50 else "negative", "confidence": "High"}
+                ]
+            },
+            {
+                "category": "Volatility Bands (15%)",
+                "subtotal": volatility_subtotal,
+                "features": [
+                    {"feature_key": "bb_width", "current_value": f"{close:.2f}", "normalized_value": bb_width_val, "weight": w_bb, "contribution": bb_contrib, "effect": "positive" if bb_width_val > 0 else "negative", "confidence": "Medium"},
+                    {"feature_key": "atr_percentile", "current_value": f"{atr_percentile:.1f}%", "normalized_value": atr_val, "weight": w_atr, "contribution": atr_contrib, "effect": "positive" if atr_percentile < 50 else "negative", "confidence": "Medium"}
+                ]
+            }
+        ]
+        
+        feature_attributions = enrich_runtime_contributions(runtime_categories)
 
         # Dynamic Explanation
         explanation_parts = []
         if has_real_indicators:
-            rsi = indicators.get("rsi_14")
-            above20 = indicators.get("above_ema20", 0) == 1
-            above50 = indicators.get("above_ema50", 0) == 1
-            macd = indicators.get("macd")
-            macd_sig = indicators.get("macd_signal")
-            
             if above20 and above50:
-                explanation_parts.append("Trend alignment remains structurally bullish, with price sustaining above both the short-term EMA 9 and medium-term EMA 21.")
+                explanation_parts.append("Trend alignment remains structurally bullish, with price sustaining above both the short-term EMA 20 and medium-term EMA 50.")
             elif not above20 and not above50:
                 explanation_parts.append("Price exhibits short-term structural deterioration, trading below its key moving average layers.")
             else:
                 explanation_parts.append("Price action shows minor consolidation, crossing intermediate moving average bands.")
                 
-            if rsi is not None:
-                if rsi >= 70:
-                    explanation_parts.append(f"Momentum is extremely strong as RSI reached {rsi:.1f}, indicating entering overbought boundaries where expansion could slow.")
-                elif rsi <= 30:
-                    explanation_parts.append(f"Price is technically oversold with RSI at {rsi:.1f}, signaling severe exhaustion of selling pressure.")
-                else:
-                    explanation_parts.append(f"RSI is neutral at {rsi:.1f}, suggesting steady accumulation with room for expansion.")
-                    
-            if macd is not None and macd_sig is not None:
-                if macd > macd_sig:
-                    explanation_parts.append("MACD holds a positive divergence above its signal line, confirming ongoing buyer momentum.")
-                else:
-                    explanation_parts.append("MACD is below its signal line, representing local distribution momentum.")
+            if rsi >= 70:
+                explanation_parts.append(f"Momentum is extremely strong as RSI reached {rsi:.1f}, indicating entering overbought boundaries where expansion could slow.")
+            elif rsi <= 30:
+                explanation_parts.append(f"Price is technically oversold with RSI at {rsi:.1f}, signaling severe exhaustion of selling pressure.")
+            else:
+                explanation_parts.append(f"RSI is neutral at {rsi:.1f}, suggesting steady accumulation with room for expansion.")
+                
+            if macd > macd_sig:
+                explanation_parts.append("MACD holds a positive divergence above its signal line, confirming ongoing buyer momentum.")
+            else:
+                explanation_parts.append("MACD is below its signal line, representing local distribution momentum.")
         else:
             explanation_parts.append("Explanations are sourced from pre-computed static trends. Run dynamic PMS analysis to extract updated indicator-driven narratives.")
             
@@ -173,16 +274,11 @@ class TechnicalExplainer(BaseExplainer):
         if tech_score < 80:
             why_not_parts.append("The Technical Score is not rated peak bullish because:")
             if has_real_indicators:
-                rsi = indicators.get("rsi_14")
-                above20 = indicators.get("above_ema20", 0) == 1
-                macd = indicators.get("macd")
-                macd_sig = indicators.get("macd_signal")
-                
-                if rsi is not None and rsi >= 70:
+                if rsi >= 70:
                     why_not_parts.append(f"- RSI is in overbought territory ({rsi:.1f}), signaling high technical extension and expansion risk.")
                 if not above20:
-                    why_not_parts.append("- The price is below the short-term EMA 9, reflecting local trend consolidation.")
-                if macd is not None and macd_sig is not None and macd < macd_sig:
+                    why_not_parts.append("- The price is below the short-term EMA 20, reflecting local trend consolidation.")
+                if macd < macd_sig:
                     why_not_parts.append("- MACD exhibits a bearish signal line crossing, showing intermediate momentum drag.")
             else:
                 why_not_parts.append("- Immediate momentum indicator overlays did not exhibit full convergence during the last scanning pass.")
@@ -197,7 +293,7 @@ class TechnicalExplainer(BaseExplainer):
             current_value=round(tech_score, 2),
             purpose=self.get_purpose(),
             formula=self.get_formula(),
-            factors=["Trend (EMA 9, EMA 21)", "Momentum (RSI 14)", "Trend Divergence (MACD)", "Volatility Bands (Bollinger)"],
+            factors=["Trend (EMA 20, EMA 50, EMA 200)", "Momentum (RSI 14)", "Trend Divergence (MACD)", "Volatility Bands (Bollinger)"],
             validation=self.get_validation(),
             interpretation=self.get_interpretation(),
             limitations=self.get_limitations(),
@@ -206,5 +302,7 @@ class TechnicalExplainer(BaseExplainer):
             current_contributions=contributions,
             dynamic_explanation=dynamic_text,
             why_not=why_not_text,
-            historical_context=hist_context
+            historical_context=hist_context,
+            explanation_type="global_importance",
+            feature_attributions=feature_attributions
         )

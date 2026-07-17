@@ -111,6 +111,48 @@ class ScoreInterpretation(BaseModel):
     action: str
 
 
+class NormalizationExplain(BaseModel):
+    method: str
+    range: str
+    logic: str
+
+
+class FeatureMetadata(BaseModel):
+    data_source: str
+    plain_formula: str
+    latex_formula: str
+    normalization: NormalizationExplain
+    reference: ResearchReference
+
+
+class RuntimeFeatureContribution(BaseModel):
+    feature_key: str
+    current_value: str
+    weight: float
+    contribution: float
+    effect: str  # "positive" | "negative" | "neutral"
+    confidence: str  # "High" | "Medium" | "Low"
+
+
+class FeatureAttribution(BaseModel):
+    feature_key: str
+    name: str
+    current_value: str
+    normalized_value: float
+    weight: float
+    contribution: float
+    effect: str
+    explanation: str
+    confidence: str
+    metadata: FeatureMetadata
+
+
+class CategoryContribution(BaseModel):
+    category: str
+    features: List[FeatureAttribution]
+    subtotal: float
+
+
 class ExplainScoreResponse(BaseModel):
     score_type: str
     symbol: Optional[str] = None
@@ -128,6 +170,9 @@ class ExplainScoreResponse(BaseModel):
     why_not: str
     historical_context: Optional[List[dict]] = None
     llm_summary: Optional[str] = None
+    explanation_type: str = "global_importance"  # "global_importance" | "local_shap" | "integrated_gradients" | "permutation_importance"
+    feature_attributions: Optional[List[CategoryContribution]] = None
+
 
 
 class DashboardData(BaseModel):
