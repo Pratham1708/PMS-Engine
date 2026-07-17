@@ -177,8 +177,17 @@ class ComparisonEngine:
         s1_stocks = {s["symbol"].upper(): s for s in db.get_snapshot_stocks(snap1["snapshot_id"])}
         s2_stocks = {s["symbol"].upper(): s for s in db.get_snapshot_stocks(snap2["snapshot_id"])}
         
-        s1_scores = {s["symbol"].upper(): s for s in db.get_snapshot_scores(snap1["snapshot_id"])}
-        s2_scores = {s["symbol"].upper(): s for s in db.get_snapshot_scores(snap2["snapshot_id"])}
+        # Try new score_snapshot table first, fall back to snapshot_score
+        s1_scores_list = db.get_score_snapshots(snap1["snapshot_id"], strategy_id)
+        if not s1_scores_list:
+            s1_scores_list = db.get_snapshot_scores(snap1["snapshot_id"])
+            
+        s2_scores_list = db.get_score_snapshots(snap2["snapshot_id"], strategy_id)
+        if not s2_scores_list:
+            s2_scores_list = db.get_snapshot_scores(snap2["snapshot_id"])
+            
+        s1_scores = {s["symbol"].upper(): s for s in s1_scores_list}
+        s2_scores = {s["symbol"].upper(): s for s in s2_scores_list}
         
         s1_indicators = {s["symbol"].upper(): s for s in db.get_snapshot_indicators(snap1["snapshot_id"])}
         s2_indicators = {s["symbol"].upper(): s for s in db.get_snapshot_indicators(snap2["snapshot_id"])}
@@ -254,7 +263,12 @@ class ComparisonEngine:
             changes = {}
             for field_key, response_key in score_fields:
                 val1 = st1.get(field_key)
+                if val1 is None:
+                    val1 = sc1.get(response_key)
+                    
                 val2 = st2.get(field_key)
+                if val2 is None:
+                    val2 = sc2.get(response_key)
                 
                 # Check default weights if None
                 if val1 is None: val1 = 0.0
@@ -271,9 +285,9 @@ class ComparisonEngine:
                     "category": cls.categorize_score_change(delta)
                 }
                 
-            # Expected return (return_score from snapshot_score table)
-            ret1 = sc1.get("return_score") or 0.0
-            ret2 = sc2.get("return_score") or 0.0
+            # Expected return (expected_return from score_snapshot or return_score from legacy snapshot_score)
+            ret1 = sc1.get("expected_return") or sc1.get("return_score") or 0.0
+            ret2 = sc2.get("expected_return") or sc2.get("return_score") or 0.0
             ret_delta = round(ret2 - ret1, 2)
             ret_pct = round((ret_delta / ret1 * 100.0), 2) if ret1 != 0.0 else 0.0
             

@@ -1364,6 +1364,19 @@ def get_score_snapshot(snapshot_id: str, symbol: str) -> Optional[Dict[str, Any]
         conn.close()
 
 
+def get_score_snapshots(snapshot_id: str, strategy_id: str = "pms_default") -> List[Dict[str, Any]]:
+    """Query all score snapshots for a given snapshot ID and strategy."""
+    conn = get_db_connection()
+    try:
+        rows = conn.execute(
+            "SELECT * FROM score_snapshot WHERE snapshot_id = ? AND strategy_id = ?",
+            (snapshot_id, strategy_id)
+        ).fetchall()
+        return [dict(r) for r in rows]
+    finally:
+        conn.close()
+
+
 def get_explainability_snapshot(snapshot_id: str, symbol: str) -> Optional[Dict[str, Any]]:
     """Query explainability details from database."""
     conn = get_db_connection()
