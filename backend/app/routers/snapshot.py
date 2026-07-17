@@ -632,79 +632,124 @@ async def get_snapshot_reports_by_date(date: str):
     return db.get_snapshot_reports(snap["snapshot_id"])
 
 
+# ── Fallback Changes Helper ──────────────────────────────────────────────────
+
+def _get_snapshot_changes_with_fallback(
+    snapshot_id: str,
+    change_type: Optional[str] = None,
+    significant_only: bool = False
+) -> List[dict]:
+    rows = db.get_snapshot_changes(
+        snapshot_id,
+        change_type=change_type,
+        significant_only=significant_only
+    )
+    if not rows:
+        try:
+            from app.services.comparison_service import ComparisonEngine
+            prev = db.get_previous_official_snapshot(snapshot_id)
+            if prev:
+                res = ComparisonEngine.run_comparison(
+                    snap1_sel=prev["snapshot_id"],
+                    snap2_sel=snapshot_id
+                )
+                for sd in res["stock_deltas"]:
+                    if sd["transition_type"] == "UNCHANGED":
+                        continue
+                    is_sig = abs(sd["score_changes"].get("composite_score", {}).get("delta", 0.0)) > 5.0 or sd["transition_type"] in ("UPGRADE", "DOWNGRADE")
+                    if significant_only and not is_sig:
+                        continue
+                    if change_type and change_type != "ALL" and sd["transition_type"] != change_type:
+                        continue
+                    
+                    primary = sd["drivers"][0]["feature"] + " change (" + sd["drivers"][0]["change"] + ")" if sd["drivers"] else "No major change"
+                    secondary = sd["drivers"][1]["feature"] + " change (" + sd["drivers"][1]["change"] + ")" if len(sd["drivers"]) > 1 else None
+                    
+                    rows.append({
+                        "symbol": sd["symbol"],
+                        "change_type": sd["transition_type"],
+                        "prev_rating": sd["prev_rating"],
+                        "new_rating": sd["new_rating"],
+                        "composite_diff": sd["score_changes"].get("composite_score", {}).get("delta"),
+                        "confidence_diff": sd["score_changes"].get("confidence_score", {}).get("delta"),
+                        "technical_diff": sd["score_changes"].get("technical_score", {}).get("delta"),
+                        "ml_diff": sd["score_changes"].get("ensemble_score", {}).get("delta"),
+                        "momentum_diff": sd["score_changes"].get("momentum_score", {}).get("delta"),
+                        "trend_diff": sd["score_changes"].get("trend_score", {}).get("delta"),
+                        "risk_diff": sd["score_changes"].get("risk_score", {}).get("delta"),
+                        "primary_driver": primary,
+                        "secondary_driver": secondary,
+                        "is_significant": 1 if is_sig else 0,
+                        "prev_snapshot_id": prev["snapshot_id"]
+                    })
+        except Exception as e:
+            logger.error(f"Fallback changes calculation failed for {snapshot_id}: {e}")
+    return rows
+
+
+@router.get("/snapshot/latest/changes", response_model=List[RecommendationChange])
+async def get_latest_changes(
+    change_type: Optional[str] = Query(None, description="Filter by change_type"),
+    significant_only: bool = Query(False, description="Return only significant changes"),
+):
+    """Return recommendation changes from the latest official snapshot."""
+    snap = _require_latest()
+    rows = _get_snapshot_changes_with_fallback(
+        snap["snapshot_id"],
+        change_type=change_type,
+        significant_only=significant_only
+    )
+    return [RecommendationChange(**{
+        k: r.get(k) for k in RecommendationChange.model_fields
+    }) for r in rows]
+
+
+@router.get("/snapshot/{date}/changes", response_model=List[RecommendationChange])
+async def get_snapshot_changes_by_date(date: str):
+    """Return recommendation changes for a historical snapshot date."""
+    snap = _require_by_date(date)
+    rows = _get_snapshot_changes_with_fallback(snap["snapshot_id"])
+    return [RecommendationChange(**{k: r.get(k) for k in RecommendationChange.model_fields}) for r in rows]
+
+
 # ── Comparison ────────────────────────────────────────────────────────────────
 
 @router.get("/snapshot/compare", response_model=CompareSnapshotResponse)
 async def compare_snapshots(
-    date1: str = Query(..., description="First date (YYYY-MM-DD)"),
-    date2: str = Query(..., description="Second date (YYYY-MM-DD)"),
+    date1: str = Query(..., description="First date, UUID, or keyword ('latest', 'previous')"),
+    date2: str = Query(..., description="Second date, UUID, or keyword ('latest', 'previous')"),
+    strategy_id: str = Query("pms_default", description="Strategy ID to compare")
 ):
     """Compare two snapshots side-by-side."""
-    snap1_row = db.get_snapshot_by_date(date1)
-    snap2_row = db.get_snapshot_by_date(date2)
+    from app.services.comparison_service import ComparisonEngine
+    try:
+        res = ComparisonEngine.run_comparison(
+            snap1_sel=date1,
+            snap2_sel=date2,
+            strategy_id=strategy_id,
+            official_only=True
+        )
+        return res
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.error(f"Error in snapshot comparison: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Internal error comparing snapshots: {e}")
 
-    meta1 = _meta_from_db(snap1_row) if snap1_row else None
-    meta2 = _meta_from_db(snap2_row) if snap2_row else None
 
-    breadth1_row = db.get_snapshot_market(snap1_row["snapshot_id"]) if snap1_row else None
-    breadth2_row = db.get_snapshot_market(snap2_row["snapshot_id"]) if snap2_row else None
-    breadth1 = _breadth_from_db(breadth1_row) if breadth1_row else None
-    breadth2 = _breadth_from_db(breadth2_row) if breadth2_row else None
-
-    sectors1 = [_sector_from_db(r) for r in db.get_snapshot_sector(snap1_row["snapshot_id"])] if snap1_row else []
-    sectors2 = [_sector_from_db(r) for r in db.get_snapshot_sector(snap2_row["snapshot_id"])] if snap2_row else []
-
-    # Stock changes between date1 and date2
-    stock_changes: List[RecommendationChange] = []
-    if snap1_row and snap2_row:
-        s1 = {r["symbol"].upper(): r for r in db.get_snapshot_stocks(snap1_row["snapshot_id"])}
-        s2 = {r["symbol"].upper(): r for r in db.get_snapshot_stocks(snap2_row["snapshot_id"])}
-        for sym in set(s1) | set(s2):
-            r1 = s1.get(sym, {})
-            r2 = s2.get(sym, {})
-            composite_diff = round(
-                (r2.get("composite_score") or 0) - (r1.get("composite_score") or 0), 2
-            )
-            if abs(composite_diff) > 0.01 or r1.get("final_rating") != r2.get("final_rating"):
-                stock_changes.append(RecommendationChange(
-                    symbol=sym,
-                    change_type="COMPARE_DIFF",
-                    prev_rating=r1.get("final_rating"),
-                    new_rating=r2.get("final_rating"),
-                    composite_diff=composite_diff,
-                    confidence_diff=round(
-                        (r2.get("confidence") or 0) - (r1.get("confidence") or 0), 2
-                    ),
-                    is_significant=abs(composite_diff) > 5,
-                ))
-        stock_changes.sort(key=lambda x: abs(x.composite_diff or 0), reverse=True)
-
-    regime_change = None
-    if breadth1 and breadth2 and breadth1.market_regime != breadth2.market_regime:
-        regime_change = f"{breadth1.market_regime} → {breadth2.market_regime}"
-
-    composite_delta = None
-    if breadth1 and breadth2 and breadth1.avg_composite is not None and breadth2.avg_composite is not None:
-        composite_delta = round(breadth2.avg_composite - breadth1.avg_composite, 2)
-
-    confidence_delta = None
-    if breadth1 and breadth2 and breadth1.avg_confidence is not None and breadth2.avg_confidence is not None:
-        confidence_delta = round(breadth2.avg_confidence - breadth1.avg_confidence, 2)
-
-    return CompareSnapshotResponse(
-        date1=date1,
-        date2=date2,
-        snapshot1=meta1,
-        snapshot2=meta2,
-        breadth1=breadth1,
-        breadth2=breadth2,
-        sectors1=sectors1,
-        sectors2=sectors2,
-        stock_changes=stock_changes[:50],
-        regime_change=regime_change,
-        composite_delta=composite_delta,
-        confidence_delta=confidence_delta,
-    )
+@router.get("/snapshot/compare/trend")
+async def compare_snapshot_trend(
+    symbols: List[str] = Query(..., description="List of stock symbols to trace"),
+    limit: int = Query(10, ge=2, le=90, description="Max snapshot dates to trace")
+):
+    """Trace composite score trajectories over the last N snapshots for a list of stocks."""
+    from app.services.comparison_service import HistoricalTrendEngine
+    try:
+        res = HistoricalTrendEngine.get_trajectory_history(symbols, limit=limit)
+        return res
+    except Exception as e:
+        logger.error(f"Error in comparison trend: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/snapshot/compare/stock")
@@ -717,3 +762,4 @@ async def compare_stock_across_dates(
     if not history:
         raise HTTPException(status_code=404, detail=f"No snapshot history found for '{symbol}'")
     return {"symbol": symbol, "history": history, "count": len(history)}
+

@@ -106,7 +106,8 @@ def translate_sqlite_to_pg(sql: str) -> str:
                 "feature_snapshot": "snapshot_id, symbol",
                 "score_snapshot": "snapshot_id, symbol",
                 "explainability_snapshot": "snapshot_id, symbol",
-                "report_snapshot": "snapshot_id"
+                "report_snapshot": "snapshot_id",
+                "snapshot_comparisons": "snapshot_id_1, snapshot_id_2, strategy_id"
             }
             conflict_target = conflict_targets.get(table_name)
             if conflict_target:
@@ -1370,6 +1371,51 @@ def get_explainability_snapshot(snapshot_id: str, symbol: str) -> Optional[Dict[
         row = conn.execute(
             "SELECT * FROM explainability_snapshot WHERE snapshot_id = ? AND UPPER(symbol) = UPPER(?)",
             (snapshot_id, symbol)
+        ).fetchone()
+        return dict(row) if row else None
+    finally:
+        conn.close()
+
+
+def register_snapshot_comparison(
+    snapshot_id_1: str,
+    snapshot_id_2: str,
+    date1: str,
+    date2: str,
+    strategy_id: str = "pms_default",
+    comparison_version: str = "1.0.0"
+) -> None:
+    """Register a snapshot comparison run metadata to snapshot_comparisons."""
+    now = _now_ist()
+    conn = get_db_connection()
+    try:
+        conn.execute(
+            """
+            INSERT OR REPLACE INTO snapshot_comparisons
+            (snapshot_id_1, snapshot_id_2, strategy_id, date1, date2, generated_at, comparison_version)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            """,
+            (snapshot_id_1, snapshot_id_2, strategy_id, date1, date2, now, comparison_version)
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def get_registered_comparison(
+    snapshot_id_1: str,
+    snapshot_id_2: str,
+    strategy_id: str = "pms_default"
+) -> Optional[Dict[str, Any]]:
+    """Retrieve metadata of a registered snapshot comparison."""
+    conn = get_db_connection()
+    try:
+        row = conn.execute(
+            """
+            SELECT * FROM snapshot_comparisons
+            WHERE snapshot_id_1 = ? AND snapshot_id_2 = ? AND strategy_id = ?
+            """,
+            (snapshot_id_1, snapshot_id_2, strategy_id)
         ).fetchone()
         return dict(row) if row else None
     finally:

@@ -537,6 +537,17 @@ class ReportSnapshot(Base):
     status = Column(String, nullable=True)
 
 
+class SnapshotComparison(Base):
+    __tablename__ = "snapshot_comparisons"
+    snapshot_id_1 = Column(String, primary_key=True)
+    snapshot_id_2 = Column(String, primary_key=True)
+    strategy_id = Column(String, primary_key=True, default="pms_default", server_default="pms_default")
+    date1 = Column(String, nullable=False)
+    date2 = Column(String, nullable=False)
+    generated_at = Column(String, nullable=False)
+    comparison_version = Column(String, nullable=False)
+
+
 # ── Security Master Seed Data ──
 # Nifty 50 + 67 additional popular Indian stocks = 117 total
 SECURITY_MASTER_SEED = [

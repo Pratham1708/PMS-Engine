@@ -619,17 +619,106 @@ class SnapshotStatusResponse(BaseModel):
     pipeline_available: bool = True
 
 
-class CompareSnapshotResponse(BaseModel):
-    """Side-by-side comparison of two snapshots."""
+from typing import Any, Dict, List
+
+class ScoreChange(BaseModel):
+    prev: Optional[float] = None
+    curr: Optional[float] = None
+    delta: Optional[float] = None
+    pct_change: Optional[float] = None
+    category: str
+
+class DriverDetail(BaseModel):
+    feature: str
+    prev_value: Any
+    curr_value: Any
+    change: str
+    effect: str
+
+class StockDeltaRecord(BaseModel):
+    symbol: str
+    company_name: str
+    sector: str
+    transition_type: str
+    prev_rating: Optional[str] = None
+    new_rating: Optional[str] = None
+    score_changes: Dict[str, ScoreChange]
+    rank_movement: Optional[int] = None
+    sector_movement: Optional[int] = None
+    drivers: List[DriverDetail] = []
+
+class ComparisonMetadata(BaseModel):
     date1: str
     date2: str
-    snapshot1: Optional[SnapshotMeta] = None
-    snapshot2: Optional[SnapshotMeta] = None
-    breadth1: Optional[MarketBreadthResponse] = None
-    breadth2: Optional[MarketBreadthResponse] = None
-    sectors1: List[SectorSnapshotRecord] = []
-    sectors2: List[SectorSnapshotRecord] = []
-    stock_changes: List[RecommendationChange] = []
-    regime_change: Optional[str] = None
-    composite_delta: Optional[float] = None
-    confidence_delta: Optional[float] = None
+    snapshot_id_1: str
+    snapshot_id_2: str
+    strategy_id: str = "pms_default"
+    generated_at: str
+    comparison_version: str
+    version_warnings: List[str] = []
+
+class PortfolioComparisonSummary(BaseModel):
+    upgrades: int
+    downgrades: int
+    unchanged: int
+    avg_composite_change: float
+    avg_technical_change: float
+    avg_expected_return_change: float
+    strongest_improving: List[StockDeltaRecord] = []
+    largest_deteriorating: List[StockDeltaRecord] = []
+
+class RecommendationComparisonSummary(BaseModel):
+    upgrade_list: List[StockDeltaRecord] = []
+    downgrade_list: List[StockDeltaRecord] = []
+    matrix: Dict[str, Dict[str, int]] = {}
+
+class SectorDeltaRecord(BaseModel):
+    sector: str
+    stock_count: int
+    avg_composite_change: float
+    avg_technical_change: float
+    avg_momentum_change: float
+    avg_risk_change: float
+    upgrades: int
+    downgrades: int
+    sector_rank_diff: int
+
+class SectorComparisonSummary(BaseModel):
+    best_sector: Optional[str] = None
+    worst_sector: Optional[str] = None
+    most_upgrades: Optional[str] = None
+    largest_momentum_gain: Optional[str] = None
+    largest_risk_reduction: Optional[str] = None
+    sector_deltas: List[SectorDeltaRecord] = []
+
+class WaterfallPoint(BaseModel):
+    name: str
+    value: float
+    display: str
+
+class HistogramBucket(BaseModel):
+    bucket: str
+    count: int
+
+class SectorHeatmapPoint(BaseModel):
+    sector: str
+    avg_composite_change: float
+    avg_technical_change: float
+    upgrades: int
+    downgrades: int
+    stock_count: int
+
+class ComparisonVisualizations(BaseModel):
+    waterfall: List[WaterfallPoint] = []
+    histogram: List[HistogramBucket] = []
+    sector_heatmap: List[SectorHeatmapPoint] = []
+
+class CompareSnapshotResponse(BaseModel):
+    """Side-by-side comparison of two snapshots."""
+    comparison_metadata: ComparisonMetadata
+    portfolio_summary: PortfolioComparisonSummary
+    sector_summary: SectorComparisonSummary
+    recommendation_summary: RecommendationComparisonSummary
+    stock_deltas: List[StockDeltaRecord] = []
+    visualizations: ComparisonVisualizations
+
