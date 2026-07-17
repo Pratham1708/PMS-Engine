@@ -559,6 +559,58 @@ async def get_latest_data_quality():
     )
 
 
+# ── Comparison ────────────────────────────────────────────────────────────────
+
+@router.get("/snapshot/compare", response_model=CompareSnapshotResponse)
+async def compare_snapshots(
+    date1: str = Query(..., description="First date, UUID, or keyword ('latest', 'previous')"),
+    date2: str = Query(..., description="Second date, UUID, or keyword ('latest', 'previous')"),
+    strategy_id: str = Query("pms_default", description="Strategy ID to compare")
+):
+    """Compare two snapshots side-by-side."""
+    from app.services.comparison_service import ComparisonEngine
+    try:
+        res = ComparisonEngine.run_comparison(
+            snap1_sel=date1,
+            snap2_sel=date2,
+            strategy_id=strategy_id,
+            official_only=True
+        )
+        return res
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.error(f"Error in snapshot comparison: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Internal error comparing snapshots: {e}")
+
+
+@router.get("/snapshot/compare/trend")
+async def compare_snapshot_trend(
+    symbols: List[str] = Query(..., description="List of stock symbols to trace"),
+    limit: int = Query(10, ge=2, le=90, description="Max snapshot dates to trace")
+):
+    """Trace composite score trajectories over the last N snapshots for a list of stocks."""
+    from app.services.comparison_service import HistoricalTrendEngine
+    try:
+        res = HistoricalTrendEngine.get_trajectory_history(symbols, limit=limit)
+        return res
+    except Exception as e:
+        logger.error(f"Error in comparison trend: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/snapshot/compare/stock")
+async def compare_stock_across_dates(
+    symbol: str = Query(...),
+    limit: int = Query(90, ge=1, le=365),
+):
+    """Return a stock's historical data across multiple snapshots."""
+    history = db.get_stock_history_across_snapshots(symbol, limit=limit)
+    if not history:
+        raise HTTPException(status_code=404, detail=f"No snapshot history found for '{symbol}'")
+    return {"symbol": symbol, "history": history, "count": len(history)}
+
+
 # ── Historical Archive ────────────────────────────────────────────────────────
 
 @router.get("/snapshot/dates")
@@ -712,54 +764,5 @@ async def get_snapshot_changes_by_date(date: str):
     return [RecommendationChange(**{k: r.get(k) for k in RecommendationChange.model_fields}) for r in rows]
 
 
-# ── Comparison ────────────────────────────────────────────────────────────────
 
-@router.get("/snapshot/compare", response_model=CompareSnapshotResponse)
-async def compare_snapshots(
-    date1: str = Query(..., description="First date, UUID, or keyword ('latest', 'previous')"),
-    date2: str = Query(..., description="Second date, UUID, or keyword ('latest', 'previous')"),
-    strategy_id: str = Query("pms_default", description="Strategy ID to compare")
-):
-    """Compare two snapshots side-by-side."""
-    from app.services.comparison_service import ComparisonEngine
-    try:
-        res = ComparisonEngine.run_comparison(
-            snap1_sel=date1,
-            snap2_sel=date2,
-            strategy_id=strategy_id,
-            official_only=True
-        )
-        return res
-    except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
-    except Exception as e:
-        logger.error(f"Error in snapshot comparison: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Internal error comparing snapshots: {e}")
-
-
-@router.get("/snapshot/compare/trend")
-async def compare_snapshot_trend(
-    symbols: List[str] = Query(..., description="List of stock symbols to trace"),
-    limit: int = Query(10, ge=2, le=90, description="Max snapshot dates to trace")
-):
-    """Trace composite score trajectories over the last N snapshots for a list of stocks."""
-    from app.services.comparison_service import HistoricalTrendEngine
-    try:
-        res = HistoricalTrendEngine.get_trajectory_history(symbols, limit=limit)
-        return res
-    except Exception as e:
-        logger.error(f"Error in comparison trend: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@router.get("/snapshot/compare/stock")
-async def compare_stock_across_dates(
-    symbol: str = Query(...),
-    limit: int = Query(90, ge=1, le=365),
-):
-    """Return a stock's historical data across multiple snapshots."""
-    history = db.get_stock_history_across_snapshots(symbol, limit=limit)
-    if not history:
-        raise HTTPException(status_code=404, detail=f"No snapshot history found for '{symbol}'")
-    return {"symbol": symbol, "history": history, "count": len(history)}
 
