@@ -722,3 +722,120 @@ class CompareSnapshotResponse(BaseModel):
     stock_deltas: List[StockDeltaRecord] = []
     visualizations: ComparisonVisualizations
 
+
+# ── Quant Strategy Studio Schemas ───────────────────────────────────────────
+
+from typing import Dict, Any
+
+class FeatureSelectionModel(BaseModel):
+    feature_id: str
+    feature_group: str
+    enabled: bool = True
+
+class WeightAllocationModel(BaseModel):
+    feature_id: str
+    weight: float
+    normalization_method: Optional[str] = "Default"
+    contribution_method: Optional[str] = "Additive"
+
+class ScoringConfigModel(BaseModel):
+    scoring_method: str = "Weighted Average"
+    aggregation_method: str = "Additive"
+    threshold_buy: float = 35.0
+    threshold_hold: float = -15.0
+    threshold_sell: float = -15.0
+    normalization: str = "Default"
+    recommendation_method: str = "Standard"
+
+class StrategyDefinitionModel(BaseModel):
+    features: List[FeatureSelectionModel] = []
+    weights: List[WeightAllocationModel] = []
+    scoring_config: ScoringConfigModel = Field(default_factory=ScoringConfigModel)
+    risk_profile: Optional[str] = "Medium"
+    filters: Optional[Dict[str, Any]] = None
+
+class StrategyVersionModel(BaseModel):
+    version: str
+    timestamp: str
+    change_summary: Optional[str] = None
+    created_by: Optional[str] = None
+
+class StrategyCreateRequest(BaseModel):
+    strategy_name: str
+    description: Optional[str] = None
+    strategy_type: str = "Stock"  # Stock, Portfolio, ETF, Sector, Options, Screening, Allocation
+    strategy_prompt: Optional[str] = None  # text/AI prompt
+    strategy_definition: StrategyDefinitionModel
+    visibility: str = "Private"  # Private, Public, Shared
+
+class StrategyUpdateRequest(BaseModel):
+    strategy_name: Optional[str] = None
+    description: Optional[str] = None
+    strategy_type: Optional[str] = None
+    strategy_prompt: Optional[str] = None
+    strategy_definition: Optional[StrategyDefinitionModel] = None
+    visibility: Optional[str] = None
+    status: Optional[str] = None  # Draft, Published, Archived
+    change_summary: Optional[str] = "Updated strategy configuration"
+
+class StrategyResponse(BaseModel):
+    strategy_id: str
+    owner_id: Optional[str] = None
+    strategy_name: str
+    description: Optional[str] = None
+    strategy_type: str
+    strategy_prompt: Optional[str] = None
+    strategy_definition: StrategyDefinitionModel
+    visibility: str
+    version: str
+    status: str
+    created_at: Optional[str] = None
+    updated_at: Optional[str] = None
+    versions: List[StrategyVersionModel] = []
+
+class HealthScoreBreakdown(BaseModel):
+    diversification: int
+    weight_balance: int
+    feature_independence: int
+    normalization: int
+    risk_coverage: int
+    overall: int
+
+class StrategyValidationResponse(BaseModel):
+    valid: bool
+    health_score: int
+    health_breakdown: HealthScoreBreakdown
+    errors: List[str]
+    warnings: List[str]
+    complexity: str  # Low, Medium, High
+    estimated_behavior: str  # Conservative, Moderate, Aggressive
+
+class CompareMetricRecord(BaseModel):
+    symbol: str
+    company_name: str
+    sector: str
+    current_price: Optional[float] = None
+    daily_change_pct: Optional[float] = None
+    # PMS Default values
+    default_score: float
+    default_rating: str
+    default_rank: int
+    # Custom strategy values
+    custom_score: float
+    custom_rating: str
+    custom_rank: int
+    # Differences
+    score_diff: float
+    rank_diff: int
+    rating_diff: str
+    expected_return_diff: float
+
+class StrategyExecuteResponse(BaseModel):
+    strategy_id: str
+    strategy_name: str
+    snapshot_id: str
+    status: str
+    total_stocks: int
+    stocks: List[CompareMetricRecord] = []
+
+

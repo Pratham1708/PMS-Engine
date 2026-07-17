@@ -70,5 +70,9 @@ export const fetchCompareStock = (symbol, limit = 90) =>
   client.get('/snapshot/compare/stock', { params: { symbol, limit } });
 
 // Explainability Engine
-export const fetchExplainScore = (scoreType, symbol) =>
-  client.get(`/explain/${scoreType}`, { params: { symbol } });
+export const fetchExplainScore = (scoreType, symbol, strategyId = null) => {
+  const params = {};
+  if (symbol) params.symbol = symbol;
+  if (strategyId) params.strategy_id = strategyId;
+  return client.get(`/explain/${scoreType}`, { params });
+};

@@ -675,3 +675,36 @@ SECURITY_MASTER_SEED = [
     ("PRESTIGE.NS", "Prestige Estates Projects Ltd", "Real Estate", "Real Estate Development"),
 ]
 
+
+# ── Quant Strategy Studio Tables ───────────────────────────────────────────
+
+class StrategyMaster(Base):
+    __tablename__ = "strategy_master"
+    strategy_id = Column(String, primary_key=True)  # UUID string
+    owner_id = Column(String, nullable=True)
+    strategy_name = Column(String, nullable=False)
+    description = Column(Text, nullable=True)
+    strategy_type = Column(String, default="Stock")  # Stock, Portfolio, ETF, Sector, Options, Screening, Allocation
+    strategy_prompt = Column(Text, nullable=True)  # search/AI prompt
+    strategy_definition = Column(Text, nullable=True)  # JSON string
+    visibility = Column(String, default="Private")  # Private, Public, Shared
+    version = Column(String, default="1.0.0")
+    status = Column(String, default="Draft")  # Draft, Published, Archived
+    created_at = Column(String, nullable=True)
+    updated_at = Column(String, nullable=True)
+    
+    versions = relationship("StrategyVersion", back_populates="strategy", cascade="all, delete-orphan")
+
+
+class StrategyVersion(Base):
+    __tablename__ = "strategy_versions"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    strategy_id = Column(String, ForeignKey("strategy_master.strategy_id", ondelete="CASCADE"), nullable=False)
+    version = Column(String, nullable=False)
+    timestamp = Column(String, nullable=False)
+    change_summary = Column(Text, nullable=True)
+    created_by = Column(String, nullable=True)
+    
+    strategy = relationship("StrategyMaster", back_populates="versions")
+
+

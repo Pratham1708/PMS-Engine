@@ -8,6 +8,7 @@ import StockSearch from './pages/StockSearch';
 import StockDetail from './pages/StockDetail';
 import MarketOverview from './pages/MarketOverview';
 import Reports from './pages/Reports';
+import QuantStrategyStudio from './pages/QuantStrategyStudio';
 
 // Quant Lab Page Imports
 import QuantLabHome from './pages/QuantLab/QuantLabHome';
@@ -61,6 +62,7 @@ const PAGE_TITLES = {
   '/search': 'Stock Search',
   '/market': 'Market Overview',
   '/reports': 'Research Reports',
+  '/studio': 'Quant Strategy Studio',
   '/lab': 'Quant Research Laboratory',
 
   '/lab/indicators': 'Indicator Lab',
@@ -159,6 +161,7 @@ function AppContent() {
             <Route path="/stock/:symbol" element={<StockDetail />} />
             <Route path="/market" element={<MarketOverview />} />
             <Route path="/reports" element={<Reports />} />
+            <Route path="/studio" element={<QuantStrategyStudio />} />
 
             
             {/* Quant Lab Routes */}

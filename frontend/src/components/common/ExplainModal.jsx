@@ -17,7 +17,7 @@ import {
   ReferenceLine
 } from 'recharts';
 
-export default function ExplainModal({ scoreType, symbol, defaultTab = 'why', onClose }) {
+export default function ExplainModal({ scoreType, symbol, defaultTab = 'why', strategyId = null, onClose }) {
   const [activeTab, setActiveTab] = useState(defaultTab);
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState(null);
@@ -36,7 +36,7 @@ export default function ExplainModal({ scoreType, symbol, defaultTab = 'why', on
   useEffect(() => {
     setLoading(true);
     setError(null);
-    fetchExplainScore(scoreType, symbol)
+    fetchExplainScore(scoreType, symbol, strategyId)
       .then((res) => {
         console.log('[FRONTEND API DEBUG] Received explain payload:', res.data);
         setData(res.data);

@@ -11,6 +11,7 @@ const navItems = [
   { path: '/data-quality', label: 'Data Quality', icon: '🛡️' },
   { path: '/search', label: 'Stock Search', icon: '🔍' },
   { path: '/reports', label: 'Research Reports', icon: '📄' },
+  { path: '/studio', label: 'Strategy Studio', icon: '🎨' },
   { path: '/lab', label: 'Quant Laboratory', icon: '🔬' },
 ];
 

@@ -60,13 +60,31 @@ def get_scores_detail_for_stock(snapshot_id: str, symbol: str) -> dict:
 @router.get("/explain/{score_type}", response_model=ExplainScoreResponse)
 async def explain_score(
     score_type: str,
-    symbol: Optional[str] = Query(None, description="Ticker symbol of the stock")
+    symbol: Optional[str] = Query(None, description="Ticker symbol of the stock"),
+    strategy_id: Optional[str] = Query(None, description="Strategy ID to explain (default 'pms_default')")
 ):
     """
     Expose the explanation methodology, visual formula, parameters, 
     and dynamic narrative for any score. Optionally takes a symbol.
     """
     normalized_type = score_type.lower().strip()
+    
+    # If strategy_id is provided and not pms_default, execute custom strategy explanation
+    if strategy_id and strategy_id != "pms_default" and symbol:
+        from app.services import strategy_service
+        from app.services.db import get_db_session
+        session = get_db_session()
+        try:
+            strat = strategy_service.get_strategy_by_id(session, strategy_id)
+            if not strat:
+                raise HTTPException(status_code=404, detail=f"Custom strategy '{strategy_id}' not found.")
+            defn = json.loads(strat.strategy_definition)
+            latest_snap = db.get_latest_snapshot()
+            snap_id = latest_snap["snapshot_id"] if latest_snap else None
+            return strategy_service.explain_custom_strategy_score(defn, symbol, snap_id)
+        finally:
+            session.close()
+
     if normalized_type not in EXPLAINERS:
         raise HTTPException(
             status_code=404, 
