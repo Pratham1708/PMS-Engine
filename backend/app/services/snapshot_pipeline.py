@@ -1799,8 +1799,20 @@ def run_pipeline(
 
     # Determine market date
     if not snapshot_date:
-        today = datetime.now(IST).date()
-        snapshot_date = today.strftime("%Y-%m-%d")
+        try:
+            import yfinance as yf
+            nsei = yf.Ticker("^NSEI")
+            df_nsei = nsei.history(period="5d")
+            if not df_nsei.empty:
+                snapshot_date = df_nsei.index[-1].strftime("%Y-%m-%d")
+                logger.info(f"[Pipeline] Auto-resolved snapshot date to last NSE trading day: {snapshot_date}")
+            else:
+                today = datetime.now(IST).date()
+                snapshot_date = today.strftime("%Y-%m-%d")
+        except Exception as e:
+            logger.error(f"[Pipeline] Error auto-resolving trading day: {e}")
+            today = datetime.now(IST).date()
+            snapshot_date = today.strftime("%Y-%m-%d")
 
     # Recovery check: search for incomplete or failed snapshot for this date
     snapshot_id = None
