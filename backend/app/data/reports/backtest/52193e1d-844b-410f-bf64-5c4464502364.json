@@ -1,0 +1,2957 @@
+{
+  "run_id": "52193e1d-844b-410f-bf64-5c4464502364",
+  "strategy_id": "af695c1f-935c-4375-b9a9-282751e205f9",
+  "strategy_name": "Test Verification Strategy",
+  "status": "completed",
+  "start_date": "2024-01-01",
+  "end_date": "2026-07-19",
+  "benchmark": "NIFTY50",
+  "rebalance_freq": "Monthly",
+  "weighting_scheme": "Equal",
+  "initial_capital": 1000000.0,
+  "snapshots_used": 5,
+  "custom_metrics": {
+    "returns": {
+      "total_return_pct": 0.1184,
+      "cagr_pct": 226.6419,
+      "annualized_return_pct": 226.6419,
+      "monthly_returns": [
+        {
+          "year": 2026,
+          "month": 7,
+          "return_pct": 0.1184
+        }
+      ],
+      "quarterly_returns": [],
+      "yearly_returns": [
+        {
+          "year": 2026,
+          "return_pct": 0.1184
+        }
+      ]
+    },
+    "risk": {
+      "annualized_volatility_pct": 18.8373,
+      "beta": 0.4008,
+      "alpha_pct": 320.1754,
+      "sharpe_ratio": 6.3554,
+      "sortino_ratio": 10.1837,
+      "calmar_ratio": 609.655,
+      "information_ratio": 0.358,
+      "treynor_ratio": 2.987245
+    },
+    "drawdown": {
+      "max_drawdown_pct": -0.3718,
+      "avg_drawdown_pct": -0.3145,
+      "max_recovery_days": 3,
+      "total_underwater_days": 3,
+      "drawdown_curve": [
+        {
+          "date": "2026-07-17",
+          "drawdown_pct": 0.0
+        },
+        {
+          "date": "2026-07-15",
+          "drawdown_pct": -0.3718
+        },
+        {
+          "date": "2026-07-15",
+          "drawdown_pct": -0.3718
+        },
+        {
+          "date": "2026-07-14",
+          "drawdown_pct": -0.2
+        },
+        {
+          "date": "2026-07-13",
+          "drawdown_pct": 0.0
+        }
+      ]
+    },
+    "trades": {
+      "total_trades": 20,
+      "win_rate_pct": 10.0,
+      "loss_rate_pct": 90.0,
+      "avg_win_pct": 7.5874,
+      "avg_loss_pct": -0.6924,
+      "profit_factor": 1.2176,
+      "expectancy_pct": 0.1356,
+      "avg_holding_days": -2.5
+    },
+    "portfolio": {
+      "avg_portfolio_score": 2912.33,
+      "avg_turnover_pct": 25.53,
+      "avg_cash_utilization_pct": 80.27,
+      "sector_allocation": {
+        "Industrials": 0.1334,
+        "Energy": 0.0799,
+        "Materials": 0.2673,
+        "Healthcare": 0.135,
+        "Consumer Discretionary": 0.1993,
+        "Technology": 0.1199,
+        "—": 0.0682,
+        "Financial Services": 0.121
+      },
+      "avg_position_concentration_pct": 0.0,
+      "top5_weight_pct": 40.52,
+      "feature_utilization_pct": 0.0
+    },
+    "benchmark_relative": {
+      "excess_return_pct": 0.6251,
+      "tracking_error_pct": 27.3765,
+      "relative_max_drawdown_pct": 0.7881,
+      "relative_sharpe": 17.5726,
+      "relative_cagr_pct": 326.0198
+    },
+    "rolling": {
+      "rolling_cagr": [
+        {
+          "date": "2026-07-15",
+          "d30": null,
+          "d90": null,
+          "d252": null
+        },
+        {
+          "date": "2026-07-15",
+          "d30": null,
+          "d90": null,
+          "d252": null
+        },
+        {
+          "date": "2026-07-14",
+          "d30": -93.0656,
+          "d90": null,
+          "d252": null
+        },
+        {
+          "date": "2026-07-13",
+          "d30": 69421.4729,
+          "d90": null,
+          "d252": null
+        }
+      ],
+      "rolling_volatility": [
+        {
+          "date": "2026-07-15",
+          "d30": null,
+          "d90": null,
+          "d252": null
+        },
+        {
+          "date": "2026-07-15",
+          "d30": null,
+          "d90": null,
+          "d252": null
+        },
+        {
+          "date": "2026-07-14",
+          "d30": 17.5896,
+          "d90": null,
+          "d252": null
+        },
+        {
+          "date": "2026-07-13",
+          "d30": 10.0996,
+          "d90": null,
+          "d252": null
+        }
+      ],
+      "rolling_sharpe": [
+        {
+          "date": "2026-07-15",
+          "d30": null,
+          "d90": null,
+          "d252": null
+        },
+        {
+          "date": "2026-07-15",
+          "d30": null,
+          "d90": null,
+          "d252": null
+        },
+        {
+          "date": "2026-07-14",
+          "d30": -15.1081,
+          "d90": null,
+          "d252": null
+        },
+        {
+          "date": "2026-07-13",
+          "d30": 64.8836,
+          "d90": null,
+          "d252": null
+        }
+      ],
+      "rolling_sortino": [
+        {
+          "date": "2026-07-15",
+          "d30": null,
+          "d90": null,
+          "d252": null
+        },
+        {
+          "date": "2026-07-15",
+          "d30": null,
+          "d90": null,
+          "d252": null
+        },
+        {
+          "date": "2026-07-14",
+          "d30": -19.5768,
+          "d90": null,
+          "d252": null
+        },
+        {
+          "date": "2026-07-13",
+          "d30": 0.0,
+          "d90": null,
+          "d252": null
+        }
+      ],
+      "rolling_alpha": [
+        {
+          "date": "2026-07-15",
+          "d30": null,
+          "d90": null,
+          "d252": null
+        },
+        {
+          "date": "2026-07-15",
+          "d30": null,
+          "d90": null,
+          "d252": null
+        },
+        {
+          "date": "2026-07-14",
+          "d30": 417.4934,
+          "d90": null,
+          "d252": null
+        },
+        {
+          "date": "2026-07-13",
+          "d30": 440.5106,
+          "d90": null,
+          "d252": null
+        }
+      ],
+      "rolling_drawdown": [
+        {
+          "date": "2026-07-15",
+          "d30": null,
+          "d90": null,
+          "d252": null
+        },
+        {
+          "date": "2026-07-15",
+          "d30": null,
+          "d90": null,
+          "d252": null
+        },
+        {
+          "date": "2026-07-14",
+          "d30": -0.3718,
+          "d90": null,
+          "d252": null
+        },
+        {
+          "date": "2026-07-13",
+          "d30": 0.0,
+          "d90": null,
+          "d252": null
+        }
+      ],
+      "rolling_win_rate": []
+    }
+  },
+  "pms_default_metrics": {
+    "returns": {
+      "total_return_pct": -1.3304,
+      "cagr_pct": -99.9998,
+      "annualized_return_pct": -99.9998,
+      "monthly_returns": [
+        {
+          "year": 2026,
+          "month": 7,
+          "return_pct": -1.3304
+        }
+      ],
+      "quarterly_returns": [],
+      "yearly_returns": [
+        {
+          "year": 2026,
+          "return_pct": -1.3304
+        }
+      ]
+    },
+    "risk": {
+      "annualized_volatility_pct": 39.5943,
+      "beta": -0.3921,
+      "alpha_pct": -1527.2815,
+      "sharpe_ratio": -33.6203,
+      "sortino_ratio": -37.4498,
+      "calmar_ratio": 75.1655,
+      "information_ratio": -0.1837,
+      "treynor_ratio": 33.952185
+    },
+    "drawdown": {
+      "max_drawdown_pct": -1.3304,
+      "avg_drawdown_pct": -0.5558,
+      "max_recovery_days": 4,
+      "total_underwater_days": 4,
+      "drawdown_curve": [
+        {
+          "date": "2026-07-17",
+          "drawdown_pct": 0.0
+        },
+        {
+          "date": "2026-07-15",
+          "drawdown_pct": -0.3763
+        },
+        {
+          "date": "2026-07-15",
+          "drawdown_pct": -0.3763
+        },
+        {
+          "date": "2026-07-14",
+          "drawdown_pct": -0.14
+        },
+        {
+          "date": "2026-07-13",
+          "drawdown_pct": -1.3304
+        }
+      ]
+    },
+    "trades": {
+      "total_trades": 0,
+      "win_rate_pct": 0.0,
+      "loss_rate_pct": 0.0,
+      "avg_win_pct": 0.0,
+      "avg_loss_pct": 0.0,
+      "profit_factor": 0.0,
+      "expectancy_pct": 0.0,
+      "avg_holding_days": 0.0
+    },
+    "portfolio": {},
+    "benchmark_relative": {
+      "excess_return_pct": -0.8237,
+      "tracking_error_pct": 71.5207,
+      "relative_max_drawdown_pct": -0.1705,
+      "relative_sharpe": -22.4031,
+      "relative_cagr_pct": -0.6219
+    },
+    "rolling": {
+      "rolling_cagr": [
+        {
+          "date": "2026-07-15",
+          "d30": null,
+          "d90": null,
+          "d252": null
+        },
+        {
+          "date": "2026-07-15",
+          "d30": null,
+          "d90": null,
+          "d252": null
+        },
+        {
+          "date": "2026-07-14",
+          "d30": -84.5648,
+          "d90": null,
+          "d252": null
+        },
+        {
+          "date": "2026-07-13",
+          "d30": -99.9997,
+          "d90": null,
+          "d252": null
+        }
+      ],
+      "rolling_volatility": [
+        {
+          "date": "2026-07-15",
+          "d30": null,
+          "d90": null,
+          "d252": null
+        },
+        {
+          "date": "2026-07-15",
+          "d30": null,
+          "d90": null,
+          "d252": null
+        },
+        {
+          "date": "2026-07-14",
+          "d30": 19.5659,
+          "d90": null,
+          "d252": null
+        },
+        {
+          "date": "2026-07-13",
+          "d30": 48.4408,
+          "d90": null,
+          "d252": null
+        }
+      ],
+      "rolling_sharpe": [
+        {
+          "date": "2026-07-15",
+          "d30": null,
+          "d90": null,
+          "d252": null
+        },
+        {
+          "date": "2026-07-15",
+          "d30": null,
+          "d90": null,
+          "d252": null
+        },
+        {
+          "date": "2026-07-14",
+          "d30": -9.4824,
+          "d90": null,
+          "d252": null
+        },
+        {
+          "date": "2026-07-13",
+          "d30": -26.2824,
+          "d90": null,
+          "d252": null
+        }
+      ],
+      "rolling_sortino": [
+        {
+          "date": "2026-07-15",
+          "d30": null,
+          "d90": null,
+          "d252": null
+        },
+        {
+          "date": "2026-07-15",
+          "d30": null,
+          "d90": null,
+          "d252": null
+        },
+        {
+          "date": "2026-07-14",
+          "d30": -13.5018,
+          "d90": null,
+          "d252": null
+        },
+        {
+          "date": "2026-07-13",
+          "d30": -29.2497,
+          "d90": null,
+          "d252": null
+        }
+      ],
+      "rolling_alpha": [
+        {
+          "date": "2026-07-15",
+          "d30": null,
+          "d90": null,
+          "d252": null
+        },
+        {
+          "date": "2026-07-15",
+          "d30": null,
+          "d90": null,
+          "d252": null
+        },
+        {
+          "date": "2026-07-14",
+          "d30": 546.3267,
+          "d90": null,
+          "d252": null
+        },
+        {
+          "date": "2026-07-13",
+          "d30": 76.2626,
+          "d90": null,
+          "d252": null
+        }
+      ],
+      "rolling_drawdown": [
+        {
+          "date": "2026-07-15",
+          "d30": null,
+          "d90": null,
+          "d252": null
+        },
+        {
+          "date": "2026-07-15",
+          "d30": null,
+          "d90": null,
+          "d252": null
+        },
+        {
+          "date": "2026-07-14",
+          "d30": -0.3763,
+          "d90": null,
+          "d252": null
+        },
+        {
+          "date": "2026-07-13",
+          "d30": -1.192,
+          "d90": null,
+          "d252": null
+        }
+      ],
+      "rolling_win_rate": []
+    }
+  },
+  "benchmark_metrics": {
+    "returns": {
+      "total_return_pct": -0.5067,
+      "cagr_pct": -99.3779,
+      "annualized_return_pct": -99.3779,
+      "monthly_returns": [
+        {
+          "year": 2026,
+          "month": 7,
+          "return_pct": -0.5067
+        }
+      ],
+      "quarterly_returns": [],
+      "yearly_returns": [
+        {
+          "year": 2026,
+          "return_pct": -0.5067
+        }
+      ]
+    },
+    "risk": {
+      "annualized_volatility_pct": 44.5909,
+      "beta": 1.0,
+      "alpha_pct": 0.0,
+      "sharpe_ratio": -11.2172,
+      "sortino_ratio": -15.5094,
+      "calmar_ratio": 85.6791,
+      "information_ratio": 0.0,
+      "treynor_ratio": -5.001849
+    },
+    "drawdown": {
+      "max_drawdown_pct": -1.1599,
+      "avg_drawdown_pct": -0.9422,
+      "max_recovery_days": 4,
+      "total_underwater_days": 4,
+      "drawdown_curve": [
+        {
+          "date": "2026-07-17",
+          "drawdown_pct": 0.0
+        },
+        {
+          "date": "2026-07-15",
+          "drawdown_pct": -1.0512
+        },
+        {
+          "date": "2026-07-15",
+          "drawdown_pct": -1.0512
+        },
+        {
+          "date": "2026-07-14",
+          "drawdown_pct": -1.1599
+        },
+        {
+          "date": "2026-07-13",
+          "drawdown_pct": -0.5067
+        }
+      ]
+    },
+    "trades": {
+      "total_trades": 0,
+      "win_rate_pct": 0.0,
+      "loss_rate_pct": 0.0,
+      "avg_win_pct": 0.0,
+      "avg_loss_pct": 0.0,
+      "profit_factor": 0.0,
+      "expectancy_pct": 0.0,
+      "avg_holding_days": 0.0
+    },
+    "portfolio": {},
+    "benchmark_relative": {
+      "excess_return_pct": 0.0,
+      "tracking_error_pct": 0.0,
+      "relative_max_drawdown_pct": 0.0,
+      "relative_sharpe": 0.0,
+      "relative_cagr_pct": 0.0
+    },
+    "rolling": {
+      "rolling_cagr": [
+        {
+          "date": "2026-07-15",
+          "d30": null,
+          "d90": null,
+          "d252": null
+        },
+        {
+          "date": "2026-07-15",
+          "d30": null,
+          "d90": null,
+          "d252": null
+        },
+        {
+          "date": "2026-07-14",
+          "d30": -100.0,
+          "d90": null,
+          "d252": null
+        },
+        {
+          "date": "2026-07-13",
+          "d30": 150467.2242,
+          "d90": null,
+          "d252": null
+        }
+      ],
+      "rolling_volatility": [
+        {
+          "date": "2026-07-15",
+          "d30": null,
+          "d90": null,
+          "d252": null
+        },
+        {
+          "date": "2026-07-15",
+          "d30": null,
+          "d90": null,
+          "d252": null
+        },
+        {
+          "date": "2026-07-14",
+          "d30": 36.5442,
+          "d90": null,
+          "d252": null
+        },
+        {
+          "date": "2026-07-13",
+          "d30": 26.3663,
+          "d90": null,
+          "d252": null
+        }
+      ],
+      "rolling_sharpe": [
+        {
+          "date": "2026-07-15",
+          "d30": null,
+          "d90": null,
+          "d252": null
+        },
+        {
+          "date": "2026-07-15",
+          "d30": null,
+          "d90": null,
+          "d252": null
+        },
+        {
+          "date": "2026-07-14",
+          "d30": -42.3612,
+          "d90": null,
+          "d252": null
+        },
+        {
+          "date": "2026-07-13",
+          "d30": 27.8643,
+          "d90": null,
+          "d252": null
+        }
+      ],
+      "rolling_sortino": [
+        {
+          "date": "2026-07-15",
+          "d30": null,
+          "d90": null,
+          "d252": null
+        },
+        {
+          "date": "2026-07-15",
+          "d30": null,
+          "d90": null,
+          "d252": null
+        },
+        {
+          "date": "2026-07-14",
+          "d30": -42.3612,
+          "d90": null,
+          "d252": null
+        },
+        {
+          "date": "2026-07-13",
+          "d30": 183.1658,
+          "d90": null,
+          "d252": null
+        }
+      ],
+      "rolling_alpha": [
+        {
+          "date": "2026-07-15",
+          "d30": null,
+          "d90": null,
+          "d252": null
+        },
+        {
+          "date": "2026-07-15",
+          "d30": null,
+          "d90": null,
+          "d252": null
+        },
+        {
+          "date": "2026-07-14",
+          "d30": 0.0,
+          "d90": null,
+          "d252": null
+        },
+        {
+          "date": "2026-07-13",
+          "d30": 0.0,
+          "d90": null,
+          "d252": null
+        }
+      ],
+      "rolling_drawdown": [
+        {
+          "date": "2026-07-15",
+          "d30": null,
+          "d90": null,
+          "d252": null
+        },
+        {
+          "date": "2026-07-15",
+          "d30": null,
+          "d90": null,
+          "d252": null
+        },
+        {
+          "date": "2026-07-14",
+          "d30": -1.1599,
+          "d90": null,
+          "d252": null
+        },
+        {
+          "date": "2026-07-13",
+          "d30": -0.1098,
+          "d90": null,
+          "d252": null
+        }
+      ],
+      "rolling_win_rate": []
+    }
+  },
+  "equity_curve": [
+    {
+      "date": "2026-07-17",
+      "custom": 998003.0,
+      "pms_default": 998003.0,
+      "benchmark": 1119235.23
+    },
+    {
+      "date": "2026-07-15",
+      "custom": 994292.88,
+      "pms_default": 994247.33,
+      "benchmark": 1107469.89
+    },
+    {
+      "date": "2026-07-15",
+      "custom": 994292.88,
+      "pms_default": 994247.33,
+      "benchmark": 1107469.89
+    },
+    {
+      "date": "2026-07-14",
+      "custom": 996007.49,
+      "pms_default": 996605.39,
+      "benchmark": 1106253.38
+    },
+    {
+      "date": "2026-07-13",
+      "custom": 999185.03,
+      "pms_default": 984725.61,
+      "benchmark": 1113564.11
+    }
+  ],
+  "sector_allocation_timeline": [
+    {
+      "date": "2026-07-17",
+      "Industrials": 0.1335,
+      "Energy": 0.0667,
+      "Materials": 0.2669,
+      "Healthcare": 0.1335,
+      "Consumer Discretionary": 0.2002,
+      "Technology": 0.0667,
+      "—": 0.0667,
+      "Financial Services": 0.0657
+    },
+    {
+      "date": "2026-07-15",
+      "Industrials": 0.1334,
+      "Energy": 0.067,
+      "Materials": 0.2675,
+      "Healthcare": 0.1357,
+      "Consumer Discretionary": 0.1989,
+      "Technology": 0.0638,
+      "—": 0.0689,
+      "Financial Services": 0.0649
+    },
+    {
+      "date": "2026-07-15",
+      "Industrials": 0.1334,
+      "Energy": 0.067,
+      "Materials": 0.2675,
+      "Healthcare": 0.1357,
+      "Consumer Discretionary": 0.1989,
+      "Technology": 0.0638,
+      "—": 0.0689,
+      "Financial Services": 0.0649
+    },
+    {
+      "date": "2026-07-14",
+      "Technology": 0.2,
+      "Financial Services": 0.2,
+      "Energy": 0.1
+    },
+    {
+      "date": "2026-07-13",
+      "Technology": 0.2053,
+      "Financial Services": 0.2094,
+      "Energy": 0.0989
+    }
+  ],
+  "win_loss_histogram": [
+    {
+      "bucket": "-100% to -30%",
+      "low": -100,
+      "high": -30,
+      "count": 0
+    },
+    {
+      "bucket": "-30% to -20%",
+      "low": -30,
+      "high": -20,
+      "count": 0
+    },
+    {
+      "bucket": "-20% to -10%",
+      "low": -20,
+      "high": -10,
+      "count": 0
+    },
+    {
+      "bucket": "-10% to -5%",
+      "low": -10,
+      "high": -5,
+      "count": 1
+    },
+    {
+      "bucket": "-5% to 0%",
+      "low": -5,
+      "high": 0,
+      "count": 2
+    },
+    {
+      "bucket": "0% to 5%",
+      "low": 0,
+      "high": 5,
+      "count": 15
+    },
+    {
+      "bucket": "5% to 10%",
+      "low": 5,
+      "high": 10,
+      "count": 2
+    },
+    {
+      "bucket": "10% to 20%",
+      "low": 10,
+      "high": 20,
+      "count": 0
+    },
+    {
+      "bucket": "20% to 30%",
+      "low": 20,
+      "high": 30,
+      "count": 0
+    },
+    {
+      "bucket": "30% to 100%",
+      "low": 30,
+      "high": 100,
+      "count": 0
+    }
+  ],
+  "summary": {
+    "total_return_pct": 0.1184,
+    "cagr_pct": 226.6419,
+    "sharpe_ratio": 6.3554,
+    "sortino_ratio": 10.1837,
+    "max_drawdown_pct": -0.3718,
+    "win_rate_pct": 10.0,
+    "profit_factor": 1.2176,
+    "alpha_pct": 320.1754,
+    "beta": 0.4008,
+    "pms_total_return_pct": -1.3304,
+    "pms_cagr_pct": -99.9998,
+    "pms_sharpe_ratio": -33.6203,
+    "pms_max_drawdown_pct": -1.3304,
+    "benchmark_total_return_pct": -0.5067,
+    "benchmark_cagr_pct": -99.3779,
+    "benchmark_sharpe_ratio": -11.2172,
+    "benchmark_max_drawdown_pct": -1.1599
+  },
+  "trade_log": [
+    {
+      "trade_id": "5e554d66-c819-40c7-af73-1b4b8c988f1a",
+      "symbol": "ADANIPORTS.NS",
+      "company_name": "Adani Ports & SEZ Ltd",
+      "sector": "Industrials",
+      "entry_date": "2026-07-17",
+      "exit_date": "2026-07-14",
+      "holding_days": -3,
+      "entry_price": 1839.2374,
+      "exit_price": 1839.2374,
+      "entry_score": 4118.5,
+      "exit_score": 0.0,
+      "entry_rating": "STRONG BUY",
+      "exit_rating": "HOLD",
+      "return_pct": 0.0,
+      "position_weight": 0.0,
+      "entry_snapshot_id": "f0782fe7-2bc8-4de7-ba42-d91cf08a3f08",
+      "exit_snapshot_id": "ff994337-bd94-4b6a-ad92-4dd2aa6a0f85",
+      "attribution": {
+        "why_entered": "Entered on strength in: momentum_score (+36.66), risk_score (+4.53)",
+        "why_exited": "",
+        "top_contributors": [
+          {
+            "feature_id": "momentum_score",
+            "label": "momentum_score",
+            "contribution": 36.655,
+            "raw_value": 73.31,
+            "normalized_value": 73.31,
+            "weight": 50.0
+          },
+          {
+            "feature_id": "risk_score",
+            "label": "risk_score",
+            "contribution": 4.53,
+            "raw_value": 22.65,
+            "normalized_value": 22.65,
+            "weight": 20.0
+          },
+          {
+            "feature_id": "pe_ratio",
+            "label": "pe_ratio",
+            "contribution": 0.0,
+            "raw_value": 0.0,
+            "normalized_value": 0.0,
+            "weight": 30.0
+          }
+        ],
+        "top_detractors": [
+          {
+            "feature_id": "pe_ratio",
+            "label": "pe_ratio",
+            "contribution": 0.0,
+            "raw_value": 0.0,
+            "normalized_value": 0.0,
+            "weight": 30.0
+          },
+          {
+            "feature_id": "risk_score",
+            "label": "risk_score",
+            "contribution": 4.53,
+            "raw_value": 22.65,
+            "normalized_value": 22.65,
+            "weight": 20.0
+          },
+          {
+            "feature_id": "momentum_score",
+            "label": "momentum_score",
+            "contribution": 36.655,
+            "raw_value": 73.31,
+            "normalized_value": 73.31,
+            "weight": 50.0
+          }
+        ],
+        "entry_eqif_available": true,
+        "exit_eqif_available": false
+      }
+    },
+    {
+      "trade_id": "bbca17bb-1ce2-4599-a1e5-9593b04df3b7",
+      "symbol": "ADANIENT.NS",
+      "company_name": "Adani Enterprises Ltd",
+      "sector": "Industrials",
+      "entry_date": "2026-07-17",
+      "exit_date": "2026-07-14",
+      "holding_days": -3,
+      "entry_price": 3163.8607,
+      "exit_price": 3163.8607,
+      "entry_score": 3918.5,
+      "exit_score": 0.0,
+      "entry_rating": "STRONG BUY",
+      "exit_rating": "HOLD",
+      "return_pct": 0.0,
+      "position_weight": 0.0,
+      "entry_snapshot_id": "f0782fe7-2bc8-4de7-ba42-d91cf08a3f08",
+      "exit_snapshot_id": "ff994337-bd94-4b6a-ad92-4dd2aa6a0f85",
+      "attribution": {
+        "why_entered": "Entered on strength in: momentum_score (+39.19), pe_ratio (+0.00)",
+        "why_exited": "",
+        "top_contributors": [
+          {
+            "feature_id": "momentum_score",
+            "label": "momentum_score",
+            "contribution": 39.185,
+            "raw_value": 78.37,
+            "normalized_value": 78.37,
+            "weight": 50.0
+          },
+          {
+            "feature_id": "pe_ratio",
+            "label": "pe_ratio",
+            "contribution": 0.0,
+            "raw_value": 0.0,
+            "normalized_value": 0.0,
+            "weight": 30.0
+          },
+          {
+            "feature_id": "risk_score",
+            "label": "risk_score",
+            "contribution": 0.0,
+            "raw_value": 0.0,
+            "normalized_value": 0.0,
+            "weight": 20.0
+          }
+        ],
+        "top_detractors": [
+          {
+            "feature_id": "pe_ratio",
+            "label": "pe_ratio",
+            "contribution": 0.0,
+            "raw_value": 0.0,
+            "normalized_value": 0.0,
+            "weight": 30.0
+          },
+          {
+            "feature_id": "risk_score",
+            "label": "risk_score",
+            "contribution": 0.0,
+            "raw_value": 0.0,
+            "normalized_value": 0.0,
+            "weight": 20.0
+          },
+          {
+            "feature_id": "momentum_score",
+            "label": "momentum_score",
+            "contribution": 39.185,
+            "raw_value": 78.37,
+            "normalized_value": 78.37,
+            "weight": 50.0
+          }
+        ],
+        "entry_eqif_available": true,
+        "exit_eqif_available": false
+      }
+    },
+    {
+      "trade_id": "2d480309-3011-4d0d-86ca-942124dfff74",
+      "symbol": "COALINDIA.NS",
+      "company_name": "Coal India Ltd",
+      "sector": "Energy",
+      "entry_date": "2026-07-17",
+      "exit_date": "2026-07-14",
+      "holding_days": -3,
+      "entry_price": 428.0776,
+      "exit_price": 428.0776,
+      "entry_score": 3663.8,
+      "exit_score": 0.0,
+      "entry_rating": "STRONG BUY",
+      "exit_rating": "HOLD",
+      "return_pct": 0.0,
+      "position_weight": 0.0,
+      "entry_snapshot_id": "f0782fe7-2bc8-4de7-ba42-d91cf08a3f08",
+      "exit_snapshot_id": "ff994337-bd94-4b6a-ad92-4dd2aa6a0f85",
+      "attribution": {
+        "why_entered": "Entered on strength in: momentum_score (+32.19), risk_score (+4.45)",
+        "why_exited": "",
+        "top_contributors": [
+          {
+            "feature_id": "momentum_score",
+            "label": "momentum_score",
+            "contribution": 32.19,
+            "raw_value": 64.38,
+            "normalized_value": 64.38,
+            "weight": 50.0
+          },
+          {
+            "feature_id": "risk_score",
+            "label": "risk_score",
+            "contribution": 4.448,
+            "raw_value": 22.24,
+            "normalized_value": 22.24,
+            "weight": 20.0
+          },
+          {
+            "feature_id": "pe_ratio",
+            "label": "pe_ratio",
+            "contribution": 0.0,
+            "raw_value": 0.0,
+            "normalized_value": 0.0,
+            "weight": 30.0
+          }
+        ],
+        "top_detractors": [
+          {
+            "feature_id": "pe_ratio",
+            "label": "pe_ratio",
+            "contribution": 0.0,
+            "raw_value": 0.0,
+            "normalized_value": 0.0,
+            "weight": 30.0
+          },
+          {
+            "feature_id": "risk_score",
+            "label": "risk_score",
+            "contribution": 4.448,
+            "raw_value": 22.24,
+            "normalized_value": 22.24,
+            "weight": 20.0
+          },
+          {
+            "feature_id": "momentum_score",
+            "label": "momentum_score",
+            "contribution": 32.19,
+            "raw_value": 64.38,
+            "normalized_value": 64.38,
+            "weight": 50.0
+          }
+        ],
+        "entry_eqif_available": true,
+        "exit_eqif_available": false
+      }
+    },
+    {
+      "trade_id": "2d7e54c9-50af-4275-9c60-531cc9271e58",
+      "symbol": "HINDALCO.NS",
+      "company_name": "Hindalco Industries Ltd",
+      "sector": "Materials",
+      "entry_date": "2026-07-17",
+      "exit_date": "2026-07-14",
+      "holding_days": -3,
+      "entry_price": 945.0941,
+      "exit_price": 945.0941,
+      "entry_score": 3047.7,
+      "exit_score": 0.0,
+      "entry_rating": "STRONG BUY",
+      "exit_rating": "HOLD",
+      "return_pct": 0.0,
+      "position_weight": 0.0,
+      "entry_snapshot_id": "f0782fe7-2bc8-4de7-ba42-d91cf08a3f08",
+      "exit_snapshot_id": "ff994337-bd94-4b6a-ad92-4dd2aa6a0f85",
+      "attribution": {
+        "why_entered": "Entered on strength in: momentum_score (+29.75), risk_score (+0.72)",
+        "why_exited": "",
+        "top_contributors": [
+          {
+            "feature_id": "momentum_score",
+            "label": "momentum_score",
+            "contribution": 29.755,
+            "raw_value": 59.51,
+            "normalized_value": 59.51,
+            "weight": 50.0
+          },
+          {
+            "feature_id": "risk_score",
+            "label": "risk_score",
+            "contribution": 0.722,
+            "raw_value": 3.61,
+            "normalized_value": 3.61,
+            "weight": 20.0
+          },
+          {
+            "feature_id": "pe_ratio",
+            "label": "pe_ratio",
+            "contribution": 0.0,
+            "raw_value": 0.0,
+            "normalized_value": 0.0,
+            "weight": 30.0
+          }
+        ],
+        "top_detractors": [
+          {
+            "feature_id": "pe_ratio",
+            "label": "pe_ratio",
+            "contribution": 0.0,
+            "raw_value": 0.0,
+            "normalized_value": 0.0,
+            "weight": 30.0
+          },
+          {
+            "feature_id": "risk_score",
+            "label": "risk_score",
+            "contribution": 0.722,
+            "raw_value": 3.61,
+            "normalized_value": 3.61,
+            "weight": 20.0
+          },
+          {
+            "feature_id": "momentum_score",
+            "label": "momentum_score",
+            "contribution": 29.755,
+            "raw_value": 59.51,
+            "normalized_value": 59.51,
+            "weight": 50.0
+          }
+        ],
+        "entry_eqif_available": true,
+        "exit_eqif_available": false
+      }
+    },
+    {
+      "trade_id": "42cd4696-8dd2-46e9-8db7-8f95b9438cf0",
+      "symbol": "GRASIM.NS",
+      "company_name": "Grasim Industries Ltd",
+      "sector": "Materials",
+      "entry_date": "2026-07-17",
+      "exit_date": "2026-07-14",
+      "holding_days": -3,
+      "entry_price": 3112.8097,
+      "exit_price": 3112.8097,
+      "entry_score": 2418.5,
+      "exit_score": 0.0,
+      "entry_rating": "STRONG BUY",
+      "exit_rating": "HOLD",
+      "return_pct": 0.0,
+      "position_weight": 0.0,
+      "entry_snapshot_id": "f0782fe7-2bc8-4de7-ba42-d91cf08a3f08",
+      "exit_snapshot_id": "ff994337-bd94-4b6a-ad92-4dd2aa6a0f85",
+      "attribution": {
+        "why_entered": "Entered on strength in: momentum_score (+24.18), pe_ratio (+0.00)",
+        "why_exited": "",
+        "top_contributors": [
+          {
+            "feature_id": "momentum_score",
+            "label": "momentum_score",
+            "contribution": 24.185,
+            "raw_value": 48.37,
+            "normalized_value": 48.37,
+            "weight": 50.0
+          },
+          {
+            "feature_id": "pe_ratio",
+            "label": "pe_ratio",
+            "contribution": 0.0,
+            "raw_value": 0.0,
+            "normalized_value": 0.0,
+            "weight": 30.0
+          },
+          {
+            "feature_id": "risk_score",
+            "label": "risk_score",
+            "contribution": 0.0,
+            "raw_value": 0.0,
+            "normalized_value": 0.0,
+            "weight": 20.0
+          }
+        ],
+        "top_detractors": [
+          {
+            "feature_id": "pe_ratio",
+            "label": "pe_ratio",
+            "contribution": 0.0,
+            "raw_value": 0.0,
+            "normalized_value": 0.0,
+            "weight": 30.0
+          },
+          {
+            "feature_id": "risk_score",
+            "label": "risk_score",
+            "contribution": 0.0,
+            "raw_value": 0.0,
+            "normalized_value": 0.0,
+            "weight": 20.0
+          },
+          {
+            "feature_id": "momentum_score",
+            "label": "momentum_score",
+            "contribution": 24.185,
+            "raw_value": 48.37,
+            "normalized_value": 48.37,
+            "weight": 50.0
+          }
+        ],
+        "entry_eqif_available": true,
+        "exit_eqif_available": false
+      }
+    },
+    {
+      "trade_id": "a4880c75-a5b9-41e5-aec7-ada76e24dbb5",
+      "symbol": "APOLLOHOSP.NS",
+      "company_name": "Apollo Hospitals Enterprise Ltd",
+      "sector": "Healthcare",
+      "entry_date": "2026-07-17",
+      "exit_date": "2026-07-14",
+      "holding_days": -3,
+      "entry_price": 8834.826,
+      "exit_price": 8834.826,
+      "entry_score": 2343.0,
+      "exit_score": 0.0,
+      "entry_rating": "STRONG BUY",
+      "exit_rating": "HOLD",
+      "return_pct": 0.0,
+      "position_weight": 0.0,
+      "entry_snapshot_id": "f0782fe7-2bc8-4de7-ba42-d91cf08a3f08",
+      "exit_snapshot_id": "ff994337-bd94-4b6a-ad92-4dd2aa6a0f85",
+      "attribution": {
+        "why_entered": "Entered on strength in: momentum_score (+23.43), pe_ratio (+0.00)",
+        "why_exited": "",
+        "top_contributors": [
+          {
+            "feature_id": "momentum_score",
+            "label": "momentum_score",
+            "contribution": 23.43,
+            "raw_value": 46.86,
+            "normalized_value": 46.86,
+            "weight": 50.0
+          },
+          {
+            "feature_id": "pe_ratio",
+            "label": "pe_ratio",
+            "contribution": 0.0,
+            "raw_value": 0.0,
+            "normalized_value": 0.0,
+            "weight": 30.0
+          },
+          {
+            "feature_id": "risk_score",
+            "label": "risk_score",
+            "contribution": 0.0,
+            "raw_value": 0.0,
+            "normalized_value": 0.0,
+            "weight": 20.0
+          }
+        ],
+        "top_detractors": [
+          {
+            "feature_id": "pe_ratio",
+            "label": "pe_ratio",
+            "contribution": 0.0,
+            "raw_value": 0.0,
+            "normalized_value": 0.0,
+            "weight": 30.0
+          },
+          {
+            "feature_id": "risk_score",
+            "label": "risk_score",
+            "contribution": 0.0,
+            "raw_value": 0.0,
+            "normalized_value": 0.0,
+            "weight": 20.0
+          },
+          {
+            "feature_id": "momentum_score",
+            "label": "momentum_score",
+            "contribution": 23.43,
+            "raw_value": 46.86,
+            "normalized_value": 46.86,
+            "weight": 50.0
+          }
+        ],
+        "entry_eqif_available": true,
+        "exit_eqif_available": false
+      }
+    },
+    {
+      "trade_id": "d839ade8-8652-4100-9944-d529ced8c5bd",
+      "symbol": "BAJAJ-AUTO.NS",
+      "company_name": "Bajaj Auto Ltd",
+      "sector": "Consumer Discretionary",
+      "entry_date": "2026-07-17",
+      "exit_date": "2026-07-14",
+      "holding_days": -3,
+      "entry_price": 10453.443,
+      "exit_price": 10453.443,
+      "entry_score": 2258.5,
+      "exit_score": 0.0,
+      "entry_rating": "STRONG BUY",
+      "exit_rating": "HOLD",
+      "return_pct": 0.0,
+      "position_weight": 0.0,
+      "entry_snapshot_id": "f0782fe7-2bc8-4de7-ba42-d91cf08a3f08",
+      "exit_snapshot_id": "ff994337-bd94-4b6a-ad92-4dd2aa6a0f85",
+      "attribution": {
+        "why_entered": "Entered on strength in: momentum_score (+22.59), pe_ratio (+0.00)",
+        "why_exited": "",
+        "top_contributors": [
+          {
+            "feature_id": "momentum_score",
+            "label": "momentum_score",
+            "contribution": 22.585,
+            "raw_value": 45.17,
+            "normalized_value": 45.17,
+            "weight": 50.0
+          },
+          {
+            "feature_id": "pe_ratio",
+            "label": "pe_ratio",
+            "contribution": 0.0,
+            "raw_value": 0.0,
+            "normalized_value": 0.0,
+            "weight": 30.0
+          },
+          {
+            "feature_id": "risk_score",
+            "label": "risk_score",
+            "contribution": 0.0,
+            "raw_value": 0.0,
+            "normalized_value": 0.0,
+            "weight": 20.0
+          }
+        ],
+        "top_detractors": [
+          {
+            "feature_id": "pe_ratio",
+            "label": "pe_ratio",
+            "contribution": 0.0,
+            "raw_value": 0.0,
+            "normalized_value": 0.0,
+            "weight": 30.0
+          },
+          {
+            "feature_id": "risk_score",
+            "label": "risk_score",
+            "contribution": 0.0,
+            "raw_value": 0.0,
+            "normalized_value": 0.0,
+            "weight": 20.0
+          },
+          {
+            "feature_id": "momentum_score",
+            "label": "momentum_score",
+            "contribution": 22.585,
+            "raw_value": 45.17,
+            "normalized_value": 45.17,
+            "weight": 50.0
+          }
+        ],
+        "entry_eqif_available": true,
+        "exit_eqif_available": false
+      }
+    },
+    {
+      "trade_id": "3eff452e-6437-4a4d-8030-e87e36d04cf9",
+      "symbol": "JSWSTEEL.NS",
+      "company_name": "JSW Steel Ltd",
+      "sector": "Materials",
+      "entry_date": "2026-07-17",
+      "exit_date": "2026-07-14",
+      "holding_days": -3,
+      "entry_price": 1238.5373,
+      "exit_price": 1238.5373,
+      "entry_score": 2238.1,
+      "exit_score": 0.0,
+      "entry_rating": "STRONG BUY",
+      "exit_rating": "HOLD",
+      "return_pct": 0.0,
+      "position_weight": 0.0,
+      "entry_snapshot_id": "f0782fe7-2bc8-4de7-ba42-d91cf08a3f08",
+      "exit_snapshot_id": "ff994337-bd94-4b6a-ad92-4dd2aa6a0f85",
+      "attribution": {
+        "why_entered": "Entered on strength in: momentum_score (+19.02), risk_score (+3.37)",
+        "why_exited": "",
+        "top_contributors": [
+          {
+            "feature_id": "momentum_score",
+            "label": "momentum_score",
+            "contribution": 19.015,
+            "raw_value": 38.03,
+            "normalized_value": 38.03,
+            "weight": 50.0
+          },
+          {
+            "feature_id": "risk_score",
+            "label": "risk_score",
+            "contribution": 3.366,
+            "raw_value": 16.83,
+            "normalized_value": 16.83,
+            "weight": 20.0
+          },
+          {
+            "feature_id": "pe_ratio",
+            "label": "pe_ratio",
+            "contribution": 0.0,
+            "raw_value": 0.0,
+            "normalized_value": 0.0,
+            "weight": 30.0
+          }
+        ],
+        "top_detractors": [
+          {
+            "feature_id": "pe_ratio",
+            "label": "pe_ratio",
+            "contribution": 0.0,
+            "raw_value": 0.0,
+            "normalized_value": 0.0,
+            "weight": 30.0
+          },
+          {
+            "feature_id": "risk_score",
+            "label": "risk_score",
+            "contribution": 3.366,
+            "raw_value": 16.83,
+            "normalized_value": 16.83,
+            "weight": 20.0
+          },
+          {
+            "feature_id": "momentum_score",
+            "label": "momentum_score",
+            "contribution": 19.015,
+            "raw_value": 38.03,
+            "normalized_value": 38.03,
+            "weight": 50.0
+          }
+        ],
+        "entry_eqif_available": true,
+        "exit_eqif_available": false
+      }
+    },
+    {
+      "trade_id": "f46ac015-13d5-42e7-b9de-5537a6c30b18",
+      "symbol": "ASIANPAINT.NS",
+      "company_name": "Asian Paints Ltd",
+      "sector": "Consumer Discretionary",
+      "entry_date": "2026-07-17",
+      "exit_date": "2026-07-14",
+      "holding_days": -3,
+      "entry_price": 2691.689,
+      "exit_price": 2691.689,
+      "entry_score": 2221.8,
+      "exit_score": 0.0,
+      "entry_rating": "STRONG BUY",
+      "exit_rating": "HOLD",
+      "return_pct": 0.0,
+      "position_weight": 0.0,
+      "entry_snapshot_id": "f0782fe7-2bc8-4de7-ba42-d91cf08a3f08",
+      "exit_snapshot_id": "ff994337-bd94-4b6a-ad92-4dd2aa6a0f85",
+      "attribution": {
+        "why_entered": "Entered on strength in: momentum_score (+20.95), risk_score (+1.27)",
+        "why_exited": "",
+        "top_contributors": [
+          {
+            "feature_id": "momentum_score",
+            "label": "momentum_score",
+            "contribution": 20.95,
+            "raw_value": 41.9,
+            "normalized_value": 41.9,
+            "weight": 50.0
+          },
+          {
+            "feature_id": "risk_score",
+            "label": "risk_score",
+            "contribution": 1.268,
+            "raw_value": 6.34,
+            "normalized_value": 6.34,
+            "weight": 20.0
+          },
+          {
+            "feature_id": "pe_ratio",
+            "label": "pe_ratio",
+            "contribution": 0.0,
+            "raw_value": 0.0,
+            "normalized_value": 0.0,
+            "weight": 30.0
+          }
+        ],
+        "top_detractors": [
+          {
+            "feature_id": "pe_ratio",
+            "label": "pe_ratio",
+            "contribution": 0.0,
+            "raw_value": 0.0,
+            "normalized_value": 0.0,
+            "weight": 30.0
+          },
+          {
+            "feature_id": "risk_score",
+            "label": "risk_score",
+            "contribution": 1.268,
+            "raw_value": 6.34,
+            "normalized_value": 6.34,
+            "weight": 20.0
+          },
+          {
+            "feature_id": "momentum_score",
+            "label": "momentum_score",
+            "contribution": 20.95,
+            "raw_value": 41.9,
+            "normalized_value": 41.9,
+            "weight": 50.0
+          }
+        ],
+        "entry_eqif_available": true,
+        "exit_eqif_available": false
+      }
+    },
+    {
+      "trade_id": "e8df4255-4036-44d1-abd5-c79981cb10bf",
+      "symbol": "TECHM.NS",
+      "company_name": "Tech Mahindra Ltd",
+      "sector": "Technology",
+      "entry_date": "2026-07-17",
+      "exit_date": "2026-07-14",
+      "holding_days": -3,
+      "entry_price": 1574.4729,
+      "exit_price": 1574.4729,
+      "entry_score": 2175.8,
+      "exit_score": 0.0,
+      "entry_rating": "STRONG BUY",
+      "exit_rating": "HOLD",
+      "return_pct": 0.0,
+      "position_weight": 0.0,
+      "entry_snapshot_id": "f0782fe7-2bc8-4de7-ba42-d91cf08a3f08",
+      "exit_snapshot_id": "ff994337-bd94-4b6a-ad92-4dd2aa6a0f85",
+      "attribution": {
+        "why_entered": "Entered on strength in: momentum_score (+11.65), risk_score (+10.11)",
+        "why_exited": "",
+        "top_contributors": [
+          {
+            "feature_id": "momentum_score",
+            "label": "momentum_score",
+            "contribution": 11.65,
+            "raw_value": 23.3,
+            "normalized_value": 23.3,
+            "weight": 50.0
+          },
+          {
+            "feature_id": "risk_score",
+            "label": "risk_score",
+            "contribution": 10.108,
+            "raw_value": 50.54,
+            "normalized_value": 50.54,
+            "weight": 20.0
+          },
+          {
+            "feature_id": "pe_ratio",
+            "label": "pe_ratio",
+            "contribution": 0.0,
+            "raw_value": 0.0,
+            "normalized_value": 0.0,
+            "weight": 30.0
+          }
+        ],
+        "top_detractors": [
+          {
+            "feature_id": "pe_ratio",
+            "label": "pe_ratio",
+            "contribution": 0.0,
+            "raw_value": 0.0,
+            "normalized_value": 0.0,
+            "weight": 30.0
+          },
+          {
+            "feature_id": "risk_score",
+            "label": "risk_score",
+            "contribution": 10.108,
+            "raw_value": 50.54,
+            "normalized_value": 50.54,
+            "weight": 20.0
+          },
+          {
+            "feature_id": "momentum_score",
+            "label": "momentum_score",
+            "contribution": 11.65,
+            "raw_value": 23.3,
+            "normalized_value": 23.3,
+            "weight": 50.0
+          }
+        ],
+        "entry_eqif_available": true,
+        "exit_eqif_available": false
+      }
+    },
+    {
+      "trade_id": "1b715546-ef03-4712-9e6e-3e6adcb944ec",
+      "symbol": "CIPLA.NS",
+      "company_name": "Cipla Ltd",
+      "sector": "Healthcare",
+      "entry_date": "2026-07-17",
+      "exit_date": "2026-07-14",
+      "holding_days": -3,
+      "entry_price": 1420.1187,
+      "exit_price": 1420.1187,
+      "entry_score": 1541.1,
+      "exit_score": 0.0,
+      "entry_rating": "STRONG BUY",
+      "exit_rating": "HOLD",
+      "return_pct": 0.0,
+      "position_weight": 0.0,
+      "entry_snapshot_id": "f0782fe7-2bc8-4de7-ba42-d91cf08a3f08",
+      "exit_snapshot_id": "ff994337-bd94-4b6a-ad92-4dd2aa6a0f85",
+      "attribution": {
+        "why_entered": "Entered on strength in: momentum_score (+11.68), risk_score (+3.74)",
+        "why_exited": "",
+        "top_contributors": [
+          {
+            "feature_id": "momentum_score",
+            "label": "momentum_score",
+            "contribution": 11.675,
+            "raw_value": 23.35,
+            "normalized_value": 23.35,
+            "weight": 50.0
+          },
+          {
+            "feature_id": "risk_score",
+            "label": "risk_score",
+            "contribution": 3.736,
+            "raw_value": 18.68,
+            "normalized_value": 18.68,
+            "weight": 20.0
+          },
+          {
+            "feature_id": "pe_ratio",
+            "label": "pe_ratio",
+            "contribution": 0.0,
+            "raw_value": 0.0,
+            "normalized_value": 0.0,
+            "weight": 30.0
+          }
+        ],
+        "top_detractors": [
+          {
+            "feature_id": "pe_ratio",
+            "label": "pe_ratio",
+            "contribution": 0.0,
+            "raw_value": 0.0,
+            "normalized_value": 0.0,
+            "weight": 30.0
+          },
+          {
+            "feature_id": "risk_score",
+            "label": "risk_score",
+            "contribution": 3.736,
+            "raw_value": 18.68,
+            "normalized_value": 18.68,
+            "weight": 20.0
+          },
+          {
+            "feature_id": "momentum_score",
+            "label": "momentum_score",
+            "contribution": 11.675,
+            "raw_value": 23.35,
+            "normalized_value": 23.35,
+            "weight": 50.0
+          }
+        ],
+        "entry_eqif_available": true,
+        "exit_eqif_available": false
+      }
+    },
+    {
+      "trade_id": "874e9425-6223-4312-9a35-68b7b2c83d1d",
+      "symbol": "ETERNAL.NS",
+      "company_name": "ETERNAL.NS",
+      "sector": "—",
+      "entry_date": "2026-07-17",
+      "exit_date": "2026-07-14",
+      "holding_days": -3,
+      "entry_price": 286.8866,
+      "exit_price": 286.8866,
+      "entry_score": 1498.2,
+      "exit_score": 0.0,
+      "entry_rating": "STRONG BUY",
+      "exit_rating": "HOLD",
+      "return_pct": 0.0,
+      "position_weight": 0.0,
+      "entry_snapshot_id": "f0782fe7-2bc8-4de7-ba42-d91cf08a3f08",
+      "exit_snapshot_id": "ff994337-bd94-4b6a-ad92-4dd2aa6a0f85",
+      "attribution": {
+        "why_entered": "Entered on strength in: risk_score (+10.21), momentum_score (+4.77)",
+        "why_exited": "",
+        "top_contributors": [
+          {
+            "feature_id": "risk_score",
+            "label": "risk_score",
+            "contribution": 10.212,
+            "raw_value": 51.06,
+            "normalized_value": 51.06,
+            "weight": 20.0
+          },
+          {
+            "feature_id": "momentum_score",
+            "label": "momentum_score",
+            "contribution": 4.77,
+            "raw_value": 9.54,
+            "normalized_value": 9.54,
+            "weight": 50.0
+          },
+          {
+            "feature_id": "pe_ratio",
+            "label": "pe_ratio",
+            "contribution": 0.0,
+            "raw_value": 0.0,
+            "normalized_value": 0.0,
+            "weight": 30.0
+          }
+        ],
+        "top_detractors": [
+          {
+            "feature_id": "pe_ratio",
+            "label": "pe_ratio",
+            "contribution": 0.0,
+            "raw_value": 0.0,
+            "normalized_value": 0.0,
+            "weight": 30.0
+          },
+          {
+            "feature_id": "momentum_score",
+            "label": "momentum_score",
+            "contribution": 4.77,
+            "raw_value": 9.54,
+            "normalized_value": 9.54,
+            "weight": 50.0
+          },
+          {
+            "feature_id": "risk_score",
+            "label": "risk_score",
+            "contribution": 10.212,
+            "raw_value": 51.06,
+            "normalized_value": 51.06,
+            "weight": 20.0
+          }
+        ],
+        "entry_eqif_available": true,
+        "exit_eqif_available": false
+      }
+    },
+    {
+      "trade_id": "195a2bc0-9d97-4dba-a2aa-1add7daae72e",
+      "symbol": "TITAN.NS",
+      "company_name": "Titan Company Ltd",
+      "sector": "Consumer Discretionary",
+      "entry_date": "2026-07-17",
+      "exit_date": "2026-07-14",
+      "holding_days": -3,
+      "entry_price": 4642.7381,
+      "exit_price": 4642.7381,
+      "entry_score": 1469.4,
+      "exit_score": 0.0,
+      "entry_rating": "STRONG BUY",
+      "exit_rating": "HOLD",
+      "return_pct": 0.0,
+      "position_weight": 0.0,
+      "entry_snapshot_id": "f0782fe7-2bc8-4de7-ba42-d91cf08a3f08",
+      "exit_snapshot_id": "ff994337-bd94-4b6a-ad92-4dd2aa6a0f85",
+      "attribution": {
+        "why_entered": "Entered on strength in: momentum_score (+9.09), risk_score (+5.60)",
+        "why_exited": "",
+        "top_contributors": [
+          {
+            "feature_id": "momentum_score",
+            "label": "momentum_score",
+            "contribution": 9.09,
+            "raw_value": 18.18,
+            "normalized_value": 18.18,
+            "weight": 50.0
+          },
+          {
+            "feature_id": "risk_score",
+            "label": "risk_score",
+            "contribution": 5.604,
+            "raw_value": 28.02,
+            "normalized_value": 28.02,
+            "weight": 20.0
+          },
+          {
+            "feature_id": "pe_ratio",
+            "label": "pe_ratio",
+            "contribution": 0.0,
+            "raw_value": 0.0,
+            "normalized_value": 0.0,
+            "weight": 30.0
+          }
+        ],
+        "top_detractors": [
+          {
+            "feature_id": "pe_ratio",
+            "label": "pe_ratio",
+            "contribution": 0.0,
+            "raw_value": 0.0,
+            "normalized_value": 0.0,
+            "weight": 30.0
+          },
+          {
+            "feature_id": "risk_score",
+            "label": "risk_score",
+            "contribution": 5.604,
+            "raw_value": 28.02,
+            "normalized_value": 28.02,
+            "weight": 20.0
+          },
+          {
+            "feature_id": "momentum_score",
+            "label": "momentum_score",
+            "contribution": 9.09,
+            "raw_value": 18.18,
+            "normalized_value": 18.18,
+            "weight": 50.0
+          }
+        ],
+        "entry_eqif_available": true,
+        "exit_eqif_available": false
+      }
+    },
+    {
+      "trade_id": "359ed965-ae36-4716-9274-d767f6af2478",
+      "symbol": "TATASTEEL.NS",
+      "company_name": "Tata Steel Ltd",
+      "sector": "Materials",
+      "entry_date": "2026-07-17",
+      "exit_date": "2026-07-14",
+      "holding_days": -3,
+      "entry_price": 186.0759,
+      "exit_price": 186.0759,
+      "entry_score": 1450.8,
+      "exit_score": 0.0,
+      "entry_rating": "STRONG BUY",
+      "exit_rating": "HOLD",
+      "return_pct": 0.0,
+      "position_weight": 0.0,
+      "entry_snapshot_id": "f0782fe7-2bc8-4de7-ba42-d91cf08a3f08",
+      "exit_snapshot_id": "ff994337-bd94-4b6a-ad92-4dd2aa6a0f85",
+      "attribution": {
+        "why_entered": "Entered on strength in: momentum_score (+8.21), risk_score (+6.30)",
+        "why_exited": "",
+        "top_contributors": [
+          {
+            "feature_id": "momentum_score",
+            "label": "momentum_score",
+            "contribution": 8.21,
+            "raw_value": 16.42,
+            "normalized_value": 16.42,
+            "weight": 50.0
+          },
+          {
+            "feature_id": "risk_score",
+            "label": "risk_score",
+            "contribution": 6.298,
+            "raw_value": 31.49,
+            "normalized_value": 31.49,
+            "weight": 20.0
+          },
+          {
+            "feature_id": "pe_ratio",
+            "label": "pe_ratio",
+            "contribution": 0.0,
+            "raw_value": 0.0,
+            "normalized_value": 0.0,
+            "weight": 30.0
+          }
+        ],
+        "top_detractors": [
+          {
+            "feature_id": "pe_ratio",
+            "label": "pe_ratio",
+            "contribution": 0.0,
+            "raw_value": 0.0,
+            "normalized_value": 0.0,
+            "weight": 30.0
+          },
+          {
+            "feature_id": "risk_score",
+            "label": "risk_score",
+            "contribution": 6.298,
+            "raw_value": 31.49,
+            "normalized_value": 31.49,
+            "weight": 20.0
+          },
+          {
+            "feature_id": "momentum_score",
+            "label": "momentum_score",
+            "contribution": 8.21,
+            "raw_value": 16.42,
+            "normalized_value": 16.42,
+            "weight": 50.0
+          }
+        ],
+        "entry_eqif_available": true,
+        "exit_eqif_available": false
+      }
+    },
+    {
+      "trade_id": "6c7ad7ba-df6d-4214-94f3-449d1b13dde3",
+      "symbol": "INDUSINDBK.NS",
+      "company_name": "IndusInd Bank Ltd",
+      "sector": "Financial Services",
+      "entry_date": "2026-07-17",
+      "exit_date": "2026-07-14",
+      "holding_days": -3,
+      "entry_price": 1028.2272,
+      "exit_price": 1028.2272,
+      "entry_score": 1444.5,
+      "exit_score": 0.0,
+      "entry_rating": "STRONG BUY",
+      "exit_rating": "HOLD",
+      "return_pct": 0.0,
+      "position_weight": 0.0,
+      "entry_snapshot_id": "f0782fe7-2bc8-4de7-ba42-d91cf08a3f08",
+      "exit_snapshot_id": "ff994337-bd94-4b6a-ad92-4dd2aa6a0f85",
+      "attribution": {
+        "why_entered": "Entered on strength in: momentum_score (+10.44), risk_score (+4.01)",
+        "why_exited": "",
+        "top_contributors": [
+          {
+            "feature_id": "momentum_score",
+            "label": "momentum_score",
+            "contribution": 10.435,
+            "raw_value": 20.87,
+            "normalized_value": 20.87,
+            "weight": 50.0
+          },
+          {
+            "feature_id": "risk_score",
+            "label": "risk_score",
+            "contribution": 4.01,
+            "raw_value": 20.05,
+            "normalized_value": 20.05,
+            "weight": 20.0
+          },
+          {
+            "feature_id": "pe_ratio",
+            "label": "pe_ratio",
+            "contribution": 0.0,
+            "raw_value": 0.0,
+            "normalized_value": 0.0,
+            "weight": 30.0
+          }
+        ],
+        "top_detractors": [
+          {
+            "feature_id": "pe_ratio",
+            "label": "pe_ratio",
+            "contribution": 0.0,
+            "raw_value": 0.0,
+            "normalized_value": 0.0,
+            "weight": 30.0
+          },
+          {
+            "feature_id": "risk_score",
+            "label": "risk_score",
+            "contribution": 4.01,
+            "raw_value": 20.05,
+            "normalized_value": 20.05,
+            "weight": 20.0
+          },
+          {
+            "feature_id": "momentum_score",
+            "label": "momentum_score",
+            "contribution": 10.435,
+            "raw_value": 20.87,
+            "normalized_value": 20.87,
+            "weight": 50.0
+          }
+        ],
+        "entry_eqif_available": true,
+        "exit_eqif_available": false
+      }
+    },
+    {
+      "trade_id": "fa66b5e2-3d7d-4668-b88d-85821aa8a8a8",
+      "symbol": "TCS.NS",
+      "company_name": "Tata Consultancy Services",
+      "sector": "Technology",
+      "entry_date": "2026-07-14",
+      "exit_date": "2026-07-13",
+      "holding_days": -1,
+      "entry_price": 3603.6,
+      "exit_price": 3500.0,
+      "entry_score": 4700.0,
+      "exit_score": 4250.0,
+      "entry_rating": "STRONG BUY",
+      "exit_rating": "STRONG BUY",
+      "return_pct": -2.8749,
+      "position_weight": 0.0,
+      "entry_snapshot_id": "ff994337-bd94-4b6a-ad92-4dd2aa6a0f85",
+      "exit_snapshot_id": "a5c70e8e-d358-4ba7-8569-becf0566aee0",
+      "attribution": {
+        "why_entered": "Entered on strength in: momentum_score (+44.00), risk_score (+3.00)",
+        "why_exited": "Exited at rebalance — score 4250.0",
+        "top_contributors": [
+          {
+            "feature_id": "momentum_score",
+            "label": "momentum_score",
+            "contribution": 44.0,
+            "raw_value": 88.0,
+            "normalized_value": 88.0,
+            "weight": 50.0
+          },
+          {
+            "feature_id": "risk_score",
+            "label": "risk_score",
+            "contribution": 3.0,
+            "raw_value": 15.0,
+            "normalized_value": 15.0,
+            "weight": 20.0
+          },
+          {
+            "feature_id": "pe_ratio",
+            "label": "pe_ratio",
+            "contribution": 0.0,
+            "raw_value": 0.0,
+            "normalized_value": 0.0,
+            "weight": 30.0
+          }
+        ],
+        "top_detractors": [
+          {
+            "feature_id": "pe_ratio",
+            "label": "pe_ratio",
+            "contribution": 0.0,
+            "raw_value": 0.0,
+            "normalized_value": 0.0,
+            "weight": 30.0
+          },
+          {
+            "feature_id": "risk_score",
+            "label": "risk_score",
+            "contribution": 3.0,
+            "raw_value": 15.0,
+            "normalized_value": 15.0,
+            "weight": 20.0
+          },
+          {
+            "feature_id": "momentum_score",
+            "label": "momentum_score",
+            "contribution": 44.0,
+            "raw_value": 88.0,
+            "normalized_value": 88.0,
+            "weight": 50.0
+          }
+        ],
+        "entry_eqif_available": true,
+        "exit_eqif_available": true
+      }
+    },
+    {
+      "trade_id": "3939457d-4c29-461c-8619-a42ef6d66852",
+      "symbol": "HDFCBANK.NS",
+      "company_name": "HDFC Bank Ltd",
+      "sector": "Financial Services",
+      "entry_date": "2026-07-14",
+      "exit_date": "2026-07-13",
+      "holding_days": -1,
+      "entry_price": 1751.75,
+      "exit_price": 1600.0,
+      "entry_score": 3860.0,
+      "exit_score": 2800.0,
+      "entry_rating": "STRONG BUY",
+      "exit_rating": "STRONG BUY",
+      "return_pct": -8.6628,
+      "position_weight": 0.0,
+      "entry_snapshot_id": "ff994337-bd94-4b6a-ad92-4dd2aa6a0f85",
+      "exit_snapshot_id": "a5c70e8e-d358-4ba7-8569-becf0566aee0",
+      "attribution": {
+        "why_entered": "Entered on strength in: momentum_score (+31.00), risk_score (+7.60)",
+        "why_exited": "Exited at rebalance — score 2800.0",
+        "top_contributors": [
+          {
+            "feature_id": "momentum_score",
+            "label": "momentum_score",
+            "contribution": 31.0,
+            "raw_value": 62.0,
+            "normalized_value": 62.0,
+            "weight": 50.0
+          },
+          {
+            "feature_id": "risk_score",
+            "label": "risk_score",
+            "contribution": 7.6,
+            "raw_value": 38.0,
+            "normalized_value": 38.0,
+            "weight": 20.0
+          },
+          {
+            "feature_id": "pe_ratio",
+            "label": "pe_ratio",
+            "contribution": 0.0,
+            "raw_value": 0.0,
+            "normalized_value": 0.0,
+            "weight": 30.0
+          }
+        ],
+        "top_detractors": [
+          {
+            "feature_id": "pe_ratio",
+            "label": "pe_ratio",
+            "contribution": 0.0,
+            "raw_value": 0.0,
+            "normalized_value": 0.0,
+            "weight": 30.0
+          },
+          {
+            "feature_id": "risk_score",
+            "label": "risk_score",
+            "contribution": 7.6,
+            "raw_value": 38.0,
+            "normalized_value": 38.0,
+            "weight": 20.0
+          },
+          {
+            "feature_id": "momentum_score",
+            "label": "momentum_score",
+            "contribution": 31.0,
+            "raw_value": 62.0,
+            "normalized_value": 62.0,
+            "weight": 50.0
+          }
+        ],
+        "entry_eqif_available": true,
+        "exit_eqif_available": true
+      }
+    },
+    {
+      "trade_id": "0a7276b2-35ba-4429-a2cc-04b693004048",
+      "symbol": "INFY.NS",
+      "company_name": "Infosys Ltd",
+      "sector": "Technology",
+      "entry_date": "2026-07-14",
+      "exit_date": "2026-07-13",
+      "holding_days": -1,
+      "entry_price": 1421.42,
+      "exit_price": 1500.0,
+      "entry_score": 3500.0,
+      "exit_score": 4100.0,
+      "entry_rating": "STRONG BUY",
+      "exit_rating": "STRONG BUY",
+      "return_pct": 5.5283,
+      "position_weight": 0.0,
+      "entry_snapshot_id": "ff994337-bd94-4b6a-ad92-4dd2aa6a0f85",
+      "exit_snapshot_id": "a5c70e8e-d358-4ba7-8569-becf0566aee0",
+      "attribution": {
+        "why_entered": "Entered on strength in: momentum_score (+26.00), risk_score (+9.00)",
+        "why_exited": "Exited at rebalance — score 4100.0",
+        "top_contributors": [
+          {
+            "feature_id": "momentum_score",
+            "label": "momentum_score",
+            "contribution": 26.0,
+            "raw_value": 52.0,
+            "normalized_value": 52.0,
+            "weight": 50.0
+          },
+          {
+            "feature_id": "risk_score",
+            "label": "risk_score",
+            "contribution": 9.0,
+            "raw_value": 45.0,
+            "normalized_value": 45.0,
+            "weight": 20.0
+          },
+          {
+            "feature_id": "pe_ratio",
+            "label": "pe_ratio",
+            "contribution": 0.0,
+            "raw_value": 0.0,
+            "normalized_value": 0.0,
+            "weight": 30.0
+          }
+        ],
+        "top_detractors": [
+          {
+            "feature_id": "pe_ratio",
+            "label": "pe_ratio",
+            "contribution": 0.0,
+            "raw_value": 0.0,
+            "normalized_value": 0.0,
+            "weight": 30.0
+          },
+          {
+            "feature_id": "risk_score",
+            "label": "risk_score",
+            "contribution": 9.0,
+            "raw_value": 45.0,
+            "normalized_value": 45.0,
+            "weight": 20.0
+          },
+          {
+            "feature_id": "momentum_score",
+            "label": "momentum_score",
+            "contribution": 26.0,
+            "raw_value": 52.0,
+            "normalized_value": 52.0,
+            "weight": 50.0
+          }
+        ],
+        "entry_eqif_available": true,
+        "exit_eqif_available": true
+      }
+    },
+    {
+      "trade_id": "c8eace2f-16bf-4322-a99d-0e7203375952",
+      "symbol": "RELIANCE.NS",
+      "company_name": "Reliance Industries",
+      "sector": "Energy",
+      "entry_date": "2026-07-14",
+      "exit_date": "2026-07-13",
+      "holding_days": -1,
+      "entry_price": 2422.42,
+      "exit_price": 2400.0,
+      "entry_score": 3430.0,
+      "exit_score": 3400.0,
+      "entry_rating": "STRONG BUY",
+      "exit_rating": "STRONG BUY",
+      "return_pct": -0.9255,
+      "position_weight": 0.0,
+      "entry_snapshot_id": "ff994337-bd94-4b6a-ad92-4dd2aa6a0f85",
+      "exit_snapshot_id": "a5c70e8e-d358-4ba7-8569-becf0566aee0",
+      "attribution": {
+        "why_entered": "Entered on strength in: momentum_score (+24.50), risk_score (+9.80)",
+        "why_exited": "Exited at rebalance — score 3400.0",
+        "top_contributors": [
+          {
+            "feature_id": "momentum_score",
+            "label": "momentum_score",
+            "contribution": 24.5,
+            "raw_value": 49.0,
+            "normalized_value": 49.0,
+            "weight": 50.0
+          },
+          {
+            "feature_id": "risk_score",
+            "label": "risk_score",
+            "contribution": 9.8,
+            "raw_value": 49.0,
+            "normalized_value": 49.0,
+            "weight": 20.0
+          },
+          {
+            "feature_id": "pe_ratio",
+            "label": "pe_ratio",
+            "contribution": 0.0,
+            "raw_value": 0.0,
+            "normalized_value": 0.0,
+            "weight": 30.0
+          }
+        ],
+        "top_detractors": [
+          {
+            "feature_id": "pe_ratio",
+            "label": "pe_ratio",
+            "contribution": 0.0,
+            "raw_value": 0.0,
+            "normalized_value": 0.0,
+            "weight": 30.0
+          },
+          {
+            "feature_id": "risk_score",
+            "label": "risk_score",
+            "contribution": 9.8,
+            "raw_value": 49.0,
+            "normalized_value": 49.0,
+            "weight": 20.0
+          },
+          {
+            "feature_id": "momentum_score",
+            "label": "momentum_score",
+            "contribution": 24.5,
+            "raw_value": 49.0,
+            "normalized_value": 49.0,
+            "weight": 50.0
+          }
+        ],
+        "entry_eqif_available": true,
+        "exit_eqif_available": true
+      }
+    },
+    {
+      "trade_id": "ba833aa8-0fa2-4477-bab4-200856b66d57",
+      "symbol": "ICICIBANK.NS",
+      "company_name": "ICICI Bank Ltd",
+      "sector": "Financial Services",
+      "entry_date": "2026-07-14",
+      "exit_date": "2026-07-13",
+      "holding_days": -1,
+      "entry_price": 820.82,
+      "exit_price": 900.0,
+      "entry_score": 2960.0,
+      "exit_score": 4000.0,
+      "entry_rating": "STRONG BUY",
+      "exit_rating": "STRONG BUY",
+      "return_pct": 9.6465,
+      "position_weight": 0.0,
+      "entry_snapshot_id": "ff994337-bd94-4b6a-ad92-4dd2aa6a0f85",
+      "exit_snapshot_id": "a5c70e8e-d358-4ba7-8569-becf0566aee0",
+      "attribution": {
+        "why_entered": "Entered on strength in: momentum_score (+16.00), risk_score (+13.60)",
+        "why_exited": "Exited at rebalance — score 4000.0",
+        "top_contributors": [
+          {
+            "feature_id": "momentum_score",
+            "label": "momentum_score",
+            "contribution": 16.0,
+            "raw_value": 32.0,
+            "normalized_value": 32.0,
+            "weight": 50.0
+          },
+          {
+            "feature_id": "risk_score",
+            "label": "risk_score",
+            "contribution": 13.6,
+            "raw_value": 68.0,
+            "normalized_value": 68.0,
+            "weight": 20.0
+          },
+          {
+            "feature_id": "pe_ratio",
+            "label": "pe_ratio",
+            "contribution": 0.0,
+            "raw_value": 0.0,
+            "normalized_value": 0.0,
+            "weight": 30.0
+          }
+        ],
+        "top_detractors": [
+          {
+            "feature_id": "pe_ratio",
+            "label": "pe_ratio",
+            "contribution": 0.0,
+            "raw_value": 0.0,
+            "normalized_value": 0.0,
+            "weight": 30.0
+          },
+          {
+            "feature_id": "risk_score",
+            "label": "risk_score",
+            "contribution": 13.6,
+            "raw_value": 68.0,
+            "normalized_value": 68.0,
+            "weight": 20.0
+          },
+          {
+            "feature_id": "momentum_score",
+            "label": "momentum_score",
+            "contribution": 16.0,
+            "raw_value": 32.0,
+            "normalized_value": 32.0,
+            "weight": 50.0
+          }
+        ],
+        "entry_eqif_available": true,
+        "exit_eqif_available": true
+      }
+    }
+  ],
+  "portfolio_timeline": [
+    {
+      "date": "2026-07-17",
+      "snapshot_id": "f0782fe7-2bc8-4de7-ba42-d91cf08a3f08",
+      "portfolio_value": 998003.0,
+      "cash": 0.0,
+      "cash_pct": 0.0,
+      "sector_allocation": {
+        "Industrials": 0.1335,
+        "Energy": 0.0667,
+        "Materials": 0.2669,
+        "Healthcare": 0.1335,
+        "Consumer Discretionary": 0.2002,
+        "Technology": 0.0667,
+        "—": 0.0667,
+        "Financial Services": 0.0657
+      },
+      "top_holdings": [
+        {
+          "symbol": "GRASIM.NS",
+          "weight": 0.0667,
+          "score": 2418.5,
+          "rating": "STRONG BUY"
+        },
+        {
+          "symbol": "JSWSTEEL.NS",
+          "weight": 0.0667,
+          "score": 2238.1,
+          "rating": "STRONG BUY"
+        },
+        {
+          "symbol": "ADANIPORTS.NS",
+          "weight": 0.0667,
+          "score": 4118.5,
+          "rating": "STRONG BUY"
+        },
+        {
+          "symbol": "ADANIENT.NS",
+          "weight": 0.0667,
+          "score": 3918.5,
+          "rating": "STRONG BUY"
+        },
+        {
+          "symbol": "COALINDIA.NS",
+          "weight": 0.0667,
+          "score": 3663.8,
+          "rating": "STRONG BUY"
+        }
+      ],
+      "avg_score": 2387.21,
+      "num_positions": 15,
+      "turnover_pct": 50.0
+    },
+    {
+      "date": "2026-07-15",
+      "snapshot_id": "27528091-83e5-4942-8e22-ce93c893ba25",
+      "portfolio_value": 994292.88,
+      "cash": 0.0,
+      "cash_pct": 0.0,
+      "sector_allocation": {
+        "Industrials": 0.1334,
+        "Energy": 0.067,
+        "Materials": 0.2675,
+        "Healthcare": 0.1357,
+        "Consumer Discretionary": 0.1989,
+        "Technology": 0.0638,
+        "—": 0.0689,
+        "Financial Services": 0.0649
+      },
+      "top_holdings": [
+        {
+          "symbol": "ETERNAL.NS",
+          "weight": 0.0689,
+          "score": 1498.2,
+          "rating": "STRONG BUY"
+        },
+        {
+          "symbol": "CIPLA.NS",
+          "weight": 0.0679,
+          "score": 1541.1,
+          "rating": "STRONG BUY"
+        },
+        {
+          "symbol": "HINDALCO.NS",
+          "weight": 0.0678,
+          "score": 3047.7,
+          "rating": "STRONG BUY"
+        },
+        {
+          "symbol": "APOLLOHOSP.NS",
+          "weight": 0.0678,
+          "score": 2343.0,
+          "rating": "STRONG BUY"
+        },
+        {
+          "symbol": "COALINDIA.NS",
+          "weight": 0.067,
+          "score": 3663.8,
+          "rating": "STRONG BUY"
+        }
+      ],
+      "avg_score": 2387.21,
+      "num_positions": 15,
+      "turnover_pct": 0.62
+    },
+    {
+      "date": "2026-07-15",
+      "snapshot_id": "c1d6062c-e31a-42fc-b6ca-61ae1d26eaeb",
+      "portfolio_value": 994292.88,
+      "cash": 0.0,
+      "cash_pct": 0.0,
+      "sector_allocation": {
+        "Industrials": 0.1334,
+        "Energy": 0.067,
+        "Materials": 0.2675,
+        "Healthcare": 0.1357,
+        "Consumer Discretionary": 0.1989,
+        "Technology": 0.0638,
+        "—": 0.0689,
+        "Financial Services": 0.0649
+      },
+      "top_holdings": [
+        {
+          "symbol": "ETERNAL.NS",
+          "weight": 0.0689,
+          "score": 1498.2,
+          "rating": "STRONG BUY"
+        },
+        {
+          "symbol": "CIPLA.NS",
+          "weight": 0.0679,
+          "score": 1541.1,
+          "rating": "STRONG BUY"
+        },
+        {
+          "symbol": "HINDALCO.NS",
+          "weight": 0.0678,
+          "score": 3047.7,
+          "rating": "STRONG BUY"
+        },
+        {
+          "symbol": "APOLLOHOSP.NS",
+          "weight": 0.0678,
+          "score": 2343.0,
+          "rating": "STRONG BUY"
+        },
+        {
+          "symbol": "COALINDIA.NS",
+          "weight": 0.067,
+          "score": 3663.8,
+          "rating": "STRONG BUY"
+        }
+      ],
+      "avg_score": 2387.21,
+      "num_positions": 15,
+      "turnover_pct": 0.62
+    },
+    {
+      "date": "2026-07-14",
+      "snapshot_id": "ff994337-bd94-4b6a-ad92-4dd2aa6a0f85",
+      "portfolio_value": 996007.49,
+      "cash": 498003.5,
+      "cash_pct": 50.0,
+      "sector_allocation": {
+        "Technology": 0.2,
+        "Financial Services": 0.2,
+        "Energy": 0.1
+      },
+      "top_holdings": [
+        {
+          "symbol": "TCS.NS",
+          "weight": 0.1,
+          "score": 4700.0,
+          "rating": "STRONG BUY"
+        },
+        {
+          "symbol": "HDFCBANK.NS",
+          "weight": 0.1,
+          "score": 3860.0,
+          "rating": "STRONG BUY"
+        },
+        {
+          "symbol": "RELIANCE.NS",
+          "weight": 0.1,
+          "score": 3430.0,
+          "rating": "STRONG BUY"
+        },
+        {
+          "symbol": "INFY.NS",
+          "weight": 0.1,
+          "score": 3500.0,
+          "rating": "STRONG BUY"
+        },
+        {
+          "symbol": "ICICIBANK.NS",
+          "weight": 0.1,
+          "score": 2960.0,
+          "rating": "STRONG BUY"
+        }
+      ],
+      "avg_score": 3690.0,
+      "num_positions": 5,
+      "turnover_pct": 75.0
+    },
+    {
+      "date": "2026-07-13",
+      "snapshot_id": "a5c70e8e-d358-4ba7-8569-becf0566aee0",
+      "portfolio_value": 999185.03,
+      "cash": 486047.47,
+      "cash_pct": 48.64,
+      "sector_allocation": {
+        "Technology": 0.2053,
+        "Financial Services": 0.2094,
+        "Energy": 0.0989
+      },
+      "top_holdings": [
+        {
+          "symbol": "ICICIBANK.NS",
+          "weight": 0.1094,
+          "score": 4000.0,
+          "rating": "STRONG BUY"
+        },
+        {
+          "symbol": "INFY.NS",
+          "weight": 0.1053,
+          "score": 4100.0,
+          "rating": "STRONG BUY"
+        },
+        {
+          "symbol": "TCS.NS",
+          "weight": 0.1,
+          "score": 4250.0,
+          "rating": "STRONG BUY"
+        },
+        {
+          "symbol": "HDFCBANK.NS",
+          "weight": 0.1,
+          "score": 2800.0,
+          "rating": "STRONG BUY"
+        },
+        {
+          "symbol": "RELIANCE.NS",
+          "weight": 0.0989,
+          "score": 3400.0,
+          "rating": "STRONG BUY"
+        }
+      ],
+      "avg_score": 3710.0,
+      "num_positions": 5,
+      "turnover_pct": 1.39
+    }
+  ],
+  "benchmark_comparison_table": [
+    {
+      "metric": "total_return",
+      "metric_label": "Total Return (%)",
+      "strategy_value": 0.1184,
+      "pms_default_value": -1.3304,
+      "benchmark_value": -0.5067,
+      "strategy_vs_default": 1.4488,
+      "strategy_vs_benchmark": 0.6251,
+      "higher_is_better": true
+    },
+    {
+      "metric": "cagr",
+      "metric_label": "CAGR (%)",
+      "strategy_value": 226.6419,
+      "pms_default_value": -99.9998,
+      "benchmark_value": -99.3779,
+      "strategy_vs_default": 326.6417,
+      "strategy_vs_benchmark": 326.0198,
+      "higher_is_better": true
+    },
+    {
+      "metric": "sharpe",
+      "metric_label": "Sharpe Ratio",
+      "strategy_value": 6.3554,
+      "pms_default_value": -33.6203,
+      "benchmark_value": -11.2172,
+      "strategy_vs_default": 39.9757,
+      "strategy_vs_benchmark": 17.5726,
+      "higher_is_better": true
+    },
+    {
+      "metric": "sortino",
+      "metric_label": "Sortino Ratio",
+      "strategy_value": 10.1837,
+      "pms_default_value": -37.4498,
+      "benchmark_value": -15.5094,
+      "strategy_vs_default": 47.6335,
+      "strategy_vs_benchmark": 25.6931,
+      "higher_is_better": true
+    },
+    {
+      "metric": "calmar",
+      "metric_label": "Calmar Ratio",
+      "strategy_value": 609.655,
+      "pms_default_value": 75.1655,
+      "benchmark_value": 85.6791,
+      "strategy_vs_default": 534.4895,
+      "strategy_vs_benchmark": 523.9759,
+      "higher_is_better": true
+    },
+    {
+      "metric": "alpha",
+      "metric_label": "Alpha (%)",
+      "strategy_value": 320.1754,
+      "pms_default_value": -1527.2815,
+      "benchmark_value": 0.0,
+      "strategy_vs_default": 1847.4569,
+      "strategy_vs_benchmark": 320.1754,
+      "higher_is_better": true
+    },
+    {
+      "metric": "beta",
+      "metric_label": "Beta",
+      "strategy_value": 0.4008,
+      "pms_default_value": -0.3921,
+      "benchmark_value": 1.0,
+      "strategy_vs_default": 0.7929,
+      "strategy_vs_benchmark": -0.5992,
+      "higher_is_better": false
+    },
+    {
+      "metric": "volatility",
+      "metric_label": "Annualised Volatility (%)",
+      "strategy_value": 18.8373,
+      "pms_default_value": 39.5943,
+      "benchmark_value": 44.5909,
+      "strategy_vs_default": -20.757,
+      "strategy_vs_benchmark": -25.7536,
+      "higher_is_better": false
+    },
+    {
+      "metric": "max_drawdown",
+      "metric_label": "Max Drawdown (%)",
+      "strategy_value": -0.3718,
+      "pms_default_value": -1.3304,
+      "benchmark_value": -1.1599,
+      "strategy_vs_default": 0.9586,
+      "strategy_vs_benchmark": 0.7881,
+      "higher_is_better": false
+    },
+    {
+      "metric": "information_ratio",
+      "metric_label": "Information Ratio",
+      "strategy_value": 0.358,
+      "pms_default_value": -0.1837,
+      "benchmark_value": 0.0,
+      "strategy_vs_default": 0.5417,
+      "strategy_vs_benchmark": 0.358,
+      "higher_is_better": true
+    },
+    {
+      "metric": "win_rate",
+      "metric_label": "Win Rate (%)",
+      "strategy_value": 10.0,
+      "pms_default_value": 0.0,
+      "benchmark_value": 0.0,
+      "strategy_vs_default": 10.0,
+      "strategy_vs_benchmark": 10.0,
+      "higher_is_better": true
+    },
+    {
+      "metric": "profit_factor",
+      "metric_label": "Profit Factor",
+      "strategy_value": 1.2176,
+      "pms_default_value": 0.0,
+      "benchmark_value": 0.0,
+      "strategy_vs_default": 1.2176,
+      "strategy_vs_benchmark": 1.2176,
+      "higher_is_better": true
+    },
+    {
+      "metric": "excess_return",
+      "metric_label": "Excess Return vs Benchmark (%)",
+      "strategy_value": 0.6251,
+      "pms_default_value": -0.8237,
+      "benchmark_value": 0.0,
+      "strategy_vs_default": 1.4488,
+      "strategy_vs_benchmark": 0.6251,
+      "higher_is_better": true
+    }
+  ],
+  "execution_log": [
+    {
+      "snapshot_date": "2026-07-17",
+      "snapshot_id": "f0782fe7-2bc8-4de7-ba42-d91cf08a3f08",
+      "integrity_status": "warned",
+      "integrity_checks": {
+        "published": true,
+        "complete": true,
+        "has_stock_rows": true,
+        "has_indicator_rows": true,
+        "has_score_rows": true,
+        "engine_version_match": false,
+        "feature_registry_match": true,
+        "model_version_match": true
+      },
+      "stocks_scored": 50,
+      "signals_generated": 50,
+      "buy_signals": 18,
+      "sell_signals": 32,
+      "buy_pct": 36.0,
+      "trades_executed": 15,
+      "portfolio_value": 998003.0,
+      "turnover_pct": 50.0,
+      "notes": "published=✓; complete=✓; has_stock_rows=✓; has_indicator_rows=✓; has_score_rows=✓; engine_version_match=✗; feature_registry_match=✓; model_version_match=✓; Snapshot engine_version=1.0.0 ≠ run engine_version=14C.1 (warn only)"
+    },
+    {
+      "snapshot_date": "2026-07-15",
+      "snapshot_id": "27528091-83e5-4942-8e22-ce93c893ba25",
+      "integrity_status": "warned",
+      "integrity_checks": {
+        "published": true,
+        "complete": true,
+        "has_stock_rows": true,
+        "has_indicator_rows": true,
+        "has_score_rows": true,
+        "engine_version_match": false,
+        "feature_registry_match": true,
+        "model_version_match": true
+      },
+      "stocks_scored": 50,
+      "signals_generated": 50,
+      "buy_signals": 18,
+      "sell_signals": 32,
+      "buy_pct": 36.0,
+      "trades_executed": 0,
+      "portfolio_value": 994292.88,
+      "turnover_pct": 0.62,
+      "notes": "published=✓; complete=✓; has_stock_rows=✓; has_indicator_rows=✓; has_score_rows=✓; engine_version_match=✗; feature_registry_match=✓; model_version_match=✓; Snapshot engine_version=1.0.0 ≠ run engine_version=14C.1 (warn only)"
+    },
+    {
+      "snapshot_date": "2026-07-15",
+      "snapshot_id": "c1d6062c-e31a-42fc-b6ca-61ae1d26eaeb",
+      "integrity_status": "warned",
+      "integrity_checks": {
+        "published": true,
+        "complete": true,
+        "has_stock_rows": true,
+        "has_indicator_rows": true,
+        "has_score_rows": true,
+        "engine_version_match": false,
+        "feature_registry_match": true,
+        "model_version_match": true
+      },
+      "stocks_scored": 50,
+      "signals_generated": 50,
+      "buy_signals": 18,
+      "sell_signals": 32,
+      "buy_pct": 36.0,
+      "trades_executed": 0,
+      "portfolio_value": 994292.88,
+      "turnover_pct": 0.62,
+      "notes": "published=✓; complete=✓; has_stock_rows=✓; has_indicator_rows=✓; has_score_rows=✓; engine_version_match=✗; feature_registry_match=✓; model_version_match=✓; Snapshot engine_version=1.0.0 ≠ run engine_version=14C.1 (warn only)"
+    },
+    {
+      "snapshot_date": "2026-07-14",
+      "snapshot_id": "ff994337-bd94-4b6a-ad92-4dd2aa6a0f85",
+      "integrity_status": "warned",
+      "integrity_checks": {
+        "published": true,
+        "complete": true,
+        "has_stock_rows": true,
+        "has_indicator_rows": true,
+        "has_score_rows": true,
+        "engine_version_match": false,
+        "feature_registry_match": true,
+        "model_version_match": true
+      },
+      "stocks_scored": 5,
+      "signals_generated": 5,
+      "buy_signals": 5,
+      "sell_signals": 0,
+      "buy_pct": 100.0,
+      "trades_executed": 20,
+      "portfolio_value": 996007.49,
+      "turnover_pct": 75.0,
+      "notes": "published=✓; complete=✓; has_stock_rows=✓; has_indicator_rows=✓; has_score_rows=✓; engine_version_match=✗; feature_registry_match=✓; model_version_match=✓; Snapshot engine_version=1.0.0 ≠ run engine_version=14C.1 (warn only); WARN: Over-broad buy zone — 100.0% of universe is BUY/STRONG_BUY. Consider raising the buy threshold."
+    },
+    {
+      "snapshot_date": "2026-07-13",
+      "snapshot_id": "a5c70e8e-d358-4ba7-8569-becf0566aee0",
+      "integrity_status": "warned",
+      "integrity_checks": {
+        "published": true,
+        "complete": true,
+        "has_stock_rows": true,
+        "has_indicator_rows": true,
+        "has_score_rows": true,
+        "engine_version_match": false,
+        "feature_registry_match": true,
+        "model_version_match": true
+      },
+      "stocks_scored": 5,
+      "signals_generated": 5,
+      "buy_signals": 5,
+      "sell_signals": 0,
+      "buy_pct": 100.0,
+      "trades_executed": 0,
+      "portfolio_value": 999185.03,
+      "turnover_pct": 1.39,
+      "notes": "published=✓; complete=✓; has_stock_rows=✓; has_indicator_rows=✓; has_score_rows=✓; engine_version_match=✗; feature_registry_match=✓; model_version_match=✓; Snapshot engine_version=1.0.0 ≠ run engine_version=14C.1 (warn only); WARN: Over-broad buy zone — 100.0% of universe is BUY/STRONG_BUY. Consider raising the buy threshold."
+    }
+  ],
+  "versioning": {
+    "backtest_version": "14C.1",
+    "engine_version": "14C.1",
+    "strategy_version": "1.0.0",
+    "snapshot_version_range": "1.0.0",
+    "feature_registry_version": "1.0.0",
+    "model_version": "gru_v1",
+    "generated_at": "2026-07-19T11:48:08.914505+05:30"
+  },
+  "created_at": "2026-07-19T11:48:08.914505+05:30",
+  "execution_time_sec": 1.239
+}

@@ -165,6 +165,14 @@ def run(ctx: StrategyExecutionContext) -> StrategyExecutionContext:
     logger.info("[SnapshotLoader] %d snapshots sampled after %s frequency filter",
                 len(sampled), ctx.rebalance_freq)
 
+    # Graceful fallback: if sampling is too restrictive and yields < 2 snapshots,
+    # but we have >= 2 snapshots in range, fallback to Daily sampling so simulation can run.
+    if len(sampled) < 2 and len(in_range) >= 2:
+        logger.warning("[SnapshotLoader] Rebalance frequency '%s' yielded only %d snapshot(s). "
+                       "Gracefully falling back to 'Daily' sampling to utilize all %d snapshots.",
+                       ctx.rebalance_freq, len(sampled), len(in_range))
+        sampled = _sample_by_frequency(in_range, "Daily")
+
     # 3. Integrity verification
     verified: List[Dict] = []
     engine_versions: List[str] = []
