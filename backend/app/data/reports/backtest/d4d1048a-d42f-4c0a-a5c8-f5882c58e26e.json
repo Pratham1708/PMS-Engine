@@ -1,0 +1,414 @@
+{
+  "strategy_name": "Test Verification Strategy",
+  "strategy_id": "af695c1f-935c-4375-b9a9-282751e205f9",
+  "start_date": "2026-07-13",
+  "end_date": "2026-07-14",
+  "rebalance_freq": "Monthly",
+  "benchmark": "NIFTY50",
+  "summary": {
+    "total_return_pct": 0.6337,
+    "cagr_pct": 55310.7715,
+    "annualized_return_pct": 55310.7715,
+    "monthly_returns": [
+      {
+        "year": 2026,
+        "month": 7,
+        "return_pct": 0.6337
+      }
+    ],
+    "quarterly_returns": [],
+    "yearly_returns": [
+      {
+        "year": 2026,
+        "return_pct": 0.6337
+      }
+    ]
+  },
+  "trade_log": [
+    {
+      "trade_id": "789690ca-3dda-4d72-a80a-2b8f9d1efc49",
+      "symbol": "TCS.NS",
+      "company_name": "Tata Consultancy Services",
+      "sector": "Technology",
+      "entry_date": "2026-07-14",
+      "exit_date": "2026-07-13",
+      "holding_days": -1,
+      "entry_price": 3603.6,
+      "exit_price": 3500.0,
+      "entry_score": 4700.0,
+      "exit_score": 4250.0,
+      "entry_rating": "STRONG BUY",
+      "exit_rating": "STRONG BUY",
+      "return_pct": -2.8749,
+      "position_weight": 0.0,
+      "entry_snapshot_id": "ff994337-bd94-4b6a-ad92-4dd2aa6a0f85",
+      "exit_snapshot_id": "a5c70e8e-d358-4ba7-8569-becf0566aee0",
+      "attribution": {
+        "why_entered": "Entered on strength in: momentum_score (+44.00), risk_score (+3.00)",
+        "why_exited": "Exited at rebalance — score 4250.0",
+        "top_contributors": [
+          {
+            "feature_id": "momentum_score",
+            "label": "momentum_score",
+            "contribution": 44.0,
+            "raw_value": 88.0,
+            "normalized_value": 88.0,
+            "weight": 50.0
+          },
+          {
+            "feature_id": "risk_score",
+            "label": "risk_score",
+            "contribution": 3.0,
+            "raw_value": 15.0,
+            "normalized_value": 15.0,
+            "weight": 20.0
+          },
+          {
+            "feature_id": "pe_ratio",
+            "label": "pe_ratio",
+            "contribution": 0.0,
+            "raw_value": 0.0,
+            "normalized_value": 0.0,
+            "weight": 30.0
+          }
+        ],
+        "top_detractors": [
+          {
+            "feature_id": "pe_ratio",
+            "label": "pe_ratio",
+            "contribution": 0.0,
+            "raw_value": 0.0,
+            "normalized_value": 0.0,
+            "weight": 30.0
+          },
+          {
+            "feature_id": "risk_score",
+            "label": "risk_score",
+            "contribution": 3.0,
+            "raw_value": 15.0,
+            "normalized_value": 15.0,
+            "weight": 20.0
+          },
+          {
+            "feature_id": "momentum_score",
+            "label": "momentum_score",
+            "contribution": 44.0,
+            "raw_value": 88.0,
+            "normalized_value": 88.0,
+            "weight": 50.0
+          }
+        ],
+        "entry_eqif_available": true,
+        "exit_eqif_available": true
+      }
+    },
+    {
+      "trade_id": "d013d6ec-c6b6-42f2-b411-e6627a79c821",
+      "symbol": "HDFCBANK.NS",
+      "company_name": "HDFC Bank Ltd",
+      "sector": "Financial Services",
+      "entry_date": "2026-07-14",
+      "exit_date": "2026-07-13",
+      "holding_days": -1,
+      "entry_price": 1751.75,
+      "exit_price": 1600.0,
+      "entry_score": 3860.0,
+      "exit_score": 2800.0,
+      "entry_rating": "STRONG BUY",
+      "exit_rating": "STRONG BUY",
+      "return_pct": -8.6628,
+      "position_weight": 0.0,
+      "entry_snapshot_id": "ff994337-bd94-4b6a-ad92-4dd2aa6a0f85",
+      "exit_snapshot_id": "a5c70e8e-d358-4ba7-8569-becf0566aee0",
+      "attribution": {
+        "why_entered": "Entered on strength in: momentum_score (+31.00), risk_score (+7.60)",
+        "why_exited": "Exited at rebalance — score 2800.0",
+        "top_contributors": [
+          {
+            "feature_id": "momentum_score",
+            "label": "momentum_score",
+            "contribution": 31.0,
+            "raw_value": 62.0,
+            "normalized_value": 62.0,
+            "weight": 50.0
+          },
+          {
+            "feature_id": "risk_score",
+            "label": "risk_score",
+            "contribution": 7.6,
+            "raw_value": 38.0,
+            "normalized_value": 38.0,
+            "weight": 20.0
+          },
+          {
+            "feature_id": "pe_ratio",
+            "label": "pe_ratio",
+            "contribution": 0.0,
+            "raw_value": 0.0,
+            "normalized_value": 0.0,
+            "weight": 30.0
+          }
+        ],
+        "top_detractors": [
+          {
+            "feature_id": "pe_ratio",
+            "label": "pe_ratio",
+            "contribution": 0.0,
+            "raw_value": 0.0,
+            "normalized_value": 0.0,
+            "weight": 30.0
+          },
+          {
+            "feature_id": "risk_score",
+            "label": "risk_score",
+            "contribution": 7.6,
+            "raw_value": 38.0,
+            "normalized_value": 38.0,
+            "weight": 20.0
+          },
+          {
+            "feature_id": "momentum_score",
+            "label": "momentum_score",
+            "contribution": 31.0,
+            "raw_value": 62.0,
+            "normalized_value": 62.0,
+            "weight": 50.0
+          }
+        ],
+        "entry_eqif_available": true,
+        "exit_eqif_available": true
+      }
+    },
+    {
+      "trade_id": "6babece1-22b3-4fa5-823e-dfc5f82c0cfc",
+      "symbol": "INFY.NS",
+      "company_name": "Infosys Ltd",
+      "sector": "Technology",
+      "entry_date": "2026-07-14",
+      "exit_date": "2026-07-13",
+      "holding_days": -1,
+      "entry_price": 1421.42,
+      "exit_price": 1500.0,
+      "entry_score": 3500.0,
+      "exit_score": 4100.0,
+      "entry_rating": "STRONG BUY",
+      "exit_rating": "STRONG BUY",
+      "return_pct": 5.5283,
+      "position_weight": 0.0,
+      "entry_snapshot_id": "ff994337-bd94-4b6a-ad92-4dd2aa6a0f85",
+      "exit_snapshot_id": "a5c70e8e-d358-4ba7-8569-becf0566aee0",
+      "attribution": {
+        "why_entered": "Entered on strength in: momentum_score (+26.00), risk_score (+9.00)",
+        "why_exited": "Exited at rebalance — score 4100.0",
+        "top_contributors": [
+          {
+            "feature_id": "momentum_score",
+            "label": "momentum_score",
+            "contribution": 26.0,
+            "raw_value": 52.0,
+            "normalized_value": 52.0,
+            "weight": 50.0
+          },
+          {
+            "feature_id": "risk_score",
+            "label": "risk_score",
+            "contribution": 9.0,
+            "raw_value": 45.0,
+            "normalized_value": 45.0,
+            "weight": 20.0
+          },
+          {
+            "feature_id": "pe_ratio",
+            "label": "pe_ratio",
+            "contribution": 0.0,
+            "raw_value": 0.0,
+            "normalized_value": 0.0,
+            "weight": 30.0
+          }
+        ],
+        "top_detractors": [
+          {
+            "feature_id": "pe_ratio",
+            "label": "pe_ratio",
+            "contribution": 0.0,
+            "raw_value": 0.0,
+            "normalized_value": 0.0,
+            "weight": 30.0
+          },
+          {
+            "feature_id": "risk_score",
+            "label": "risk_score",
+            "contribution": 9.0,
+            "raw_value": 45.0,
+            "normalized_value": 45.0,
+            "weight": 20.0
+          },
+          {
+            "feature_id": "momentum_score",
+            "label": "momentum_score",
+            "contribution": 26.0,
+            "raw_value": 52.0,
+            "normalized_value": 52.0,
+            "weight": 50.0
+          }
+        ],
+        "entry_eqif_available": true,
+        "exit_eqif_available": true
+      }
+    },
+    {
+      "trade_id": "65d74685-de61-488a-b0a2-b4faa614dcec",
+      "symbol": "RELIANCE.NS",
+      "company_name": "Reliance Industries",
+      "sector": "Energy",
+      "entry_date": "2026-07-14",
+      "exit_date": "2026-07-13",
+      "holding_days": -1,
+      "entry_price": 2422.42,
+      "exit_price": 2400.0,
+      "entry_score": 3430.0,
+      "exit_score": 3400.0,
+      "entry_rating": "STRONG BUY",
+      "exit_rating": "STRONG BUY",
+      "return_pct": -0.9255,
+      "position_weight": 0.0,
+      "entry_snapshot_id": "ff994337-bd94-4b6a-ad92-4dd2aa6a0f85",
+      "exit_snapshot_id": "a5c70e8e-d358-4ba7-8569-becf0566aee0",
+      "attribution": {
+        "why_entered": "Entered on strength in: momentum_score (+24.50), risk_score (+9.80)",
+        "why_exited": "Exited at rebalance — score 3400.0",
+        "top_contributors": [
+          {
+            "feature_id": "momentum_score",
+            "label": "momentum_score",
+            "contribution": 24.5,
+            "raw_value": 49.0,
+            "normalized_value": 49.0,
+            "weight": 50.0
+          },
+          {
+            "feature_id": "risk_score",
+            "label": "risk_score",
+            "contribution": 9.8,
+            "raw_value": 49.0,
+            "normalized_value": 49.0,
+            "weight": 20.0
+          },
+          {
+            "feature_id": "pe_ratio",
+            "label": "pe_ratio",
+            "contribution": 0.0,
+            "raw_value": 0.0,
+            "normalized_value": 0.0,
+            "weight": 30.0
+          }
+        ],
+        "top_detractors": [
+          {
+            "feature_id": "pe_ratio",
+            "label": "pe_ratio",
+            "contribution": 0.0,
+            "raw_value": 0.0,
+            "normalized_value": 0.0,
+            "weight": 30.0
+          },
+          {
+            "feature_id": "risk_score",
+            "label": "risk_score",
+            "contribution": 9.8,
+            "raw_value": 49.0,
+            "normalized_value": 49.0,
+            "weight": 20.0
+          },
+          {
+            "feature_id": "momentum_score",
+            "label": "momentum_score",
+            "contribution": 24.5,
+            "raw_value": 49.0,
+            "normalized_value": 49.0,
+            "weight": 50.0
+          }
+        ],
+        "entry_eqif_available": true,
+        "exit_eqif_available": true
+      }
+    },
+    {
+      "trade_id": "b08ccfb3-7e23-45c4-8d29-47f053251150",
+      "symbol": "ICICIBANK.NS",
+      "company_name": "ICICI Bank Ltd",
+      "sector": "Financial Services",
+      "entry_date": "2026-07-14",
+      "exit_date": "2026-07-13",
+      "holding_days": -1,
+      "entry_price": 820.82,
+      "exit_price": 900.0,
+      "entry_score": 2960.0,
+      "exit_score": 4000.0,
+      "entry_rating": "STRONG BUY",
+      "exit_rating": "STRONG BUY",
+      "return_pct": 9.6465,
+      "position_weight": 0.0,
+      "entry_snapshot_id": "ff994337-bd94-4b6a-ad92-4dd2aa6a0f85",
+      "exit_snapshot_id": "a5c70e8e-d358-4ba7-8569-becf0566aee0",
+      "attribution": {
+        "why_entered": "Entered on strength in: momentum_score (+16.00), risk_score (+13.60)",
+        "why_exited": "Exited at rebalance — score 4000.0",
+        "top_contributors": [
+          {
+            "feature_id": "momentum_score",
+            "label": "momentum_score",
+            "contribution": 16.0,
+            "raw_value": 32.0,
+            "normalized_value": 32.0,
+            "weight": 50.0
+          },
+          {
+            "feature_id": "risk_score",
+            "label": "risk_score",
+            "contribution": 13.6,
+            "raw_value": 68.0,
+            "normalized_value": 68.0,
+            "weight": 20.0
+          },
+          {
+            "feature_id": "pe_ratio",
+            "label": "pe_ratio",
+            "contribution": 0.0,
+            "raw_value": 0.0,
+            "normalized_value": 0.0,
+            "weight": 30.0
+          }
+        ],
+        "top_detractors": [
+          {
+            "feature_id": "pe_ratio",
+            "label": "pe_ratio",
+            "contribution": 0.0,
+            "raw_value": 0.0,
+            "normalized_value": 0.0,
+            "weight": 30.0
+          },
+          {
+            "feature_id": "risk_score",
+            "label": "risk_score",
+            "contribution": 13.6,
+            "raw_value": 68.0,
+            "normalized_value": 68.0,
+            "weight": 20.0
+          },
+          {
+            "feature_id": "momentum_score",
+            "label": "momentum_score",
+            "contribution": 16.0,
+            "raw_value": 32.0,
+            "normalized_value": 32.0,
+            "weight": 50.0
+          }
+        ],
+        "entry_eqif_available": true,
+        "exit_eqif_available": true
+      }
+    }
+  ]
+}

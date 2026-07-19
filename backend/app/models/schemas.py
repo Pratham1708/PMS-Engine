@@ -839,3 +839,274 @@ class StrategyExecuteResponse(BaseModel):
     stocks: List[CompareMetricRecord] = []
 
 
+# ── Phase 14C: Backtest & Validation Schemas ─────────────────────────────────
+
+class BacktestRunRequest(BaseModel):
+    strategy_id: str
+    start_date: str                              # YYYY-MM-DD
+    end_date: str                                # YYYY-MM-DD
+    benchmark: str = "NIFTY50"                  # NIFTY50 | NIFTY500
+    rebalance_freq: str = "Monthly"              # Daily | Weekly | Monthly | Quarterly
+    weighting_scheme: str = "Equal"             # Equal | ScoreWeighted | RiskParity | VolAdjusted
+    initial_capital: float = 1_000_000.0
+    max_holdings: int = 15
+    position_size: float = 10.0                 # max % per position
+    transaction_cost: float = 0.001
+    slippage: float = 0.001
+
+
+class ReportVersioning(BaseModel):
+    model_config = {"protected_namespaces": ()}
+    backtest_version: str = "14C.1"
+    engine_version: str
+    strategy_version: str
+    snapshot_version_range: str                 # e.g. "v1.0.0–v1.2.0"
+    feature_registry_version: str = "1.0.0"
+    model_version: str
+    generated_at: str
+
+
+class CorrelationPair(BaseModel):
+    feature_a: str
+    feature_b: str
+    pearson_r: float
+
+
+class ValidationCategoryResult(BaseModel):
+    category: str
+    score: float
+    max_score: float
+    status: str                                 # pass | warn | fail
+    checks: List[Dict[str, Any]] = []
+    detail: str = ""
+
+
+class ValidationReportResponse(BaseModel):
+    report_id: str
+    strategy_id: str
+    strategy_name: str
+    validation_score: float
+    passed: bool
+    categories: List[ValidationCategoryResult] = []
+    correlation_matrix: List[CorrelationPair] = []
+    bias_tags: List[str] = []
+    warnings: List[str] = []
+    errors: List[str] = []
+    recommendations: List[str] = []
+    generated_at: str
+
+
+class ExecutionLogEntry(BaseModel):
+    snapshot_date: str
+    snapshot_id: str
+    integrity_status: str                       # verified | excluded | warned
+    integrity_checks: Dict[str, bool] = {}
+    stocks_scored: int = 0
+    signals_generated: int = 0
+    buy_signals: int = 0
+    sell_signals: int = 0
+    buy_pct: float = 0.0
+    trades_executed: int = 0
+    portfolio_value: float = 0.0
+    turnover_pct: float = 0.0
+    notes: str = ""
+
+
+class TradeAttribution(BaseModel):
+    why_entered: str = ""
+    why_exited: str = ""
+    top_contributors: List[Dict[str, Any]] = []   # [{feature_id, label, contribution}]
+    top_detractors: List[Dict[str, Any]] = []
+    entry_eqif_available: bool = False
+    exit_eqif_available: bool = False
+
+
+class TradeRecord(BaseModel):
+    trade_id: str
+    symbol: str
+    company_name: str = ""
+    sector: str = ""
+    entry_date: str
+    exit_date: str
+    holding_days: int
+    entry_price: float
+    exit_price: float
+    entry_score: float
+    exit_score: float
+    entry_rating: str
+    exit_rating: str
+    return_pct: float
+    position_weight: float = 0.0
+    entry_snapshot_id: str
+    exit_snapshot_id: str
+    attribution: Optional[TradeAttribution] = None
+
+
+class ReturnMetrics(BaseModel):
+    total_return_pct: float = 0.0
+    cagr_pct: float = 0.0
+    annualized_return_pct: float = 0.0
+    monthly_returns: List[Dict[str, Any]] = []    # [{year, month, return_pct}]
+    quarterly_returns: List[Dict[str, Any]] = []
+    yearly_returns: List[Dict[str, Any]] = []
+
+
+class RiskMetrics(BaseModel):
+    annualized_volatility_pct: float = 0.0
+    beta: float = 0.0
+    alpha_pct: float = 0.0
+    sharpe_ratio: float = 0.0
+    sortino_ratio: float = 0.0
+    calmar_ratio: float = 0.0
+    information_ratio: float = 0.0
+    treynor_ratio: float = 0.0
+
+
+class DrawdownMetrics(BaseModel):
+    max_drawdown_pct: float = 0.0
+    avg_drawdown_pct: float = 0.0
+    max_recovery_days: int = 0
+    total_underwater_days: int = 0
+    drawdown_curve: List[Dict[str, Any]] = []    # [{date, drawdown_pct}]
+
+
+class TradeMetrics(BaseModel):
+    total_trades: int = 0
+    win_rate_pct: float = 0.0
+    loss_rate_pct: float = 0.0
+    avg_win_pct: float = 0.0
+    avg_loss_pct: float = 0.0
+    profit_factor: float = 0.0
+    expectancy_pct: float = 0.0
+    avg_holding_days: float = 0.0
+
+
+class PortfolioMetrics(BaseModel):
+    avg_portfolio_score: float = 0.0
+    avg_turnover_pct: float = 0.0
+    avg_cash_utilization_pct: float = 0.0
+    sector_allocation: Dict[str, float] = {}
+    avg_position_concentration_pct: float = 0.0
+    top5_weight_pct: float = 0.0
+    feature_utilization_pct: float = 0.0
+
+
+class BenchmarkRelativeMetrics(BaseModel):
+    excess_return_pct: float = 0.0
+    tracking_error_pct: float = 0.0
+    relative_max_drawdown_pct: float = 0.0
+    relative_sharpe: float = 0.0
+    relative_cagr_pct: float = 0.0
+
+
+class RollingMetrics(BaseModel):
+    rolling_cagr: List[Dict[str, Any]] = []        # [{date, d30, d90, d252}]
+    rolling_volatility: List[Dict[str, Any]] = []
+    rolling_sharpe: List[Dict[str, Any]] = []
+    rolling_sortino: List[Dict[str, Any]] = []
+    rolling_win_rate: List[Dict[str, Any]] = []
+    rolling_drawdown: List[Dict[str, Any]] = []
+    rolling_alpha: List[Dict[str, Any]] = []
+
+
+class PerformanceMetrics(BaseModel):
+    returns: ReturnMetrics = ReturnMetrics()
+    risk: RiskMetrics = RiskMetrics()
+    drawdown: DrawdownMetrics = DrawdownMetrics()
+    trades: TradeMetrics = TradeMetrics()
+    portfolio: PortfolioMetrics = PortfolioMetrics()
+    benchmark_relative: BenchmarkRelativeMetrics = BenchmarkRelativeMetrics()
+    rolling: RollingMetrics = RollingMetrics()
+
+
+class PortfolioTimelineEntry(BaseModel):
+    date: str
+    snapshot_id: str
+    portfolio_value: float
+    cash: float
+    cash_pct: float
+    sector_allocation: Dict[str, float] = {}
+    top_holdings: List[Dict[str, Any]] = []      # [{symbol, weight, score, rating}]
+    avg_score: float = 0.0
+    num_positions: int = 0
+    period_return_pct: float = 0.0
+    turnover_pct: float = 0.0
+
+
+class BenchmarkComparisonRow(BaseModel):
+    metric: str
+    metric_label: str
+    strategy_value: float
+    pms_default_value: float
+    benchmark_value: float
+    strategy_vs_default: float
+    strategy_vs_benchmark: float
+    higher_is_better: bool = True
+
+
+class BacktestSummaryCards(BaseModel):
+    """Lightweight summary returned immediately; full metrics in BacktestDetailResponse."""
+    total_return_pct: float = 0.0
+    cagr_pct: float = 0.0
+    sharpe_ratio: float = 0.0
+    sortino_ratio: float = 0.0
+    max_drawdown_pct: float = 0.0
+    win_rate_pct: float = 0.0
+    profit_factor: float = 0.0
+    alpha_pct: float = 0.0
+    beta: float = 0.0
+    # Parallel values for the other 2 series
+    pms_total_return_pct: float = 0.0
+    pms_cagr_pct: float = 0.0
+    pms_sharpe_ratio: float = 0.0
+    pms_max_drawdown_pct: float = 0.0
+    benchmark_total_return_pct: float = 0.0
+    benchmark_cagr_pct: float = 0.0
+    benchmark_sharpe_ratio: float = 0.0
+    benchmark_max_drawdown_pct: float = 0.0
+
+
+class BacktestRunResponse(BaseModel):
+    run_id: str
+    strategy_id: str
+    strategy_name: str
+    status: str
+    summary: Optional[BacktestSummaryCards] = None
+    created_at: str
+    execution_time_sec: Optional[float] = None
+    error_msg: Optional[str] = None
+    versioning: Optional[ReportVersioning] = None
+
+
+class BacktestDetailResponse(BaseModel):
+    run_id: str
+    strategy_id: str
+    strategy_name: str
+    status: str
+    # Simulation parameters
+    start_date: str
+    end_date: str
+    benchmark: str
+    rebalance_freq: str
+    weighting_scheme: str
+    initial_capital: float
+    snapshots_used: int = 0
+    # Triple series metrics
+    custom_metrics: PerformanceMetrics = PerformanceMetrics()
+    pms_default_metrics: PerformanceMetrics = PerformanceMetrics()
+    benchmark_metrics: PerformanceMetrics = PerformanceMetrics()
+    # Chart series
+    equity_curve: List[Dict[str, Any]] = []          # [{date, custom, pms_default, benchmark}]
+    sector_allocation_timeline: List[Dict[str, Any]] = []
+    win_loss_histogram: List[Dict[str, Any]] = []     # [{bucket, count}]
+    # Tables
+    summary: BacktestSummaryCards = BacktestSummaryCards()
+    trade_log: List[TradeRecord] = []
+    portfolio_timeline: List[PortfolioTimelineEntry] = []
+    benchmark_comparison_table: List[BenchmarkComparisonRow] = []
+    # Execution
+    execution_log: List[ExecutionLogEntry] = []
+    versioning: Optional[ReportVersioning] = None
+    validation_report: Optional[ValidationReportResponse] = None
+    created_at: str = ""
+    execution_time_sec: float = 0.0

@@ -1,0 +1,96 @@
+/* BacktestHistory.css — styling for runs archive */
+
+.bth-page {
+  min-height: 100vh;
+  background: #0a0f1e;
+  color: #e2e8f0;
+  padding: 24px 32px;
+  font-family: 'Inter', sans-serif;
+}
+
+.bth-loading {
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  min-height: 60vh; color: #94a3b8; gap: 16px;
+}
+.bth-spinner {
+  width: 40px; height: 40px;
+  border: 3px solid #1e293b;
+  border-top-color: #6366f1;
+  border-radius: 50%;
+  animation: bth-spin 0.8s linear infinite;
+}
+@keyframes bth-spin { to { transform: rotate(360deg); } }
+
+/* Header */
+.bth-header {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 28px;
+}
+.bth-title { font-size: 1.6rem; font-weight: 700; color: #f1f5f9; margin: 0; }
+.bth-subtitle { color: #64748b; font-size: 0.88rem; margin-top: 4px; }
+
+.bth-btn-primary {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: #fff; border: none; padding: 10px 20px;
+  border-radius: 10px; font-size: 0.9rem; font-weight: 600;
+  cursor: pointer; transition: all 0.2s;
+  box-shadow: 0 4px 16px rgba(99,102,241,0.25);
+}
+.bth-btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(99,102,241,0.4); }
+
+.bth-error {
+  padding: 12px 16px; background: rgba(239,68,68,0.1);
+  border: 1px solid rgba(239,68,68,0.2); border-radius: 8px;
+  color: #fca5a5; font-size: 0.88rem; margin-bottom: 20px;
+}
+
+/* Empty State */
+.bth-empty {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 80px 40px; background: #0f172a; border: 1px solid #1e293b;
+  border-radius: 16px; text-align: center; gap: 14px;
+}
+.bth-empty-icon { font-size: 3.5rem; }
+.bth-empty h3 { font-size: 1.2rem; font-weight: 700; margin: 0; color: #f1f5f9; }
+.bth-empty p { color: #64748b; font-size: 0.9rem; max-width: 380px; margin: 0 0 10px 0; }
+
+/* Table */
+.bth-list-wrap {
+  background: #0f172a; border: 1px solid #1e293b;
+  border-radius: 16px; overflow-x: auto;
+}
+.bth-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+.bth-table th {
+  padding: 14px 16px; text-align: left; color: #475569;
+  border-bottom: 1px solid #1e293b; font-weight: 600; font-size: 0.8rem;
+}
+.bth-table td {
+  padding: 14px 16px; border-bottom: 1px solid #1e293b;
+  vertical-align: middle;
+}
+.bth-row { cursor: pointer; transition: background 0.15s; }
+.bth-row:hover { background: #1e293b33; }
+.bth-row:last-child td { border-bottom: none; }
+
+.bth-strat-name { font-weight: 700; color: #f1f5f9; font-size: 0.92rem; }
+.bth-run-id { font-size: 0.75rem; color: #475569; font-family: monospace; margin-top: 2px; }
+
+.bth-date-range { font-size: 0.82rem; color: #94a3b8; }
+.bth-metric { font-weight: 600; }
+.bth-pos { color: #10b981; }
+.bth-neg { color: #ef4444; }
+.bth-time { font-size: 0.8rem; color: #64748b; }
+
+.bth-status {
+  padding: 4px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 600;
+}
+.bth-status-completed { background: rgba(16,185,129,0.15); color: #10b981; }
+.bth-status-running   { background: rgba(59,130,246,0.15); color: #60a5fa; }
+.bth-status-failed    { background: rgba(239,68,68,0.15); color: #ef4444; }
+
+.bth-delete-btn {
+  background: none; border: none; color: #475569;
+  cursor: pointer; font-size: 0.82rem; transition: color 0.15s;
+}
+.bth-delete-btn:hover { color: #ef4444; }

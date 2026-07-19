@@ -12,6 +12,7 @@ const navItems = [
   { path: '/search', label: 'Stock Search', icon: '🔍' },
   { path: '/reports', label: 'Research Reports', icon: '📄' },
   { path: '/studio', label: 'Strategy Studio', icon: '🎨' },
+  { path: '/backtest/history', label: 'Backtest Engine', icon: '🧪' },
   { path: '/lab', label: 'Quant Laboratory', icon: '🔬' },
 ];
 

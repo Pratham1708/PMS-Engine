@@ -708,3 +708,55 @@ class StrategyVersion(Base):
     strategy = relationship("StrategyMaster", back_populates="versions")
 
 
+# ── Phase 14C: Backtesting & Validation Tables ──────────────────────────────
+
+class StrategyBacktestRun(Base):
+    __tablename__ = "strategy_backtest_runs"
+    run_id               = Column(String, primary_key=True)          # UUID
+    strategy_id          = Column(String, ForeignKey("strategy_master.strategy_id", ondelete="SET NULL"), nullable=True)
+    strategy_version     = Column(String, nullable=True)
+    optimization_run_id  = Column(String, nullable=True)              # Phase 14D hook
+
+    # Simulation parameters
+    start_date           = Column(String, nullable=False)
+    end_date             = Column(String, nullable=False)
+    benchmark            = Column(String, default="NIFTY50")          # NIFTY50 | NIFTY500 | Custom
+    rebalance_freq       = Column(String, default="Monthly")          # Daily | Weekly | Monthly | Quarterly
+    universe             = Column(String, default="nifty50_v1")
+    weighting_scheme     = Column(String, default="Equal")            # Equal | ScoreWeighted | RiskParity | VolAdjusted
+    initial_capital      = Column(Float, default=1_000_000.0)
+    position_size        = Column(Float, default=10.0)                # max % per position
+    max_holdings         = Column(Integer, default=15)
+    transaction_cost     = Column(Float, default=0.001)
+    slippage             = Column(Float, default=0.001)
+
+    # Execution metadata
+    execution_time_sec   = Column(Float, nullable=True)
+    status               = Column(String, default="pending")          # pending|running|completed|failed
+    error_msg            = Column(Text, nullable=True)
+    created_at           = Column(String, nullable=True)
+
+    # Report versioning — frozen at run time
+    engine_version       = Column(String, nullable=True)
+    strategy_version_tag = Column(String, nullable=True)
+    snapshot_version_tag = Column(String, nullable=True)              # min–max engine_version across snapshots
+    feature_registry_ver = Column(String, nullable=True)
+    model_version_tag    = Column(String, nullable=True)
+
+    # Results (JSON blobs)
+    summary_json         = Column(Text, nullable=True)                # BacktestSummary — summary cards only
+    metrics_json         = Column(Text, nullable=True)                # full PerformanceMetrics all 3 series
+    execution_log_json   = Column(Text, nullable=True)                # per-snapshot execution log
+
+
+class StrategyValidationReport(Base):
+    __tablename__ = "strategy_validation_reports"
+    report_id             = Column(String, primary_key=True)          # UUID
+    strategy_id           = Column(String, ForeignKey("strategy_master.strategy_id", ondelete="SET NULL"), nullable=True)
+    strategy_version      = Column(String, nullable=True)
+    validation_score      = Column(Float, nullable=True)              # 0–100
+    passed                = Column(Integer, default=0)                # 0=fail, 1=pass (threshold 60)
+    diagnostics_json      = Column(Text, nullable=True)               # 11-category breakdown
+    warnings_json         = Column(Text, nullable=True)
+    recommendations_json  = Column(Text, nullable=True)
+    generated_at          = Column(String, nullable=True)

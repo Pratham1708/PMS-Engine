@@ -426,6 +426,7 @@ export default function QuantStrategyStudio() {
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '4px', borderTop: '1px solid rgba(255,255,255,0.03)', paddingTop: '8px' }}>
                       <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{strat.strategy_type} • {strat.visibility}</span>
                       <div style={{ display: 'flex', gap: '8px' }}>
+                        <button className="btn btn-primary btn-sm" style={{ padding: '2px 6px', fontSize: '11px', background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', border: 'none' }} onClick={() => navigate(`/strategy/${strat.strategy_id}/validate`, { state: { definition: strat.strategy_definition, strategyName: strat.strategy_name } })}>Validate</button>
                         <button className="btn btn-secondary btn-sm" style={{ padding: '2px 6px', fontSize: '11px' }} onClick={() => handleEdit(strat)}>Edit</button>
                         <button className="btn btn-secondary btn-sm" style={{ padding: '2px 6px', fontSize: '11px' }} onClick={() => handleDuplicate(strat.strategy_id, strat.strategy_name)}>Clone</button>
                         <button className="btn btn-secondary btn-sm" style={{ padding: '2px 6px', fontSize: '11px' }} onClick={() => handleExportJSON(strat)}>Export</button>

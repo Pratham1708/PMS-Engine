@@ -9,6 +9,9 @@ import StockDetail from './pages/StockDetail';
 import MarketOverview from './pages/MarketOverview';
 import Reports from './pages/Reports';
 import QuantStrategyStudio from './pages/QuantStrategyStudio';
+import StrategyValidation from './pages/StrategyValidation';
+import BacktestResults from './pages/BacktestResults';
+import BacktestHistory from './pages/BacktestHistory';
 
 // Quant Lab Page Imports
 import QuantLabHome from './pages/QuantLab/QuantLabHome';
@@ -162,6 +165,9 @@ function AppContent() {
             <Route path="/market" element={<MarketOverview />} />
             <Route path="/reports" element={<Reports />} />
             <Route path="/studio" element={<QuantStrategyStudio />} />
+            <Route path="/strategy/:strategyId/validate" element={<StrategyValidation />} />
+            <Route path="/backtest/:runId" element={<BacktestResults />} />
+            <Route path="/backtest/history" element={<BacktestHistory />} />
 
             
             {/* Quant Lab Routes */}
