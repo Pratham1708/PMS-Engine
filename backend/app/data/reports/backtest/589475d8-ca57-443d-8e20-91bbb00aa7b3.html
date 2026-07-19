@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Backtest Report — Test Verification Strategy</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: #0f172a;
+            color: #f1f5f9;
+            margin: 0;
+            padding: 40px;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: #1e293b;
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        h1 {
+            color: #6366f1;
+            margin-top: 0;
+        }
+        .meta {
+            color: #94a3b8;
+            font-size: 0.9rem;
+            margin-bottom: 24px;
+            border-bottom: 1px solid #334155;
+            padding-bottom: 12px;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 16px;
+            margin-bottom: 30px;
+        }
+        .card {
+            background: #0f172a;
+            padding: 16px;
+            border-radius: 12px;
+            border: 1px solid #334155;
+        }
+        .card-label {
+            font-size: 0.78rem;
+            color: #64748b;
+            text-transform: uppercase;
+        }
+        .card-value {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #f1f5f9;
+            margin-top: 6px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #334155;
+        }
+        th {
+            color: #94a3b8;
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+        .pos { color: #10b981; }
+        .neg { color: #ef4444; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Backtest Report — Test Verification Strategy</h1>
+        <div class="meta">
+            Strategy ID: af695c1f-935c-4375-b9a9-282751e205f9 &middot; 
+            Period: 2026-07-13 to 2026-07-15 &middot; 
+            Rebalance: Monthly &middot; 
+            Benchmark: NIFTY50
+        </div>
+
+        <div class="grid">
+            <div class="card">
+                <div class="card-label">Total Return (Custom)</div>
+                <div class="card-value pos">0.33%</div>
+            </div>
+            <div class="card">
+                <div class="card-label">CAGR (Custom)</div>
+                <div class="card-value pos">2657.36%</div>
+            </div>
+            <div class="card">
+                <div class="card-label">Sharpe Ratio (Custom)</div>
+                <div class="card-value">0.00x</div>
+            </div>
+            <div class="card">
+                <div class="card-label">Max Drawdown (Custom)</div>
+                <div class="card-value neg">0.00%</div>
+            </div>
+        </div>
+
+        <h2>Performance vs Baselines</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Metric</th>
+                    <th>Custom Strategy</th>
+                    <th>PMS Default</th>
+                    <th>Benchmark</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Total Return</td>
+                    <td class="pos">0.33%</td>
+                    <td>0.00%</td>
+                    <td>0.00%</td>
+                </tr>
+                <tr>
+                    <td>CAGR</td>
+                    <td>2657.36%</td>
+                    <td>0.00%</td>
+                    <td>0.00%</td>
+                </tr>
+                <tr>
+                    <td>Sharpe Ratio</td>
+                    <td>0.00x</td>
+                    <td>0.00x</td>
+                    <td>0.00x</td>
+                </tr>
+                <tr>
+                    <td>Max Drawdown</td>
+                    <td class="neg">0.00%</td>
+                    <td class="neg">0.00%</td>
+                    <td class="neg">0.00%</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>Closed Trades Log Summary (10 total trades)</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Symbol</th>
+                    <th>Entry Date</th>
+                    <th>Exit Date</th>
+                    <th>Holding Days</th>
+                    <th>Return %</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td><strong>ADANIPORTS.NS</strong><br><span style='font-size:0.75rem;color:#64748b'>Adani Ports & SEZ Ltd</span></td><td>2026-07-15</td><td>2026-07-14</td><td>-1d</td><td class='pos'>0.00%</td></tr><tr><td><strong>ADANIENT.NS</strong><br><span style='font-size:0.75rem;color:#64748b'>Adani Enterprises Ltd</span></td><td>2026-07-15</td><td>2026-07-14</td><td>-1d</td><td class='pos'>0.00%</td></tr><tr><td><strong>COALINDIA.NS</strong><br><span style='font-size:0.75rem;color:#64748b'>Coal India Ltd</span></td><td>2026-07-15</td><td>2026-07-14</td><td>-1d</td><td class='pos'>0.00%</td></tr><tr><td><strong>HINDALCO.NS</strong><br><span style='font-size:0.75rem;color:#64748b'>Hindalco Industries Ltd</span></td><td>2026-07-15</td><td>2026-07-14</td><td>-1d</td><td class='pos'>0.00%</td></tr><tr><td><strong>GRASIM.NS</strong><br><span style='font-size:0.75rem;color:#64748b'>Grasim Industries Ltd</span></td><td>2026-07-15</td><td>2026-07-14</td><td>-1d</td><td class='pos'>0.00%</td></tr><tr><td><strong>TCS.NS</strong><br><span style='font-size:0.75rem;color:#64748b'>Tata Consultancy Services</span></td><td>2026-07-14</td><td>2026-07-13</td><td>-1d</td><td class='neg'>-2.87%</td></tr><tr><td><strong>HDFCBANK.NS</strong><br><span style='font-size:0.75rem;color:#64748b'>HDFC Bank Ltd</span></td><td>2026-07-14</td><td>2026-07-13</td><td>-1d</td><td class='neg'>-8.66%</td></tr><tr><td><strong>INFY.NS</strong><br><span style='font-size:0.75rem;color:#64748b'>Infosys Ltd</span></td><td>2026-07-14</td><td>2026-07-13</td><td>-1d</td><td class='pos'>5.53%</td></tr><tr><td><strong>RELIANCE.NS</strong><br><span style='font-size:0.75rem;color:#64748b'>Reliance Industries</span></td><td>2026-07-14</td><td>2026-07-13</td><td>-1d</td><td class='neg'>-0.93%</td></tr><tr><td><strong>ICICIBANK.NS</strong><br><span style='font-size:0.75rem;color:#64748b'>ICICI Bank Ltd</span></td><td>2026-07-14</td><td>2026-07-13</td><td>-1d</td><td class='pos'>9.65%</td></tr>
+            </tbody>
+        </table>
+        
+    </div>
+</body>
+</html>

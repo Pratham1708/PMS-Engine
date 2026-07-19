@@ -170,6 +170,25 @@ async def start_scheduler() -> None:
     _scheduler.start()
     logger.info("Cron scheduler started successfully")
     
+    # 3. Startup Recovery Check: generate snapshots for all dates with prices but missing snapshots
+    async def startup_recovery_check():
+        logger.info("Scheduler Startup: Running historical snapshot recovery check...")
+        try:
+            conn = db.get_db_connection()
+            rows = conn.execute("SELECT DISTINCT trading_date FROM market_daily ORDER BY trading_date ASC").fetchall()
+            for r in rows:
+                d = r["trading_date"]
+                if not snapshot_exists_and_completed(d):
+                    logger.info(f"Scheduler Startup: Found missing snapshot for date {d}. Triggering generation...")
+                    loop = asyncio.get_event_loop()
+                    await loop.run_in_executor(None, run_pipeline, True, None, d)
+                    logger.info(f"Scheduler Startup: Completed snapshot generation for date {d}")
+            conn.close()
+        except Exception as ex:
+            logger.error(f"Error in startup snapshot recovery: {ex}", exc_info=True)
+
+    asyncio.create_task(startup_recovery_check())
+    
     # Wait 5 seconds after startup to trigger initial quotes enrich run
     await asyncio.sleep(5)
     logger.info("Triggering initial scanner quote enrichment run on startup")

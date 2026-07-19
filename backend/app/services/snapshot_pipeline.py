@@ -1423,7 +1423,30 @@ def _stage_run_validation(ctx: PipelineContext) -> StageResult:
         logger.info(f"[Snapshot Saved] Saving {len(ctx.stock_records)} stock records for snapshot {ctx.snapshot_id}")
         db.save_snapshot_stocks(ctx.snapshot_id, ctx.stock_records)
         logger.info(f"[Snapshot Saved] Saving indicator records for snapshot {ctx.snapshot_id}")
-        db.save_snapshot_indicators(ctx.snapshot_id, ctx.indicator_records)
+        legacy_records = []
+        for ind in ctx.indicator_records:
+            legacy_records.append({
+                "symbol": ind["symbol"],
+                "rsi_14": ind.get("rsi") or ind.get("rsi_14"),
+                "ema_20": ind.get("ema20") or ind.get("ema_20"),
+                "ema_50": ind.get("ema50") or ind.get("ema_50"),
+                "ema_200": ind.get("ema200") or ind.get("ema_200"),
+                "macd": ind.get("macd"),
+                "macd_signal": ind.get("macd_signal"),
+                "bb_upper": ind.get("bb_upper"),
+                "bb_lower": ind.get("bb_lower"),
+                "atr_14": ind.get("atr") or ind.get("atr_14"),
+                "stoch_k": ind.get("stoch_k"),
+                "adx_14": ind.get("adx") or ind.get("adx_14"),
+                "obv": ind.get("obv"),
+                "vwap": ind.get("vwap"),
+                "above_ema20": ind.get("above_ema20"),
+                "above_ema50": ind.get("above_ema50"),
+                "above_ema200": ind.get("above_ema200"),
+                "near_52w_high": ind.get("near_52w_high"),
+                "near_52w_low": ind.get("near_52w_low"),
+            })
+        db.save_snapshot_indicators(ctx.snapshot_id, legacy_records)
         logger.info(f"[Snapshot Saved] Saving score records for snapshot {ctx.snapshot_id}")
         db.save_snapshot_scores(ctx.snapshot_id, ctx.score_records)
         if ctx.sector_records:

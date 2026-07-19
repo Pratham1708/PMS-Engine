@@ -148,7 +148,10 @@ def _watchlist_with_meta(wl_name: str, entries: List[dict]) -> WatchlistResponse
 # ── Pipeline Control ──────────────────────────────────────────────────────────
 
 @router.post("/snapshot/generate")
-async def generate_snapshot(background_tasks: BackgroundTasks):
+async def generate_snapshot(
+    background_tasks: BackgroundTasks,
+    date: Optional[str] = Query(None, description="Target date in YYYY-MM-DD format")
+):
     """
     Trigger the official daily snapshot pipeline.
     Runs asynchronously in the background.
@@ -164,14 +167,14 @@ async def generate_snapshot(background_tasks: BackgroundTasks):
 
     def _run():
         try:
-            run_pipeline(is_official=True)
+            run_pipeline(is_official=True, snapshot_date=date)
         except Exception as e:
             logger.error(f"[SnapshotAPI] Pipeline raised exception: {e}", exc_info=True)
 
     background_tasks.add_task(_run)
     return {
         "status": "started",
-        "message": "Official snapshot pipeline started in background. "
+        "message": f"Official snapshot pipeline started in background for date {date or 'today'}. "
                    "Poll GET /api/snapshot/pipeline/status for progress.",
         "monitor_url": "/api/snapshot/pipeline/status",
     }
@@ -762,6 +765,103 @@ async def get_snapshot_changes_by_date(date: str):
     snap = _require_by_date(date)
     rows = _get_snapshot_changes_with_fallback(snap["snapshot_id"])
     return [RecommendationChange(**{k: r.get(k) for k in RecommendationChange.model_fields}) for r in rows]
+
+
+# ── Snapshot Diagnostics Endpoints ───────────────────────────────────────────
+
+@router.get("/snapshot/diagnostics/list")
+def get_snapshot_diagnostics(limit: int = Query(100, ge=1, le=1000)):
+    """Return list of all snapshots, draft and failures, with record counts."""
+    conn = db.get_db_connection()
+    try:
+        rows = conn.execute(
+            f"SELECT * FROM snapshots ORDER BY snapshot_date DESC, generated_at DESC LIMIT {limit}"
+        ).fetchall()
+        
+        diagnostics = []
+        for r in rows:
+            sid = r["snapshot_id"]
+            # Count records in all cascading tables
+            stock_cnt = conn.execute("SELECT COUNT(*) FROM snapshot_stock WHERE snapshot_id = ?", (sid,)).fetchone()[0]
+            ind_cnt = conn.execute("SELECT COUNT(*) FROM snapshot_indicator WHERE snapshot_id = ?", (sid,)).fetchone()[0]
+            score_cnt = conn.execute("SELECT COUNT(*) FROM snapshot_score WHERE snapshot_id = ?", (sid,)).fetchone()[0]
+            
+            # Find failing validation checks
+            failures = conn.execute(
+                "SELECT check_name, detail FROM snapshot_validation WHERE snapshot_id = ? AND status = 'fail'",
+                (sid,)
+            ).fetchall()
+            failure_reason = "; ".join([f"{f['check_name']}: {f['detail']}" for f in failures]) if failures else r.get("notes")
+            
+            diagnostics.append({
+                "snapshot_id": sid,
+                "snapshot_date": r["snapshot_date"],
+                "market_date": r["market_date"],
+                "generated_at": r["generated_at"],
+                "is_official": bool(r["is_official"]),
+                "status": r["status"],
+                "stocks_count": stock_cnt,
+                "indicators_count": ind_cnt,
+                "scores_count": score_cnt,
+                "validation_passed": bool(r["validation_passed"]),
+                "validation_score": r["validation_score"],
+                "failure_reason": failure_reason or "None",
+            })
+        return diagnostics
+    finally:
+        conn.close()
+
+
+@router.delete("/snapshot/{snapshot_id}")
+def delete_snapshot(snapshot_id: str):
+    """Cascading delete a snapshot and all its metadata from database."""
+    conn = db.get_db_connection()
+    try:
+        # Check if exists
+        snap = conn.execute("SELECT * FROM snapshots WHERE snapshot_id = ?", (snapshot_id,)).fetchone()
+        if not snap:
+            raise HTTPException(status_code=404, detail="Snapshot not found")
+        
+        # Cascade deletes
+        tables = [
+            "snapshot_stock", "snapshot_indicator", "snapshot_score", "snapshot_validation",
+            "snapshot_metadata", "snapshot_watchlist", "snapshot_change", "snapshot_market",
+            "snapshot_sector", "snapshot_report", "explainability_snapshot", "feature_snapshot",
+            "indicator_snapshot", "score_snapshot", "snapshot_comparisons"
+        ]
+        for tbl in tables:
+            try:
+                conn.execute(f"DELETE FROM {tbl} WHERE snapshot_id = ?", (snapshot_id,))
+            except Exception as e:
+                logger.warning(f"Failed to delete cascade from {tbl}: {e}")
+                
+        conn.execute("DELETE FROM snapshots WHERE snapshot_id = ?", (snapshot_id,))
+        conn.commit()
+        return {"status": "success", "message": f"Snapshot {snapshot_id} deleted successfully."}
+    finally:
+        conn.close()
+
+
+@router.post("/snapshot/{snapshot_id}/validate")
+def validate_snapshot_endpoint(snapshot_id: str):
+    """Force run validation checks on a snapshot date and update status."""
+    from app.services.snapshot_validator import run_validation as run_snap_val
+    try:
+        status, score, checks = run_snap_val(snapshot_id)
+        # Update snapshot status
+        conn = db.get_db_connection()
+        conn.execute(
+            "UPDATE snapshots SET status = ?, validation_passed = ?, validation_score = ? WHERE snapshot_id = ?",
+            (status, 1 if status in ("completed", "completed_with_warnings") else 0, score, snapshot_id)
+        )
+        conn.commit()
+        conn.close()
+        return {"status": status, "score": score, "checks": checks}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+
 
 
 

@@ -49,6 +49,7 @@ import SectorSnapshot from './pages/SectorSnapshot';
 import MarketBreadth from './pages/MarketBreadth';
 import HistoricalSnapshots from './pages/HistoricalSnapshots';
 import DataQuality from './pages/DataQuality';
+import SnapshotDiagnostics from './pages/SnapshotDiagnostics';
 
 
 
@@ -61,6 +62,7 @@ const PAGE_TITLES = {
   '/breadth': 'Market Breadth Indicators',
   '/archive': 'Historical Snapshot Archive',
   '/data-quality': 'Data Quality & Diagnostics',
+  '/snapshot-diagnostics': 'Snapshot Diagnostics & Administration',
   '/dashboard': 'Dashboard Signals Cache',
   '/search': 'Stock Search',
   '/market': 'Market Overview',
@@ -159,6 +161,7 @@ function AppContent() {
             <Route path="/breadth" element={<MarketBreadth />} />
             <Route path="/archive" element={<HistoricalSnapshots />} />
             <Route path="/data-quality" element={<DataQuality />} />
+            <Route path="/snapshot-diagnostics" element={<SnapshotDiagnostics />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/search" element={<StockSearch />} />
             <Route path="/stock/:symbol" element={<StockDetail />} />

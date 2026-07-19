@@ -9,6 +9,7 @@ const navItems = [
   { path: '/breadth', label: 'Market Breadth', icon: '📈' },
   { path: '/archive', label: 'Archive & Compare', icon: '📚' },
   { path: '/data-quality', label: 'Data Quality', icon: '🛡️' },
+  { path: '/snapshot-diagnostics', label: 'Snapshot Diagnostics', icon: '🔧' },
   { path: '/search', label: 'Stock Search', icon: '🔍' },
   { path: '/reports', label: 'Research Reports', icon: '📄' },
   { path: '/studio', label: 'Strategy Studio', icon: '🎨' },

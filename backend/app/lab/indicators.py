@@ -313,7 +313,7 @@ def compute_supertrend(df: pd.DataFrame, period: int = 10,
     close = df["Close"]
     n = len(df)
     supertrend = pd.Series(index=df.index, dtype=float)
-    direction = pd.Series(index=df.index, dtype=int)
+    direction = pd.Series(0, index=df.index, dtype=int)
     for i in range(1, n):
         if close.iloc[i] > upper_band.iloc[i - 1]:
             direction.iloc[i] = 1

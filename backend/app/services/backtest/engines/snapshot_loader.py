@@ -209,9 +209,48 @@ def run(ctx: StrategyExecutionContext) -> StrategyExecutionContext:
 
     # 4. Minimum threshold
     if len(verified) < 2:
+        # Build detailed diagnostics report
+        all_snaps = db.list_snapshot_dates(official_only=False, limit=365)
+        published_cnt = sum(1 for s in all_snaps if s.get("status") in ("completed", "completed_with_warnings", "published"))
+        draft_cnt = sum(1 for s in all_snaps if s.get("status") in ("draft", "generating", "running"))
+        failed_cnt = sum(1 for s in all_snaps if s.get("status") == "failed")
+        
+        failure_reasons_lines = []
+        # Check sampled snapshots that failed verification
+        for snap in sampled:
+            res = _verify_snapshot(snap, ctx)
+            if not res["passed"]:
+                date_str = snap["snapshot_date"][:10]
+                failed_checks = [k for k, v in res["checks"].items() if not v]
+                reasons = []
+                for fc in failed_checks:
+                    if fc == "has_score_rows":
+                        reasons.append("Missing score records")
+                    elif fc == "has_indicator_rows":
+                        reasons.append("Indicator calculation incomplete")
+                    elif fc == "has_stock_rows":
+                        reasons.append("Missing stock records")
+                    elif fc == "complete":
+                        reasons.append("Snapshot status incomplete")
+                    elif fc == "published":
+                        reasons.append("Snapshot not published")
+                    else:
+                        reasons.append(f"Failed integrity check: {fc}")
+                reason_str = ", ".join(reasons) if reasons else "Unknown failure"
+                failure_reasons_lines.append(f"{date_str}\n  {reason_str}")
+        
+        reasons_block = "\n".join(failure_reasons_lines)
+        if reasons_block:
+            reasons_block = "\nFailure Reasons\n" + reasons_block
+            
         raise InsufficientDataError(
             f"Only {len(verified)} snapshot(s) passed integrity checks for "
-            f"{ctx.start_date}–{ctx.end_date}. At least 2 are required."
+            f"{ctx.start_date}–{ctx.end_date}. At least 2 are required.\n\n"
+            f"Found snapshots: {len(all_snaps)}\n"
+            f"Published: {published_cnt}\n"
+            f"Draft: {draft_cnt}\n"
+            f"Failed: {failed_cnt}\n"
+            f"{reasons_block}"
         )
 
     # 5. Populate context
