@@ -1,27 +1,24 @@
-/**
- * backtestApi.js — Axios wrappers for Phase 14C Backtest & Validation endpoints.
- */
+import client from "./client";
 
-import axios from "axios";
-
-const BASE = "/api/backtest";
+const BASE = "/backtest";
 
 /** Launch a backtest run. Returns full BacktestDetailResponse. */
-export const runBacktest = (params) => axios.post(`${BASE}/run`, params);
+export const runBacktest = (params) => client.post(`${BASE}/run`, params);
 
 /** Get full backtest result by run_id. */
-export const getBacktestResult = (runId) => axios.get(`${BASE}/${runId}`);
+export const getBacktestResult = (runId) => client.get(`${BASE}/${runId}`);
 
 /** List backtest history. Optional strategyId filter. */
 export const listBacktestHistory = (strategyId) =>
-  axios.get(`${BASE}/history`, { params: strategyId ? { strategy_id: strategyId } : {} });
+  client.get(`${BASE}/history`, { params: strategyId ? { strategy_id: strategyId } : {} });
 
 /** Delete a backtest run. */
-export const deleteBacktestRun = (runId) => axios.delete(`${BASE}/${runId}`);
+export const deleteBacktestRun = (runId) => client.delete(`${BASE}/${runId}`);
 
 /** Run strategy validation only (no simulation). */
-export const validateStrategy = (payload) => axios.post(`${BASE}/validate`, payload);
+export const validateStrategy = (payload) => client.post(`${BASE}/validate`, payload);
 
 /** Download report URL (for opening in new tab or FileResponse). */
 export const getReportUrl = (runId, format = "json") =>
-  `${BASE}/${runId}/report?format=${format}`;
+  `${client.defaults.baseURL || "/api"}${BASE}/${runId}/report?format=${format}`;
+
