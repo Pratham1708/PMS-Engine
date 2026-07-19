@@ -52,7 +52,72 @@ def _get_feature_category(feat_id: str) -> str:
     return meta.get("category", "Unknown")
 
 
+def normalize_definition(definition: Dict) -> Dict:
+    """Normalize canonical strategy definition JSON into a flat structure for scorers."""
+    features = definition.get("features", [])
+    weights = definition.get("weights", [])
+    scoring_config = definition.get("scoring_config", {})
+    thresholds = definition.get("thresholds", {})
+
+    # 1. Flatten features list
+    if features and isinstance(features[0], dict):
+        features_flat = [f["feature_id"] for f in features if isinstance(f, dict) and f.get("enabled", True) and "feature_id" in f]
+    elif isinstance(features, list):
+        features_flat = features
+    else:
+        features_flat = []
+
+    # 2. Flatten weights list
+    if isinstance(weights, list):
+        weights_flat = {}
+        for w in weights:
+            if isinstance(w, dict):
+                fid = w.get("feature_id")
+                wt = w.get("weight", 0.0)
+                if fid:
+                    weights_flat[fid] = wt
+    elif isinstance(weights, dict):
+        weights_flat = weights
+    else:
+        weights_flat = {}
+
+    # 3. Flatten thresholds
+    if scoring_config:
+        thresholds_flat = {
+            "buy": scoring_config.get("threshold_buy", 35.0),
+            "sell": scoring_config.get("threshold_sell", -15.0),
+            "hold": scoring_config.get("threshold_hold", -15.0),
+        }
+    else:
+        thresholds_flat = {
+            "buy": thresholds.get("buy", 35.0),
+            "sell": thresholds.get("sell", -15.0),
+            "hold": thresholds.get("hold", -15.0),
+        }
+
+    # 4. Normalization and aggregation
+    normalization = scoring_config.get("normalization", definition.get("normalization", "Default"))
+    aggregation = scoring_config.get("aggregation_method", definition.get("aggregation", "Weighted Average"))
+    
+    # 5. Weighting scheme
+    weighting_scheme = scoring_config.get("scoring_method", definition.get("weighting_scheme", "Equal"))
+    if "equal" in weighting_scheme.lower():
+        scheme = "Equal"
+    else:
+        scheme = "ScoreWeighted"
+
+    return {
+        "features": features_flat,
+        "weights": weights_flat,
+        "thresholds": thresholds_flat,
+        "normalization": normalization,
+        "aggregation": aggregation,
+        "weighting_scheme": scheme
+    }
+
+
 # ── Category scorers ─────────────────────────────────────────────────────────
+
 
 def _score_configuration(definition: Dict) -> Dict:
     features = definition.get("features", [])
@@ -623,6 +688,7 @@ def run_validation(
     Run the full 11-category validation on a strategy definition.
     Returns a dict matching ValidationReportResponse.
     """
+    definition = normalize_definition(definition)
     report_id = str(uuid.uuid4())
     generated_at = datetime.now(IST).isoformat()
 

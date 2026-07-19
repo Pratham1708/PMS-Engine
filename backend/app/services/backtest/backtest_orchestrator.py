@@ -101,12 +101,14 @@ def run_backtest(request: BacktestRunRequest) -> Dict[str, Any]:
             logger.warning("[BacktestOrchestrator] build_runtime_config failed: %s", e)
 
         # 2. Build execution context
+        from app.services.backtest.strategy_validation_service import normalize_definition
+        flat_definition = normalize_definition(definition)
         ctx = StrategyExecutionContext(
             run_id=run_id,
             strategy_id=request.strategy_id,
             strategy_name=strategy["strategy_name"],
             strategy_version=strategy["version"],
-            definition=definition,
+            definition=flat_definition,
             runtime_config=runtime_config,
             start_date=request.start_date,
             end_date=request.end_date,
