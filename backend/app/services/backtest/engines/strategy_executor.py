@@ -53,12 +53,13 @@ def _compute_custom_score(
         return 0.0
 
     if aggregation == "weighted_average":
-        return weighted_sum / total_weight * 100.0
+        val = weighted_sum / total_weight
     elif aggregation == "weighted_sum":
-        return min(max(weighted_sum * 100.0, -100.0), 100.0)
+        val = weighted_sum
     else:
-        # Default: weighted average
-        return weighted_sum / total_weight * 100.0
+        val = weighted_sum / total_weight
+
+    return min(max(val, -100.0), 100.0)
 
 
 def _score_to_rating(score: float, threshold_buy: float, threshold_sell: float) -> str:

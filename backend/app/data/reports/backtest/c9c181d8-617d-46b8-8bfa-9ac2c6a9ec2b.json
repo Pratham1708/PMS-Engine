@@ -1,0 +1,28 @@
+{
+  "strategy_name": "Test Verification Strategy",
+  "strategy_id": "af695c1f-935c-4375-b9a9-282751e205f9",
+  "start_date": "2026-07-13",
+  "end_date": "2026-07-17",
+  "rebalance_freq": "Monthly",
+  "benchmark": "NIFTY50",
+  "summary": {
+    "total_return_pct": 0.0,
+    "cagr_pct": 0.0,
+    "annualized_return_pct": 0.0,
+    "monthly_returns": [
+      {
+        "year": 2026,
+        "month": 7,
+        "return_pct": 0.0
+      }
+    ],
+    "quarterly_returns": [],
+    "yearly_returns": [
+      {
+        "year": 2026,
+        "return_pct": 0.0
+      }
+    ]
+  },
+  "trade_log": []
+}
