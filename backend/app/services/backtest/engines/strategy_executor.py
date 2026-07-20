@@ -43,7 +43,7 @@ def _compute_custom_score(
         w = weights.get(feat_id, 0.0)
         if w == 0.0:
             continue
-        raw = resolve_raw_feature_value(feat_id, stock_row, indicators, scores)
+        raw = resolve_raw_feature_value(feat_id, indicators, scores, stock_row)
         norm = normalize_feature_value(feat_id, raw, indicators)
         weighted_sum += norm * (w / 100.0)
         total_weight += (w / 100.0)

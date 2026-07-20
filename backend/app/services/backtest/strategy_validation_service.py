@@ -371,7 +371,7 @@ def _score_data_quality(definition: Dict, latest_stocks: List[Dict], latest_indi
             ind = ind_by_sym.get(sym, {})
             sco = {}
             try:
-                raw = resolve_raw_feature_value(feat_id, dict(stock), dict(ind), sco)
+                raw = resolve_raw_feature_value(feat_id, dict(ind), sco, dict(stock))
                 if raw != 0.0:
                     non_null += 1
             except Exception:
@@ -430,7 +430,7 @@ def _score_stability(definition: Dict, recent_snapshots: List[Dict]) -> Dict:
                 if w == 0:
                     continue
                 try:
-                    raw = resolve_raw_feature_value(f, stock_dict, ind_dict, sco_dict)
+                    raw = resolve_raw_feature_value(f, ind_dict, sco_dict, stock_dict)
                     norm = normalize_feature_value(f, raw, ind_dict)
                     total += norm * (w / 100.0)
                     total_w += (w / 100.0)
@@ -520,7 +520,7 @@ def _score_turnover(definition: Dict, recent_snapshots: List[Dict]) -> Dict:
                 if w == 0:
                     continue
                 try:
-                    raw = resolve_raw_feature_value(f, stock_dict, ind_dict, sco_dict)
+                    raw = resolve_raw_feature_value(f, ind_dict, sco_dict, stock_dict)
                     norm = normalize_feature_value(f, raw, ind_dict)
                     total += norm * (w / 100.0)
                     total_w += (w / 100.0)
@@ -575,7 +575,7 @@ def _score_signal_density(definition: Dict, latest_stocks: List[Dict], latest_in
             if w == 0:
                 continue
             try:
-                raw = resolve_raw_feature_value(f, stock_dict, dict(ind_dict), {})
+                raw = resolve_raw_feature_value(f, dict(ind_dict), {}, stock_dict)
                 norm = normalize_feature_value(f, raw, dict(ind_dict))
                 t += norm * (w / 100.0)
                 tw += (w / 100.0)
@@ -716,7 +716,7 @@ def run_validation(
         for row in latest_stocks:
             sym = row.get("symbol", "")
             try:
-                raw = resolve_raw_feature_value(feat_id, dict(row), dict(ind_by_sym.get(sym, {})), {})
+                raw = resolve_raw_feature_value(feat_id, dict(ind_by_sym.get(sym, {})), {}, dict(row))
                 norm = normalize_feature_value(feat_id, raw)
                 vals.append(norm)
             except Exception:

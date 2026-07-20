@@ -41,7 +41,7 @@ def _compute_attribution(
         if w == 0.0:
             continue
         try:
-            raw = resolve_raw_feature_value(feat_id, stock_row, indicators, scores)
+            raw = resolve_raw_feature_value(feat_id, indicators, scores, stock_row)
             norm = normalize_feature_value(feat_id, raw, indicators)
             contrib = norm * (w / 100.0)
             label = METADATA_REGISTRY.get(feat_id, {}).get("label", feat_id)
