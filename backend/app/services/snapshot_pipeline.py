@@ -1091,28 +1091,42 @@ def _stage_generate_recommendations(ctx: PipelineContext) -> StageResult:
             secondary = drivers[1].description if len(drivers) > 1 else None
 
             sm = sector_map.get(symbol.upper(), {})
-            # Use dynamic technical score if computed from date indicators, fallback to CSV row
+
+            # Baseline model scores from quantitative engine / DataLoader
+            base_composite = float(row.get("CompositeScoreV2", 0) if pd.notna(row.get("CompositeScoreV2")) else 0)
+            base_tech = float(row.get("TechnicalScore", 0) if pd.notna(row.get("TechnicalScore")) else 0)
+            base_rating = str(row.get("FinalRating")) if pd.notna(row.get("FinalRating")) else None
+
+            # Dynamic technical & indicators
             ind_info = ctx.indicator_data.get(symbol, {})
-            tech = float(ind_info.get("technical_score") if ind_info.get("technical_score") is not None else row.get("TechnicalScore", 0) or 0)
+            calc_tech = float(ind_info.get("technical_score") if ind_info.get("technical_score") is not None else 0)
+            tech = round(base_tech if base_tech != 0 else calc_tech, 2)
+
             ml = float(row.get("MLScore", 0) or 0)
             gru = float(row.get("GRUScore", 0) or 0)
             reliability = float(row.get("ReliabilityScore", 0) or 0)
             confidence = float(row.get("Confidence", 0) or 0)
 
-            # Dynamically compute composite score based on snapshot date scores
-            composite = round(tech * 0.40 + ml * 0.35 + gru * 0.15 + reliability * 0.10, 2)
+            # Preserve quantitative model composite score if available, else calculate weighted composite
+            if base_composite != 0:
+                composite = round(base_composite, 2)
+            else:
+                composite = round(tech * 0.40 + ml * 0.35 + gru * 0.15 + reliability * 0.10, 2)
             
             risk = float(ctx.df.at[row.name, "RiskScore"] if "RiskScore" in ctx.df.columns and pd.notna(ctx.df.at[row.name, "RiskScore"]) else 100 - confidence)
             momentum = float(ctx.df.at[row.name, "MomentumScore"] if "MomentumScore" in ctx.df.columns and pd.notna(ctx.df.at[row.name, "MomentumScore"]) else tech)
             trend = float(ctx.df.at[row.name, "TrendScore"] if "TrendScore" in ctx.df.columns and pd.notna(ctx.df.at[row.name, "TrendScore"]) else gru)
 
-            # Determine dynamic final rating based on composite score
-            if composite >= 35.0:
-                final_rating = "STRONG BUY" if composite >= 50.0 else "BUY"
-            elif composite >= -15.0:
-                final_rating = "HOLD"
+            # Assign rating: preserve model FinalRating if available, else evaluate against score thresholds
+            if base_rating and base_rating in {"STRONG BUY", "BUY", "HOLD", "SELL", "STRONG SELL"}:
+                final_rating = base_rating
             else:
-                final_rating = "STRONG SELL" if composite <= -40.0 else "SELL"
+                if composite >= 35.0:
+                    final_rating = "STRONG BUY" if composite >= 50.0 else "BUY"
+                elif composite >= -15.0:
+                    final_rating = "HOLD"
+                else:
+                    final_rating = "STRONG SELL" if composite <= -40.0 else "SELL"
 
             percentile = round((total - rank_idx) / max(total - 1, 1) * 100, 1)
             portfolio_eligible = final_rating in ("STRONG BUY", "BUY")
