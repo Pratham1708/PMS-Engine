@@ -225,6 +225,9 @@ class PipelineContext:
     skipped_stages: List[str] = field(default_factory=list)
     warnings: List[str] = field(default_factory=list)
     errors: List[str] = field(default_factory=list)
+    # Set by stage 21 after validation runs; used by run_pipeline to avoid a duplicate call
+    validation_status: Optional[str] = None
+    validation_quality_score: Optional[float] = None
 
 
 @dataclass
@@ -388,7 +391,11 @@ def compute_stock_indicators_stage(symbol: str, target_date_str: str, ohlcv_quot
             df["Date"] = pd.to_datetime(df["Date"]).dt.strftime("%Y-%m-%d")
 
         df = df.sort_values("Date").reset_index(drop=True)
-        
+        # Filter historical data up to target_date_str so indicator calculations are strictly causal
+        df = df[df["Date"] <= target_date_str].copy()
+        if df.empty:
+            return None
+
         from app.lab.indicators import (
             compute_rsi, compute_macd, compute_ema, compute_sma,
             compute_obv, compute_williams_r, compute_roc,
@@ -434,10 +441,39 @@ def compute_stock_indicators_stage(symbol: str, target_date_str: str, ohlcv_quot
         
         target_rows = df[df["Date"] == target_date_str]
         if target_rows.empty:
-            return None
+            target_rows = df.tail(1)
             
         row = target_rows.iloc[-1]
         
+        # Calculate dynamic technical score from indicators
+        rsi_val = float(row["RSI"]) if "RSI" in row and pd.notna(row["RSI"]) else 50.0
+        rsi_score = (rsi_val - 50.0) * 2.0
+        
+        macd_val = float(row["MACD"]) if "MACD" in row and pd.notna(row["MACD"]) else 0.0
+        macd_sig = float(row["MACD_Signal"]) if "MACD_Signal" in row and pd.notna(row["MACD_Signal"]) else 0.0
+        macd_score = 50.0 if macd_val > macd_sig else -50.0
+        
+        c_val = float(row["Close"]) if "Close" in row and pd.notna(row["Close"]) else 0.0
+        e20 = float(row["EMA_Fast"]) if "EMA_Fast" in row and pd.notna(row["EMA_Fast"]) else c_val
+        e50 = float(row["EMA_Slow"]) if "EMA_Slow" in row and pd.notna(row["EMA_Slow"]) else c_val
+        e200 = float(row["EMA200"]) if "EMA200" in row and pd.notna(row["EMA200"]) else c_val
+        
+        ma_score = 0.0
+        if c_val > e20: ma_score += 25.0
+        else: ma_score -= 25.0
+        if c_val > e50: ma_score += 25.0
+        else: ma_score -= 25.0
+        if c_val > e200: ma_score += 25.0
+        else: ma_score -= 25.0
+        if e20 > e50: ma_score += 25.0
+        else: ma_score -= 25.0
+        
+        calc_tech = round(max(min(ma_score * 0.40 + macd_score * 0.30 + rsi_score * 0.30, 100.0), -100.0), 2)
+        
+        # Calculate 52-week High and Low
+        w52_h = float(df["High"].tail(252).max()) if not df.empty else None
+        w52_l = float(df["Low"].tail(252).min()) if not df.empty else None
+
         return {
             "symbol": symbol,
             "ema20": float(row["EMA_Fast"]) if "EMA_Fast" in row and pd.notna(row["EMA_Fast"]) else None,
@@ -459,7 +495,13 @@ def compute_stock_indicators_stage(symbol: str, target_date_str: str, ohlcv_quot
             "roc": float(row["ROC"]) if "ROC" in row and pd.notna(row["ROC"]) else None,
             "williams_r": float(row["Williams_R"]) if "Williams_R" in row and pd.notna(row["Williams_R"]) else None,
             "stoch_k": float(row["Stoch_K"]) if "Stoch_K" in row and pd.notna(row["Stoch_K"]) else None,
+            "technical_score": calc_tech,
+            "week52_high": w52_h,
+            "week52_low": w52_l,
         }
+    except Exception as e:
+        logger.error(f"Error computing technical indicators for {symbol}: {e}")
+        return None
     except Exception as e:
         logger.error(f"Error computing technical indicators for {symbol}: {e}")
         return None
@@ -1049,17 +1091,29 @@ def _stage_generate_recommendations(ctx: PipelineContext) -> StageResult:
             secondary = drivers[1].description if len(drivers) > 1 else None
 
             sm = sector_map.get(symbol.upper(), {})
-            composite = float(row.get("CompositeScoreV2", 0) or 0)
-            confidence = float(row.get("Confidence", 0) or 0)
-            tech = float(row.get("TechnicalScore", 0) or 0)
+            # Use dynamic technical score if computed from date indicators, fallback to CSV row
+            ind_info = ctx.indicator_data.get(symbol, {})
+            tech = float(ind_info.get("technical_score") if ind_info.get("technical_score") is not None else row.get("TechnicalScore", 0) or 0)
             ml = float(row.get("MLScore", 0) or 0)
             gru = float(row.get("GRUScore", 0) or 0)
             reliability = float(row.get("ReliabilityScore", 0) or 0)
+            confidence = float(row.get("Confidence", 0) or 0)
+
+            # Dynamically compute composite score based on snapshot date scores
+            composite = round(tech * 0.40 + ml * 0.35 + gru * 0.15 + reliability * 0.10, 2)
+            
             risk = float(ctx.df.at[row.name, "RiskScore"] if "RiskScore" in ctx.df.columns and pd.notna(ctx.df.at[row.name, "RiskScore"]) else 100 - confidence)
             momentum = float(ctx.df.at[row.name, "MomentumScore"] if "MomentumScore" in ctx.df.columns and pd.notna(ctx.df.at[row.name, "MomentumScore"]) else tech)
             trend = float(ctx.df.at[row.name, "TrendScore"] if "TrendScore" in ctx.df.columns and pd.notna(ctx.df.at[row.name, "TrendScore"]) else gru)
 
-            final_rating = str(row.get("FinalRating", "HOLD"))
+            # Determine dynamic final rating based on composite score
+            if composite >= 35.0:
+                final_rating = "STRONG BUY" if composite >= 50.0 else "BUY"
+            elif composite >= -15.0:
+                final_rating = "HOLD"
+            else:
+                final_rating = "STRONG SELL" if composite <= -40.0 else "SELL"
+
             percentile = round((total - rank_idx) / max(total - 1, 1) * 100, 1)
             portfolio_eligible = final_rating in ("STRONG BUY", "BUY")
 
@@ -1077,6 +1131,9 @@ def _stage_generate_recommendations(ctx: PipelineContext) -> StageResult:
             daily_chg_pct = float(quote.get("DailyChangePct") or row.get("DailyChangePct") or 0)
             daily_chg_amt = float(quote.get("DailyChangeAmount") or row.get("DailyChangeAmount") or 0)
 
+            w52_h = ind_info.get("week52_high")
+            w52_l = ind_info.get("week52_low")
+
             data_source = "yfinance" if not quote.get("IsMock") else "mock"
             download_status = "success" if quote else "failed"
 
@@ -1093,8 +1150,8 @@ def _stage_generate_recommendations(ctx: PipelineContext) -> StageResult:
                 "prev_close": prev_close or None,
                 "daily_chg_pct": daily_chg_pct,
                 "daily_chg_amt": daily_chg_amt,
-                "week52_high": None,
-                "week52_low": None,
+                "week52_high": w52_h,
+                "week52_low": w52_l,
                 "technical_score": round(tech, 2),
                 "ml_score": round(ml, 2),
                 "gru_score": round(gru, 2),
@@ -1416,10 +1473,10 @@ def _stage_generate_reports(ctx: PipelineContext) -> StageResult:
 
 
 def _stage_run_validation(ctx: PipelineContext) -> StageResult:
-    """Stage 21: Run pre-publish validation checks (persists draft records to SQLite first)."""
+    """Stage 21: Persist snapshot data to SQLite and run pre-publish validation checks."""
     t0 = time.monotonic()
     try:
-        # Save temporary draft records to SQLite so validation checks can query DB correctly
+        # Save all computed data to SQLite so validation checks can query the DB correctly
         logger.info(f"[Snapshot Saved] Saving {len(ctx.stock_records)} stock records for snapshot {ctx.snapshot_id}")
         db.save_snapshot_stocks(ctx.snapshot_id, ctx.stock_records)
         logger.info(f"[Snapshot Saved] Saving indicator records for snapshot {ctx.snapshot_id}")
@@ -1458,13 +1515,16 @@ def _stage_run_validation(ctx: PipelineContext) -> StageResult:
         if ctx.change_records:
             db.save_snapshot_changes(ctx.snapshot_id, ctx.change_records)
 
-        final_status, quality_score, check_results = run_validation(ctx.snapshot_id)
+        val_status, quality_score, check_results = run_validation(ctx.snapshot_id)
+        # Cache on context so run_pipeline can use the result without a duplicate call
+        ctx.validation_status = val_status
+        ctx.validation_quality_score = quality_score
         passed = sum(1 for c in check_results if c["status"] == "pass")
         failed = sum(1 for c in check_results if c["status"] == "fail")
         return StageResult(
             "21_run_validation", "done",
             stocks_ok=passed, stocks_failed=failed,
-            log_summary=f"Validation: {final_status}, score={quality_score}, "
+            log_summary=f"Validation: {val_status}, score={quality_score}, "
                         f"{passed} pass, {failed} fail",
             duration_sec=round(time.monotonic() - t0, 2),
         )
@@ -1583,10 +1643,7 @@ def _stage_compute_changes(ctx: PipelineContext) -> StageResult:
         elif confidence_diff < -10:
             change_type = "CONFIDENCE_DOWN"
         else:
-            change_type = "NO_CHANGE"
-
-        if change_type == "NO_CHANGE":
-            continue
+            change_type = "UNCHANGED"
 
         # Primary driver
         diffs = {
@@ -1597,8 +1654,8 @@ def _stage_compute_changes(ctx: PipelineContext) -> StageResult:
             "Composite": abs(composite_diff),
         }
         sorted_drivers = sorted(diffs.items(), key=lambda x: x[1], reverse=True)
-        primary = f"{sorted_drivers[0][0]} change ({sorted_drivers[0][1]:.1f})" if sorted_drivers else None
-        secondary = f"{sorted_drivers[1][0]} change ({sorted_drivers[1][1]:.1f})" if len(sorted_drivers) > 1 else None
+        primary = f"{sorted_drivers[0][0]} change ({sorted_drivers[0][1]:.1f})" if sorted_drivers and sorted_drivers[0][1] > 0 else "Baseline alignment"
+        secondary = f"{sorted_drivers[1][0]} change ({sorted_drivers[1][1]:.1f})" if len(sorted_drivers) > 1 and sorted_drivers[1][1] > 0 else None
 
         changes.append({
             "prev_snapshot_id": prev["snapshot_id"],
@@ -1902,7 +1959,8 @@ def run_pipeline(
                 else:
                     final_status = "completed_with_warnings"
                     ctx.skipped_stages.append(stage_name)
-            elif result.status in ("done_with_warnings", "skipped"):
+            elif result.status == "done_with_warnings":
+                # Only actual warnings (not intentional skips) escalate the status
                 final_status = "completed_with_warnings"
 
             # Save stage progress completion
@@ -1941,20 +1999,29 @@ def run_pipeline(
     pipeline_dur = round(time.monotonic() - pipeline_start, 2)
     db.set_snapshot_pipeline_duration(snapshot_id, pipeline_dur)
 
-    # Run final validation to get quality score
-    val_status, quality_score = final_status, None
-    if not abort:
+    # Prefer the validation results already computed by stage 21 (cached on ctx).
+    # If the pipeline aborted or stage 21 didn't run, fall back to running validation now.
+    # val_status is the authoritative source of truth for data quality and overrides
+    # the pipeline-accumulated final_status (which only tracks stage execution outcomes).
+    val_status = ctx.validation_status
+    quality_score = ctx.validation_quality_score
+    if not abort and val_status is None:
+        # Stage 21 didn't run or failed — run validation as a fallback
         try:
             val_status, quality_score, _ = run_validation(snapshot_id)
         except Exception:
             pass
 
+    # Use val_status as the authoritative final status when the pipeline completed normally.
+    # If the pipeline aborted, keep final_status='failed' regardless of validator output.
+    effective_status = final_status if (abort or val_status is None) else val_status
+
     db.update_snapshot_status(
         snapshot_id=snapshot_id,
-        status=final_status,
+        status=effective_status,
         stocks_processed=len(ctx.stock_records),
         stocks_failed=len(ctx.failed_symbols),
-        validation_passed=(final_status in ("completed", "completed_with_warnings")),
+        validation_passed=(effective_status in ("completed", "completed_with_warnings")),
         validation_score=quality_score,
         notes=f"Pipeline completed in {pipeline_dur}s; "
               f"{len(ctx.failed_symbols)} stocks failed; "

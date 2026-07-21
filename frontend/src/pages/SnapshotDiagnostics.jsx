@@ -54,6 +54,8 @@ export default function SnapshotDiagnostics() {
   };
 
   const handleValidate = async (snapshotId) => {
+    // Find the snapshot object from list to potentially select it
+    const targetSnap = snapshots.find(s => s.snapshot_id === snapshotId);
     try {
       setValidatingId(snapshotId);
       setActionMessage({ type: 'info', text: 'Running snapshot integrity checks...' });
@@ -62,9 +64,10 @@ export default function SnapshotDiagnostics() {
         type: 'success', 
         text: `Validation complete. Status: ${res.data.status}, Score: ${res.data.score}%` 
       });
-      if (selectedSnapshot?.snapshot_id === snapshotId) {
-        setValidationResults(res.data.checks);
-      }
+      // Show results in the validation panel — auto-select the row if not already selected
+      const checks = res.data.checks || [];
+      setValidationResults(checks);
+      if (targetSnap) setSelectedSnapshot(targetSnap);
       loadSnapshots();
     } catch (err) {
       console.error(err);
@@ -79,9 +82,9 @@ export default function SnapshotDiagnostics() {
       return;
     }
     try {
-      setActionMessage({ type: 'info', text: 'Deleting snapshot...' });
+      setActionMessage({ type: 'info', text: `Deleting snapshot for ${date}...` });
       const res = await axios.delete(`${BASE_URL}/snapshot/${snapshotId}`);
-      setActionMessage({ type: 'success', text: res.data.message });
+      setActionMessage({ type: 'success', text: res.data?.message || `Snapshot ${date} deleted successfully.` });
       if (selectedSnapshot?.snapshot_id === snapshotId) {
         setSelectedSnapshot(null);
         setValidationResults([]);
@@ -97,8 +100,10 @@ export default function SnapshotDiagnostics() {
     setSelectedSnapshot(snap);
     setValidationResults([]);
     try {
+      // GET /snapshot/{date}/validation returns a bare list of ValidationResult objects
       const res = await axios.get(`${BASE_URL}/snapshot/${snap.snapshot_date}/validation`);
-      setValidationResults(res.data.validation_checks || []);
+      // res.data is a list directly, not a dict with a validation_checks key
+      setValidationResults(Array.isArray(res.data) ? res.data : (res.data.validation_checks || []));
     } catch (err) {
       console.error(err);
       // If validation not run/found, validationResults remains empty

@@ -822,19 +822,28 @@ def delete_snapshot(snapshot_id: str):
         if not snap:
             raise HTTPException(status_code=404, detail="Snapshot not found")
         
-        # Cascade deletes
+        # Cascade deletes — all tables that reference snapshot_id directly
         tables = [
             "snapshot_stock", "snapshot_indicator", "snapshot_score", "snapshot_validation",
             "snapshot_metadata", "snapshot_watchlist", "snapshot_change", "snapshot_market",
             "snapshot_sector", "snapshot_report", "explainability_snapshot", "feature_snapshot",
-            "indicator_snapshot", "score_snapshot", "snapshot_comparisons"
+            "indicator_snapshot", "score_snapshot",
         ]
         for tbl in tables:
             try:
                 conn.execute(f"DELETE FROM {tbl} WHERE snapshot_id = ?", (snapshot_id,))
             except Exception as e:
                 logger.warning(f"Failed to delete cascade from {tbl}: {e}")
-                
+
+        # snapshot_comparisons uses snapshot_id_1/snapshot_id_2 instead of snapshot_id
+        try:
+            conn.execute(
+                "DELETE FROM snapshot_comparisons WHERE snapshot_id_1 = ? OR snapshot_id_2 = ?",
+                (snapshot_id, snapshot_id)
+            )
+        except Exception as e:
+            logger.warning(f"Failed to delete cascade from snapshot_comparisons: {e}")
+
         conn.execute("DELETE FROM snapshots WHERE snapshot_id = ?", (snapshot_id,))
         conn.commit()
         return {"status": "success", "message": f"Snapshot {snapshot_id} deleted successfully."}

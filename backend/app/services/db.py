@@ -814,11 +814,21 @@ def save_snapshot_changes(snapshot_id: str, records: List[Dict[str, Any]]) -> in
 
 
 def save_snapshot_validations(snapshot_id: str, records: List[Dict[str, Any]]) -> int:
-    """Bulk insert validation check results for a snapshot."""
+    """Bulk insert validation check results for a snapshot.
+
+    This is idempotent: any existing validation rows for the snapshot are removed
+    before the new results are inserted, so re-running validation never creates
+    duplicate check rows.
+    """
     if not records:
         return 0
     conn = get_db_connection()
     try:
+        # Clear previous validation rows to ensure idempotency
+        conn.execute(
+            "DELETE FROM snapshot_validation WHERE snapshot_id = ?",
+            (snapshot_id,)
+        )
         conn.executemany(
             """
             INSERT INTO snapshot_validation
