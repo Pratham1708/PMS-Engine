@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import axios from 'axios';
+import { fetchPipelineStatus } from '../api/stocks';
 
 export const LAB_STAGES = [
   { id: '01_load_security_master', name: 'Market Data Observatory', code: 'MDO' },
@@ -38,6 +39,8 @@ export function usePipelineExecutionContext() {
 
   const wsRef = useRef(null);
   const timerRef = useRef(null);
+  const pollingRef = useRef(null);
+  const isWsConnectedRef = useRef(false);
 
   // Process a single event envelope
   const processEvent = useCallback((evt) => {
@@ -99,20 +102,31 @@ export function usePipelineExecutionContext() {
     }
   }, []);
 
-  // Connect to live WebSocket
+  // Robust WebSocket Connection & Polling Fallback
   useEffect(() => {
     if (mode !== 'live') return;
 
+    let apiHost = 'localhost:8000';
+    const envUrl = import.meta.env.VITE_API_URL;
+    if (envUrl) {
+      try {
+        const parsed = new URL(envUrl);
+        apiHost = parsed.host;
+      } catch (e) {}
+    } else if (window.location.hostname) {
+      apiHost = `${window.location.hostname}:8000`;
+    }
+
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const host = window.location.host;
-    const wsUrl = `${protocol}//${host}/api/ws/pipeline`;
+    const wsUrl = `${protocol}//${apiHost}/api/ws/pipeline`;
 
     try {
       const ws = new WebSocket(wsUrl);
       wsRef.current = ws;
 
       ws.onopen = () => {
-        setLogs((prev) => [...prev, { time: new Date().toLocaleTimeString(), text: 'Connected to live Quantitative Research stream', type: 'info' }]);
+        isWsConnectedRef.current = true;
+        setLogs((prev) => [...prev, { time: new Date().toLocaleTimeString(), text: `Connected to live stream at ${wsUrl}`, type: 'info' }]);
       };
 
       ws.onmessage = (event) => {
@@ -125,11 +139,12 @@ export function usePipelineExecutionContext() {
       };
 
       ws.onerror = () => {
-        setLogs((prev) => [...prev, { time: new Date().toLocaleTimeString(), text: 'WebSocket stream connection error', type: 'error' }]);
+        isWsConnectedRef.current = false;
+        setLogs((prev) => [...prev, { time: new Date().toLocaleTimeString(), text: 'WebSocket connection error (switched to polling fallback)', type: 'error' }]);
       };
 
       ws.onclose = () => {
-        setLogs((prev) => [...prev, { time: new Date().toLocaleTimeString(), text: 'WebSocket stream closed', type: 'info' }]);
+        isWsConnectedRef.current = false;
       };
 
       return () => {
@@ -141,6 +156,37 @@ export function usePipelineExecutionContext() {
       console.error('[WebSocket] Init error:', e);
     }
   }, [mode, processEvent]);
+
+  // Polling Fallback (if WebSocket is disconnected or in cold start)
+  useEffect(() => {
+    if (mode !== 'live') return;
+
+    const pollStatus = async () => {
+      try {
+        const res = await fetchPipelineStatus();
+        if (res?.data) {
+          const data = res.data;
+          setStatus(data.status || 'idle');
+          if (data.current_stage) setCurrentStage(data.current_stage);
+          if (data.pct_complete !== undefined) setPctComplete(data.pct_complete);
+          if (data.elapsed_sec !== undefined) setElapsedSec(data.elapsed_sec);
+          if (data.stage_log && data.stage_log.length > 0) {
+            const completed = new Set(data.stage_log.map((s) => s.stage));
+            setCompletedStages(completed);
+          }
+        }
+      } catch (err) {
+        // Silently ignore polling errors
+      }
+    };
+
+    pollStatus();
+    pollingRef.current = setInterval(pollStatus, 1500);
+
+    return () => {
+      if (pollingRef.current) clearInterval(pollingRef.current);
+    };
+  }, [mode]);
 
   // Replay playback loop
   useEffect(() => {
