@@ -7,6 +7,7 @@ import {
   triggerLiveAnalysis,
   fetchPipelineStatus,
 } from '../api/stocks';
+import QuantResearchLabModal from '../components/pipeline/QuantResearchLabModal';
 
 const RATING_COLORS = {
   'STRONG BUY': '#10b981',
@@ -114,26 +115,36 @@ function ChangeCard({ change }) {
   );
 }
 
-function PipelineProgress({ pipeline }) {
+function PipelineProgress({ pipeline, onOpenLab }) {
   if (!pipeline || pipeline.status === 'idle') return null;
   const pct = pipeline.pct_complete || 0;
   const isRunning = pipeline.status === 'running';
   return (
-    <div className="sd-pipeline-progress">
-      <div className="sd-pipeline-header">
-        <span className="sd-pipeline-label">
-          {isRunning ? '⚡ Pipeline Running' : pipeline.status === 'completed' ? '✅ Pipeline Complete' : '❌ Pipeline Failed'}
+    <div className="sd-pipeline-progress" style={{ background: '#0f172a', border: '1px solid #3b82f6', borderRadius: '12px', padding: '16px', margin: '16px 0' }}>
+      <div className="sd-pipeline-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <span className="sd-pipeline-label" style={{ fontWeight: '800', color: '#38bdf8' }}>
+          {isRunning ? '⚡ Quantitative Research Laboratory Active' : pipeline.status === 'completed' ? '✅ Pipeline Complete' : '❌ Pipeline Failed'}
         </span>
-        <span className="sd-pipeline-pct">{pct.toFixed(0)}%</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <span className="sd-pipeline-pct" style={{ fontWeight: '800', color: '#ffffff' }}>{pct.toFixed(0)}%</span>
+          {onOpenLab && (
+            <button
+              onClick={onOpenLab}
+              style={{ background: '#3b82f6', color: '#ffffff', border: 'none', padding: '6px 14px', borderRadius: '6px', fontWeight: '700', fontSize: '12px', cursor: 'pointer' }}
+            >
+              🔬 Open Interactive Research Lab
+            </button>
+          )}
+        </div>
       </div>
-      <div className="sd-pipeline-bar">
-        <div className="sd-pipeline-fill" style={{ width: `${pct}%`, background: isRunning ? '#3b82f6' : pipeline.status === 'completed' ? '#10b981' : '#ef4444' }} />
+      <div className="sd-pipeline-bar" style={{ height: '6px', background: '#1e293b', borderRadius: '3px', margin: '12px 0 8px 0', overflow: 'hidden' }}>
+        <div className="sd-pipeline-fill" style={{ width: `${pct}%`, height: '100%', background: isRunning ? '#3b82f6' : pipeline.status === 'completed' ? '#10b981' : '#ef4444' }} />
       </div>
       {pipeline.current_stage && (
-        <div className="sd-pipeline-stage">{pipeline.current_stage.replace(/_/g, ' ')}</div>
+        <div className="sd-pipeline-stage" style={{ fontSize: '12px', color: '#94a3b8' }}>Stage: {pipeline.current_stage.replace(/_/g, ' ')}</div>
       )}
-      <div className="sd-pipeline-counts">
-        ✓ {pipeline.stocks_completed} · ✗ {pipeline.stocks_failed} · {pipeline.elapsed_sec?.toFixed(0)}s
+      <div className="sd-pipeline-counts" style={{ fontSize: '11px', color: '#64748b', marginTop: '4px' }}>
+        ✓ {pipeline.stocks_completed} ok · ✗ {pipeline.stocks_failed} failed · {pipeline.elapsed_sec?.toFixed(0)}s elapsed
       </div>
     </div>
   );
@@ -149,6 +160,8 @@ export default function SnapshotDashboard() {
   const [generating, setGenerating] = useState(false);
   const [liveAnalysis, setLiveAnalysis] = useState(false);
   const [error, setError] = useState(null);
+  const [isLabOpen, setIsLabOpen] = useState(false);
+  const [replaySnapshotId, setReplaySnapshotId] = useState(null);
   const navigate = useNavigate();
 
   const loadData = useCallback(async () => {
@@ -265,7 +278,7 @@ export default function SnapshotDashboard() {
             🏠 Go to Research Workspace
           </button>
         </div>
-        {isRunning && <PipelineProgress pipeline={pipeline} />}
+        {isRunning && <PipelineProgress pipeline={pipeline} onOpenLab={() => { setReplaySnapshotId(null); setIsLabOpen(true); }} />}
         {error && <div className="sd-error-msg">{error}</div>}
       </div>
     );
@@ -304,7 +317,7 @@ export default function SnapshotDashboard() {
       </div>
 
       {error && <div className="sd-error-msg">{error}</div>}
-      {isRunning && <PipelineProgress pipeline={pipeline} />}
+      {isRunning && <PipelineProgress pipeline={pipeline} onOpenLab={() => { setReplaySnapshotId(null); setIsLabOpen(true); }} />}
 
       {/* ── Row 1: Market Pulse Cards ── */}
       <div className="sd-pulse-row">
@@ -557,6 +570,14 @@ export default function SnapshotDashboard() {
         </div>
       )}
 
+      <QuantResearchLabModal
+        isOpen={isLabOpen}
+        onClose={() => {
+          setIsLabOpen(false);
+          setReplaySnapshotId(null);
+        }}
+        replaySnapshotId={replaySnapshotId}
+      />
     </div>
   );
 }

@@ -760,3 +760,16 @@ class StrategyValidationReport(Base):
     warnings_json         = Column(Text, nullable=True)
     recommendations_json  = Column(Text, nullable=True)
     generated_at          = Column(String, nullable=True)
+
+
+class PipelineEvent(Base):
+    __tablename__ = "pipeline_events"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    snapshot_id = Column(String, nullable=False, index=True)
+    sequence_id = Column(Integer, nullable=False)
+    event_type = Column(String, nullable=False)
+    stage_name = Column(String, nullable=True)
+    stock_symbol = Column(String, nullable=True)
+    payload_json = Column(Text, nullable=False)
+    created_at = Column(String, nullable=False)
+

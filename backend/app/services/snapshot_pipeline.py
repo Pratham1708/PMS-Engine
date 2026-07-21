@@ -30,6 +30,7 @@ import pytz
 
 from app.services import db
 from app.services.pipeline_monitor import get_monitor
+from app.services.pipeline_event_bus import get_event_bus
 from app.services.snapshot_validator import run_validation
 
 logger = logging.getLogger(__name__)
@@ -654,6 +655,21 @@ def _stage_download_ohlcv(ctx: PipelineContext) -> StageResult:
                                     ctx.df.at[idx[0], col] = quote[val_key]
                     ok += 1
                     monitor.stock_done(symbol, success=True)
+                    get_event_bus().publish_event(
+                        "stage_progress",
+                        {
+                            "stage": "02_download_ohlcv",
+                            "stock": symbol,
+                            "status": "completed",
+                            "ohlcv": quote,
+                            "processed": ok,
+                            "total": len(ctx.symbols),
+                            "log": f"Downloaded OHLCV for {symbol}: Open={quote.get('Open')}, Close={quote.get('Close')}, Volume={quote.get('Volume')}",
+                        },
+                        snapshot_id=ctx.snapshot_id,
+                        stage_name="02_download_ohlcv",
+                        stock_symbol=symbol,
+                    )
                 else:
                     failed += 1
                     ctx.failed_symbols.append(symbol)
@@ -806,6 +822,21 @@ def _stage_generate_indicators(ctx: PipelineContext) -> StageResult:
                             "near_52w_low": 1 if near_52w_low else 0,
                         })
                         ok += 1
+                        get_event_bus().publish_event(
+                            "stage_progress",
+                            {
+                                "stage": "06_generate_indicators",
+                                "stock": symbol,
+                                "status": "completed",
+                                "payload": ctx.indicator_data[symbol],
+                                "processed": ok,
+                                "total": len(ctx.symbols),
+                                "log": f"Calculated technical indicators for {symbol}: EMA20={ctx.indicator_data[symbol].get('ema20')}, RSI={ctx.indicator_data[symbol].get('rsi')}",
+                            },
+                            snapshot_id=ctx.snapshot_id,
+                            stage_name="06_generate_indicators",
+                            stock_symbol=symbol,
+                        )
                     else:
                         failed += 1
                         warnings_list.append(f"{symbol}: indicator computation returned empty")
@@ -1909,6 +1940,19 @@ def run_pipeline(
     except Exception:
         est_stocks = 50
 
+    event_bus = get_event_bus()
+    event_bus.reset_sequence(snapshot_id)
+    event_bus.publish_event(
+        "pipeline_started",
+        {
+            "snapshot_id": snapshot_id,
+            "snapshot_date": snapshot_date,
+            "total_stocks": est_stocks,
+            "total_stages": TOTAL_STAGES,
+        },
+        snapshot_id=snapshot_id
+    )
+
     monitor.start(snapshot_id=snapshot_id, total_stocks=est_stocks, total_stages=TOTAL_STAGES)
 
     pipeline_start = time.monotonic()
@@ -1939,12 +1983,29 @@ def run_pipeline(
     for stage_idx, stage_name, stage_fn, is_critical in PIPELINE_STAGES:
         try:
             monitor.update_stage(stage_name, stage_idx, TOTAL_STAGES)
+            event_bus.publish_event(
+                "stage_started",
+                {
+                    "stage": stage_name,
+                    "stage_index": stage_idx,
+                    "total_stages": TOTAL_STAGES,
+                    "pct_complete": round((stage_idx - 1) / TOTAL_STAGES * 100, 1),
+                },
+                snapshot_id=snapshot_id,
+                stage_name=stage_name,
+            )
             
             # Recovery: check if this stage was already completed
             if stage_name in completed_stages:
                 logger.info(f"[Pipeline] Stage {stage_idx}/{TOTAL_STAGES} {stage_name} already completed. Restoring context data.")
                 rehydrate_stage_data(ctx, stage_name)
                 monitor.stage_done(stage_name, "skipped", f"Restored completed stage {stage_name}")
+                event_bus.publish_event(
+                    "stage_completed",
+                    {"stage": stage_name, "stage_index": stage_idx, "status": "skipped", "duration_sec": 0.0},
+                    snapshot_id=snapshot_id,
+                    stage_name=stage_name,
+                )
                 continue
 
             db.save_snapshot_stage(
@@ -1958,6 +2019,18 @@ def run_pipeline(
             result = stage_fn(ctx)
             _record_stage(ctx, result)
             monitor.stage_done(stage_name, result.status, result.log_summary)
+            event_bus.publish_event(
+                "stage_completed",
+                {
+                    "stage": stage_name,
+                    "stage_index": stage_idx,
+                    "status": result.status,
+                    "duration_sec": result.duration_sec,
+                    "log_summary": result.log_summary,
+                },
+                snapshot_id=snapshot_id,
+                stage_name=stage_name,
+            )
 
             for w in result.warnings:
                 monitor.add_warning(w)
@@ -2043,6 +2116,18 @@ def run_pipeline(
     )
 
     monitor.finish(final_status)
+    event_bus.publish_event(
+        "pipeline_completed",
+        {
+            "snapshot_id": snapshot_id,
+            "status": effective_status,
+            "duration_sec": pipeline_dur,
+            "stocks_processed": len(ctx.stock_records),
+            "stocks_failed": len(ctx.failed_symbols),
+            "validation_score": quality_score,
+        },
+        snapshot_id=snapshot_id
+    )
     logger.info(
         f"[Pipeline Completed] Finished snapshot {snapshot_id}: status={final_status}, "
         f"duration={pipeline_dur}s, stocks={len(ctx.stock_records)}"

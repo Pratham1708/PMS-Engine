@@ -8,6 +8,7 @@ import os
 import re
 import uuid
 import logging
+import json
 import sqlite3
 from typing import Optional, List, Dict, Any
 
@@ -1443,3 +1444,58 @@ def get_registered_comparison(
         return dict(row) if row else None
     finally:
         conn.close()
+
+
+def save_pipeline_event(
+    snapshot_id: str,
+    sequence_id: int,
+    event_type: str,
+    payload_dict: dict,
+    stage_name: Optional[str] = None,
+    stock_symbol: Optional[str] = None
+) -> None:
+    """Save a versioned pipeline execution event for Replay Mode persistence."""
+    now = _now_ist()
+    payload_str = json.dumps(payload_dict, default=str)
+    conn = get_db_connection()
+    try:
+        conn.execute(
+            """
+            INSERT INTO pipeline_events
+            (snapshot_id, sequence_id, event_type, stage_name, stock_symbol, payload_json, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            """,
+            (snapshot_id, sequence_id, event_type, stage_name, stock_symbol, payload_str, now)
+        )
+        conn.commit()
+    except Exception as e:
+        logger.error(f"[DB] Error saving pipeline event seq {sequence_id}: {e}")
+    finally:
+        conn.close()
+
+
+def get_pipeline_events(snapshot_id: str) -> List[Dict[str, Any]]:
+    """Retrieve all ordered pipeline events for a snapshot for Replay Mode."""
+    conn = get_db_connection()
+    try:
+        rows = conn.execute(
+            """
+            SELECT id, snapshot_id, sequence_id, event_type, stage_name, stock_symbol, payload_json, created_at
+            FROM pipeline_events
+            WHERE snapshot_id = ?
+            ORDER BY sequence_id ASC
+            """,
+            (snapshot_id,)
+        ).fetchall()
+        result = []
+        for r in rows:
+            item = dict(r)
+            try:
+                item["payload"] = json.loads(item["payload_json"])
+            except Exception:
+                item["payload"] = {}
+            result.append(item)
+        return result
+    finally:
+        conn.close()
+
