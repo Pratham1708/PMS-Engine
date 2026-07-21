@@ -12,7 +12,7 @@ import {
 } from 'recharts';
 
 export default function PortfolioConstructionLab() {
-  const [symbolsText, setSymbolsText] = useState('RELIANCE.NS, TCS.NS, HDFCBANK.NS, INFY.NS');
+  const [symbolsText, setSymbolsText] = useState('RELIANCE, TCS, HDFCBANK, INFY');
   const [period, setPeriod] = useState('3Y');
 
   const [loading, setLoading] = useState(false);

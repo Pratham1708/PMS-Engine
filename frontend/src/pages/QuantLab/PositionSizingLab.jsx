@@ -3,7 +3,7 @@ import { runPositionSizing } from '../../api/labApi';
 import ChartPanel from './shared/ChartPanel';
 
 export default function PositionSizingLab() {
-  const [symbol, setSymbol] = useState('RELIANCE.NS');
+  const [symbol, setSymbol] = useState('RELIANCE');
   const [period, setPeriod] = useState('3Y');
   const [riskPct, setRiskPct] = useState(2.0);
 

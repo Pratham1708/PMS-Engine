@@ -30,22 +30,25 @@ def is_valid_symbol(symbol: str) -> bool:
 
 def get_canonical_symbol(symbol: str) -> str:
     """
-    Retrieve the exact capitalised case of the symbol.
+    Retrieve the exact capitalised case of the symbol without .NS suffix.
     Checks data_loader first, then security_master.
     """
+    clean_sym = symbol.upper().replace(".NS", "").strip()
+
     # Check data_loader (Nifty 50)
     df = data_loader.get_df()
     if not df.empty:
-        matches = df[df["Symbol"].str.upper() == symbol.upper()]
+        matches = df[df["Symbol"].str.upper().str.replace(".NS", "") == clean_sym]
         if not matches.empty:
-            return str(matches.iloc[0]["Symbol"])
+            return str(matches.iloc[0]["Symbol"]).replace(".NS", "")
 
     # Check security_master for canonical casing
-    entry = get_security_master_entry(symbol)
+    entry = get_security_master_entry(clean_sym) or get_security_master_entry(f"{clean_sym}.NS")
     if entry:
-        return entry["symbol"]
+        return entry["symbol"].replace(".NS", "")
 
-    return symbol.upper()
+    return clean_sym
+
 
 
 def is_in_data_loader(symbol: str) -> bool:

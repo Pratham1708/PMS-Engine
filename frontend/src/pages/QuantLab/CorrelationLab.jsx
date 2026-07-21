@@ -3,7 +3,7 @@ import { getCorrelationLab } from '../../api/labApi';
 import ChartPanel from './shared/ChartPanel';
 
 export default function CorrelationLab() {
-  const [symbol, setSymbol] = useState('RELIANCE.NS');
+  const [symbol, setSymbol] = useState('RELIANCE');
   const [period, setPeriod] = useState('3Y');
 
   const [loading, setLoading] = useState(false);

@@ -254,17 +254,15 @@ def get_stock(symbol: str) -> Optional[StockDetail]:
     import logging
     _log = logging.getLogger(__name__)
 
+    clean_sym = symbol.upper().replace(".NS", "").strip()
+
     df = _get_active_df()
-    match = df[df["Symbol"] == symbol]
-    if match.empty:
-        match = df[df["Symbol"].str.upper() == symbol.upper()]
+    match = df[df["Symbol"].str.upper().str.replace(".NS", "") == clean_sym]
 
     if match.empty:
         # Cascade: the snapshot may be partial — try the full CSV universe
         csv_df = data_loader.get_df()
-        match = csv_df[csv_df["Symbol"] == symbol]
-        if match.empty:
-            match = csv_df[csv_df["Symbol"].str.upper() == symbol.upper()]
+        match = csv_df[csv_df["Symbol"].str.upper().str.replace(".NS", "") == clean_sym]
         if not match.empty:
             _log.info(
                 f"[StockService] '{symbol}' not in latest snapshot; "
@@ -273,7 +271,11 @@ def get_stock(symbol: str) -> Optional[StockDetail]:
         else:
             return None
 
-    return _df_to_stock_detail(match.iloc[0])
+    stock_detail = _df_to_stock_detail(match.iloc[0])
+    # Normalize Symbol to exclude .NS suffix for display cleanliness
+    stock_detail.Symbol = stock_detail.Symbol.replace(".NS", "")
+    return stock_detail
+
 
 
 def get_top_buys(limit: int = 10) -> List[StockSummary]:

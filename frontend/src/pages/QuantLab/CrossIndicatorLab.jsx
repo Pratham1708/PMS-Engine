@@ -3,7 +3,7 @@ import { runCrossIndicator } from '../../api/labApi';
 import ChartPanel from './shared/ChartPanel';
 
 export default function CrossIndicatorLab() {
-  const [symbol, setSymbol] = useState('RELIANCE.NS');
+  const [symbol, setSymbol] = useState('RELIANCE');
   const [period, setPeriod] = useState('3Y');
   const [targetMetric, setTargetMetric] = useState('sharpe');
   

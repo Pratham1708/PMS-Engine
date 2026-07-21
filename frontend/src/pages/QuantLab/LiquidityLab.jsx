@@ -3,7 +3,7 @@ import { getLiquidityResearch } from '../../api/labApi';
 import MetricsGrid from './shared/MetricsGrid';
 
 export default function LiquidityLab() {
-  const [symbol, setSymbol] = useState('RELIANCE.NS');
+  const [symbol, setSymbol] = useState('RELIANCE');
   
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState(null);

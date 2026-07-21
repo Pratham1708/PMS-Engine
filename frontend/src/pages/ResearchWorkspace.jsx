@@ -44,17 +44,16 @@ export default function ResearchWorkspace() {
     setError(null);
     setSuccess(null);
 
-    const formatted = quickSymbol.trim().toUpperCase();
-    const symbolWithSuffix = formatted.endsWith('.NS') ? formatted : `${formatted}.NS`;
+    const formatted = quickSymbol.trim().toUpperCase().replace(/\.NS$/i, '');
 
     try {
-      await addToMyStocks(symbolWithSuffix);
-      setSuccess(`Successfully added ${symbolWithSuffix} to tracked universe!`);
+      await addToMyStocks(formatted);
+      setSuccess(`Successfully added ${formatted} to tracked universe!`);
       setQuickSymbol('');
       await loadWorkspace();
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
-      setError(err.response?.data?.detail || `Failed to add symbol ${symbolWithSuffix}. Verify it belongs to Nifty 50.`);
+      setError(err.response?.data?.detail || `Failed to add symbol ${formatted}. Verify it belongs to Nifty 50.`);
       setTimeout(() => setError(null), 4000);
     }
   };

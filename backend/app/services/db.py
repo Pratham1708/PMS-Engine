@@ -1163,6 +1163,7 @@ def get_previous_official_snapshot(before_snapshot_id: str) -> Optional[Dict[str
 def get_stock_history_across_snapshots(symbol: str, limit: int = 90) -> List[Dict[str, Any]]:
     """Return a stock's scores/ratings across the last N official snapshots."""
     conn = get_db_connection()
+    clean_sym = symbol.upper().replace(".NS", "").strip()
     try:
         rows = conn.execute(
             """
@@ -1170,13 +1171,13 @@ def get_stock_history_across_snapshots(symbol: str, limit: int = 90) -> List[Dic
                    sk.confidence, sk.technical_score, sk.ml_score, sk.close, sk.daily_chg_pct
             FROM snapshot_stock sk
             JOIN snapshots ss ON ss.snapshot_id = sk.snapshot_id
-            WHERE UPPER(sk.symbol) = UPPER(?)
+            WHERE UPPER(REPLACE(sk.symbol, '.NS', '')) = ?
             AND ss.is_official = 1
             AND ss.status IN ('completed', 'completed_with_warnings')
             ORDER BY ss.snapshot_date DESC
             LIMIT ?
             """,
-            (symbol, limit)
+            (clean_sym, limit)
         ).fetchall()
         return [dict(r) for r in rows]
     finally:
@@ -1186,6 +1187,7 @@ def get_stock_history_across_snapshots(symbol: str, limit: int = 90) -> List[Dic
 def get_historical_scores(symbol: str, limit: int = 30) -> List[Dict[str, Any]]:
     """Return historical scores for a stock across snapshots."""
     conn = get_db_connection()
+    clean_sym = symbol.upper().replace(".NS", "").strip()
     try:
         rows = conn.execute(
             """
@@ -1201,12 +1203,12 @@ def get_historical_scores(symbol: str, limit: int = 30) -> List[Dict[str, Any]]:
                    sk.reliability_score
             FROM snapshot_stock sk
             JOIN snapshots ss ON ss.snapshot_id = sk.snapshot_id
-            WHERE UPPER(sk.symbol) = UPPER(?)
+            WHERE UPPER(REPLACE(sk.symbol, '.NS', '')) = ?
             AND ss.status IN ('completed', 'completed_with_warnings', 'published')
             ORDER BY ss.snapshot_date DESC
             LIMIT ?
             """,
-            (symbol, limit)
+            (clean_sym, limit)
         ).fetchall()
         return [dict(r) for r in rows]
     finally:
