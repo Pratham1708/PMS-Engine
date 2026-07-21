@@ -27,7 +27,7 @@ export default function HeroSection() {
         }}
       />
 
-      <div style={{ maxWidth: '900px', margin: '0 auto', position: 'relative', zIndex: 2 }}>
+      <div style={{ maxWidth: '940px', margin: '0 auto', position: 'relative', zIndex: 2 }}>
         {/* Badge */}
         <div
           style={{
@@ -45,7 +45,7 @@ export default function HeroSection() {
           }}
         >
           <Zap size={14} />
-          <span>PMS Engine v2 — Next-Gen Quantitative Intelligence Platform</span>
+          <span>PMS Engine — Predictive Market Scoring Engine</span>
         </div>
 
         {/* Main Headline */}
@@ -60,7 +60,7 @@ export default function HeroSection() {
           }}
         >
           Institutional Quantitative Research <br />
-          <span className="gradient-text">Powered by AI & Historical Snapshots</span>
+          <span className="gradient-text">Powered by Predictive Market Scoring</span>
         </h1>
 
         {/* Subtitle */}
@@ -69,11 +69,11 @@ export default function HeroSection() {
             fontSize: '1.2rem',
             lineHeight: 1.6,
             color: 'var(--color-text-secondary)',
-            maxWidth: '720px',
+            maxWidth: '760px',
             margin: '0 auto 36px auto'
           }}
         >
-          Professional stock research engineered with ensemble machine learning, multi-factor risk analytics, point-in-time snapshot audits, and explainable AI for institutional decision-making.
+          <strong style={{ color: 'var(--color-text-primary)' }}>PMS Engine (Predictive Market Scoring Engine)</strong> is an institutional quantitative intelligence platform engineered with ensemble machine learning, multi-factor risk analytics, point-in-time snapshot audits, and explainable AI for systematic stock research.
         </p>
 
         {/* CTAs */}

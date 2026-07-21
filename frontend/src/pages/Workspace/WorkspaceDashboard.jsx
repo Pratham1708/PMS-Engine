@@ -5,6 +5,7 @@ import { fetchDashboard, fetchTopBuys } from '../../api/stocks';
 import GlassCard from '../../components/common/GlassCard';
 import SkeletonLoader from '../../components/common/SkeletonLoader';
 import EmptyState from '../../components/common/EmptyState';
+import { parseStockRecord } from '../../utils/stockUtils';
 
 export default function WorkspaceDashboard() {
   const [dashboardData, setDashboardData] = useState(null);
@@ -71,20 +72,23 @@ export default function WorkspaceDashboard() {
 
               {topBuys.length > 0 ? (
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '12px' }}>
-                  {topBuys.map((stk, i) => (
-                    <Link key={i} to={`/stock/${stk.symbol}`} style={{ textDecoration: 'none' }}>
-                      <div className="glass-panel glass-panel-hover" style={{ padding: '14px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-                          <span style={{ fontWeight: '700', color: 'var(--color-text-primary)' }}>{stk.symbol}</span>
-                          <span className="signal-badge strong-buy">BUY</span>
+                  {topBuys.map((item, i) => {
+                    const parsed = parseStockRecord(item);
+                    return (
+                      <Link key={i} to={`/stock/${parsed.symbol}`} style={{ textDecoration: 'none' }}>
+                        <div className="glass-panel glass-panel-hover" style={{ padding: '14px' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+                            <span style={{ fontWeight: '700', color: 'var(--color-text-primary)' }}>{parsed.symbol}</span>
+                            <span className={`signal-badge ${parsed.recommendation.toLowerCase().replace('_', '-')}`}>{parsed.recommendation}</span>
+                          </div>
+                          <div style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)', marginBottom: '8px' }}>{parsed.companyName}</div>
+                          <div style={{ fontSize: '0.85rem', fontWeight: '700', color: '#10b981' }}>
+                            Score: {parsed.compositeScore}
+                          </div>
                         </div>
-                        <div style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)', marginBottom: '8px' }}>{stk.name || 'Indian Stock'}</div>
-                        <div style={{ fontSize: '0.85rem', fontWeight: '700', color: '#10b981' }}>
-                          Score: {stk.composite_score ? (stk.composite_score * 100).toFixed(1) : '88.5'}
-                        </div>
-                      </div>
-                    </Link>
-                  ))}
+                      </Link>
+                    );
+                  })}
                 </div>
               ) : (
                 <EmptyState title="No Signals Cached" description="Run the snapshot pipeline to generate fresh signals." />

@@ -1,4 +1,5 @@
 import HeroSection from '../../components/landing/HeroSection';
+import AboutPMSEngine from '../../components/landing/AboutPMSEngine';
 import LiveMarketPreview from '../../components/landing/LiveMarketPreview';
 import WhyUsComparison from '../../components/landing/WhyUsComparison';
 import ScreenshotCarousel from '../../components/landing/ScreenshotCarousel';
@@ -12,6 +13,7 @@ export default function LandingPage() {
   return (
     <div style={{ minHeight: '100vh', background: 'var(--color-bg-base)', color: 'var(--color-text-primary)' }}>
       <HeroSection />
+      <AboutPMSEngine />
       <LiveMarketPreview />
       <WhyUsComparison />
       <ScreenshotCarousel />
