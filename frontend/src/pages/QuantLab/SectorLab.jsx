@@ -3,6 +3,7 @@ import { getSectorAnalysis, runSectorReturns, getSectorResult } from '../../api/
 import useExperiment from './shared/useExperiment';
 import ExperimentProgress from './shared/ExperimentProgress';
 import ChartPanel from './shared/ChartPanel';
+import LabWorkflowGuide from '../../components/common/LabWorkflowGuide';
 
 export default function SectorLab() {
   const [staticAnalysis, setStaticAnalysis] = useState(null);
@@ -58,21 +59,33 @@ export default function SectorLab() {
     if (val === null || val === undefined) return 'rgba(255,255,255,0.02)';
     const abs = Math.abs(val);
     if (val > 0) {
-      return `rgba(99, 102, 241, ${abs * 0.7})`; // Indigo for positive
+      return `rgba(16, 185, 129, ${Math.min(0.6, abs)})`;
     } else {
-      return `rgba(239, 68, 68, ${abs * 0.7})`; // Red for negative
+      return `rgba(239, 68, 68, ${Math.min(0.6, abs)})`;
     }
   };
 
   return (
     <div style={{ padding: '24px', maxWidth: '1400px', margin: '0 auto' }}>
       {/* Header */}
-      <div style={{ marginBottom: '24px' }}>
+      <div style={{ marginBottom: '20px' }}>
         <h1 style={{ fontSize: '24px', fontWeight: '800' }}>🏭 Sector Analysis & Momentum Rotation Lab</h1>
-        <p style={{ color: 'var(--text-secondary)' }}>
+        <p style={{ color: 'var(--text-secondary)', marginTop: '4px' }}>
           Assess industry-level composite score clusters, map sector return correlations, and view rotation weights.
         </p>
       </div>
+
+      <LabWorkflowGuide
+        title="Sector Analysis Lab"
+        description="Evaluate cross-sector relative return performance, sector momentum rotation signals, and inter-sector correlation matrices."
+        icon="🗺️"
+        steps={[
+          { title: '1. Choose Assessment Period', desc: 'Select historical timeframe (e.g. 1Y, 3Y, or 5Y).' },
+          { title: '2. Run Sector Analysis', desc: 'Click Run Sector Performance to compute relative sector returns vs NIFTY 50.' },
+          { title: '3. Inspect Clusters & Returns', desc: 'Review top-performing sectors (e.g. NIFTY IT vs NIFTY BANK).' },
+          { title: '4. Analyze Rotation & Correlation', desc: 'Examine inter-sector correlation heatmap to identify uncorrelated sector hedges.' }
+        ]}
+      />
 
       <div style={{
         display: 'grid',

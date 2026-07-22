@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { getLiquidityResearch } from '../../api/labApi';
 import MetricsGrid from './shared/MetricsGrid';
 
+import LabWorkflowGuide from '../../components/common/LabWorkflowGuide';
+
 export default function LiquidityLab() {
   const [symbol, setSymbol] = useState('RELIANCE');
   
@@ -25,12 +27,24 @@ export default function LiquidityLab() {
 
   return (
     <div style={{ padding: '24px', maxWidth: '1400px', margin: '0 auto' }}>
-      <div style={{ marginBottom: '24px' }}>
+      <div style={{ marginBottom: '20px' }}>
         <h1 style={{ fontSize: '24px', fontWeight: '800' }}>💧 Liquidity & Suitability Auditor</h1>
-        <p style={{ color: 'var(--text-secondary)' }}>
+        <p style={{ color: 'var(--text-secondary)', marginTop: '4px' }}>
           Audit stock liquidity, gap risk frequency, and market impact estimates (Amihud Illiquidity Score) to qualify assets for portfolio selection.
         </p>
       </div>
+
+      <LabWorkflowGuide
+        title="Liquidity Audit Lab"
+        description="Assess trading volume, turnover, Amihud illiquidity coefficient, and gap frequency to ensure execution suitability."
+        icon="💧"
+        steps={[
+          { title: '1. Target Ticker', desc: 'Enter stock symbol (e.g. RELIANCE.NS).' },
+          { title: '2. Execute Audit', desc: 'Click Evaluate Stock Liquidity to process historical volume profiles.' },
+          { title: '3. Review Turnover Tier', desc: 'Check 30-day Average Daily Turnover (ADV in ₹ Crores) and liquidity tier.' },
+          { title: '4. Assess Gap & Impact Risk', desc: 'Review Amihud illiquidity score and gap frequency to estimate slippage.' }
+        ]}
+      />
 
       <div style={{
         display: 'grid',

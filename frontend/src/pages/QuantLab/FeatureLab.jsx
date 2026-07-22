@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { getFullFeatureAnalysis } from '../../api/labApi';
 import ChartPanel from './shared/ChartPanel';
+import LabWorkflowGuide from '../../components/common/LabWorkflowGuide';
 
 export default function FeatureLab() {
   const [data, setData] = useState(null);

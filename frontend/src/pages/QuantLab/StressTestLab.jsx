@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { runStressTest } from '../../api/labApi';
 import MetricsGrid from './shared/MetricsGrid';
 
+import LabWorkflowGuide from '../../components/common/LabWorkflowGuide';
+
 export default function StressTestLab() {
   const [symbol, setSymbol] = useState('^NSEI');
   const [loading, setLoading] = useState(false);
@@ -30,12 +32,24 @@ export default function StressTestLab() {
 
   return (
     <div style={{ padding: '24px', maxWidth: '1400px', margin: '0 auto' }}>
-      <div style={{ marginBottom: '24px' }}>
+      <div style={{ marginBottom: '20px' }}>
         <h1 style={{ fontSize: '24px', fontWeight: '800' }}>⛈️ Historical Crisis Stress Tester</h1>
-        <p style={{ color: 'var(--text-secondary)' }}>
-          Simulate strategy performance and drawdown risk during catastrophic historical periods (2008 Financial Crisis, 2020 COVID Crash, and Budget Days).
+        <p style={{ color: 'var(--text-secondary)', marginTop: '4px' }}>
+          Simulate strategy performance and drawdown risk during catastrophic historical crisis events.
         </p>
       </div>
+
+      <LabWorkflowGuide
+        title="Crisis Stress Tester"
+        description="Evaluate strategy drawdown resilience during historical crises (2008 GFC, 2020 COVID Crash, 2022 Inflation/Rate Hikes)."
+        icon="⛈️"
+        steps={[
+          { title: '1. Select Asset or Strategy', desc: 'Choose target asset symbol (e.g. ^NSEI).' },
+          { title: '2. Execute Stress Test', desc: 'Click Run Crisis Stress Test to audit historical drawdown windows.' },
+          { title: '3. Review Drawdown Depth', desc: 'Examine maximum peak-to-trough drawdowns during each crisis event.' },
+          { title: '4. Assess Recovery Duration', desc: 'Check the number of trading days required to recover previous highs.' }
+        ]}
+      />
 
       <div style={{
         display: 'grid',
@@ -110,37 +124,48 @@ export default function StressTestLab() {
               <div className="card" style={{ padding: '20px', background: 'var(--bg-card)', border: '1px solid var(--border-primary)', borderRadius: 'var(--radius-lg)' }}>
                 <h3 style={{ fontSize: '16px', fontWeight: '700', marginBottom: '16px' }}>Crisis Performance Log</h3>
                 <div style={{ overflowX: 'auto' }}>
-                  <table className="data-table" style={{ width: '100%' }}>
+                  <table className="data-table" style={{ width: '100%', tableLayout: 'fixed', borderCollapse: 'collapse' }}>
                     <thead>
                       <tr>
-                        <th>Crisis Period</th>
-                        <th>Date Range</th>
-                        <th>Description</th>
-                        <th style={{ textAlign: 'center' }}>Return (%)</th>
-                        <th style={{ textAlign: 'center' }}>Max Drawdown</th>
-                        <th style={{ textAlign: 'center' }}>Score</th>
-                        <th style={{ textAlign: 'center' }}>Status</th>
+                        <th style={{ width: '20%', padding: '12px 14px' }}>Crisis Period</th>
+                        <th style={{ width: '17%', padding: '12px 14px' }}>Date Range</th>
+                        <th style={{ width: '31%', padding: '12px 14px' }}>Description</th>
+                        <th style={{ width: '10%', textAlign: 'center', padding: '12px 14px' }}>Return (%)</th>
+                        <th style={{ width: '10%', textAlign: 'center', padding: '12px 14px' }}>Max Drawdown</th>
+                        <th style={{ width: '6%', textAlign: 'center', padding: '12px 14px' }}>Score</th>
+                        <th style={{ width: '6%', textAlign: 'center', padding: '12px 14px' }}>Status</th>
                       </tr>
                     </thead>
                     <tbody>
                       {data.crisis_performance?.map((p) => (
                         <tr key={p.name}>
-                          <td><strong>{p.name}</strong></td>
-                          <td style={{ fontSize: '12px', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>{p.period}</td>
-                          <td style={{ fontSize: '12.5px', color: 'var(--text-muted)', maxWidth: '280px', wordBreak: 'break-word' }}>{p.description}</td>
-                          <td style={{ textAlign: 'center', fontWeight: '700', color: p.return_pct >= 0 ? '#10b981' : '#ef4444' }}>
-                            {p.return_pct}%
+                          <td style={{ padding: '14px', verticalAlign: 'middle', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            <strong>{p.name}</strong>
                           </td>
-                          <td style={{ textAlign: 'center', color: '#ef4444', fontWeight: '600' }}>{p.max_drawdown}%</td>
-                          <td style={{ textAlign: 'center', fontFamily: 'monospace' }}>{p.resilience_score}</td>
-                          <td style={{ textAlign: 'center' }}>
+                          <td style={{ padding: '14px', fontSize: '12px', color: 'var(--text-secondary)', whiteSpace: 'nowrap', verticalAlign: 'middle' }}>
+                            {p.period}
+                          </td>
+                          <td style={{ padding: '14px', fontSize: '12.5px', color: 'var(--text-muted)', whiteSpace: 'normal', wordBreak: 'break-word', lineHeight: '1.4', verticalAlign: 'middle' }}>
+                            {p.description}
+                          </td>
+                          <td style={{ padding: '14px', textAlign: 'center', fontWeight: '700', color: p.return_pct >= 0 ? '#10b981' : '#ef4444', whiteSpace: 'nowrap', verticalAlign: 'middle' }}>
+                            {p.return_pct > 0 ? `+${p.return_pct}%` : `${p.return_pct}%`}
+                          </td>
+                          <td style={{ padding: '14px', textAlign: 'center', color: '#ef4444', fontWeight: '600', whiteSpace: 'nowrap', verticalAlign: 'middle' }}>
+                            {p.max_drawdown}%
+                          </td>
+                          <td style={{ padding: '14px', textAlign: 'center', fontFamily: 'monospace', fontWeight: '600', verticalAlign: 'middle' }}>
+                            {p.resilience_score}
+                          </td>
+                          <td style={{ padding: '14px', textAlign: 'center', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
                             <span style={{
-                              padding: '2px 8px',
+                              padding: '3px 10px',
                               borderRadius: '4px',
                               fontSize: '11px',
                               fontWeight: '600',
-                              background: p.status === 'Resilient' ? 'rgba(16,185,129,0.1)' : p.status === 'Stable' ? 'rgba(245,158,11,0.1)' : 'rgba(239,68,68,0.1)',
-                              color: p.status === 'Resilient' ? '#10b981' : p.status === 'Stable' ? '#f59e0b' : '#ef4444'
+                              background: p.status === 'Resilient' ? 'rgba(16,185,129,0.12)' : p.status === 'Stable' ? 'rgba(245,158,11,0.12)' : 'rgba(239,68,68,0.12)',
+                              color: p.status === 'Resilient' ? '#10b981' : p.status === 'Stable' ? '#f59e0b' : '#ef4444',
+                              border: `1px solid ${p.status === 'Resilient' ? 'rgba(16,185,129,0.25)' : p.status === 'Stable' ? 'rgba(245,158,11,0.25)' : 'rgba(239,68,68,0.25)'}`
                             }}>
                               {p.status}
                             </span>

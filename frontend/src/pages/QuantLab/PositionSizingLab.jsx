@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { runPositionSizing } from '../../api/labApi';
 import ChartPanel from './shared/ChartPanel';
 
+import LabWorkflowGuide from '../../components/common/LabWorkflowGuide';
+
 export default function PositionSizingLab() {
   const [symbol, setSymbol] = useState('RELIANCE');
   const [period, setPeriod] = useState('3Y');
@@ -46,12 +48,24 @@ export default function PositionSizingLab() {
 
   return (
     <div style={{ padding: '24px', maxWidth: '1400px', margin: '0 auto' }}>
-      <div style={{ marginBottom: '24px' }}>
+      <div style={{ marginBottom: '20px' }}>
         <h1 style={{ fontSize: '24px', fontWeight: '800' }}>📐 Capital Allocation & Sizing Laboratory</h1>
-        <p style={{ color: 'var(--text-secondary)' }}>
-          Evaluate capital compounding and drawdown profiles comparing Fixed Capital, Fixed Fractional, Kelly Criterion, and Volatility (ATR) models.
+        <p style={{ color: 'var(--text-secondary)', marginTop: '4px' }}>
+          Evaluate compounding and drawdown profiles under Fixed, Kelly, Half-Kelly, and Volatility Parity sizing.
         </p>
       </div>
+
+      <LabWorkflowGuide
+        title="Position Sizing Lab"
+        description="Simulate strategy equity growth under Fixed Fractional, Kelly Criterion, Half-Kelly, and Volatility Parity sizing rules."
+        icon="📐"
+        steps={[
+          { title: '1. Configure Parameters', desc: 'Enter stock symbol (RELIANCE.NS) and risk per trade % (2.0%).' },
+          { title: '2. Run Compounding Simulation', desc: 'Click Run Position Sizing Simulation to calculate capital curves.' },
+          { title: '3. Compare Sizing Rules', desc: 'Evaluate final compounding performance across Kelly vs Fixed Risk rules.' },
+          { title: '4. Assess Drawdowns', desc: 'Analyze trade drawdown volatility under aggressive vs conservative sizing.' }
+        ]}
+      />
 
       <div style={{
         display: 'grid',

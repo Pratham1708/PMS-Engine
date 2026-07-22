@@ -5,6 +5,8 @@ import ExperimentProgress from './shared/ExperimentProgress';
 import MetricsGrid from './shared/MetricsGrid';
 import ChartPanel from './shared/ChartPanel';
 
+import LabWorkflowGuide from '../../components/common/LabWorkflowGuide';
+
 export default function EngineValidationLab() {
   const [horizon, setHorizon] = useState('1M');
   const vHook = useExperiment(validateEngine, getEngineResult, getEngineResult);
@@ -46,6 +48,7 @@ export default function EngineValidationLab() {
 
   const scoreColumns = [
     'TechnicalScore',
+    'FundamentalScore',
     'MLScore',
     'GRUScore',
     'ReliabilityScore',
@@ -55,12 +58,24 @@ export default function EngineValidationLab() {
 
   return (
     <div style={{ padding: '24px', maxWidth: '1400px', margin: '0 auto' }}>
-      <div style={{ marginBottom: '24px' }}>
+      <div style={{ marginBottom: '20px' }}>
         <h1 style={{ fontSize: '24px', fontWeight: '800' }}>🧪 Scoring Engine Validation Laboratory</h1>
-        <p style={{ color: 'var(--text-secondary)' }}>
+        <p style={{ color: 'var(--text-secondary)', marginTop: '4px' }}>
           Assess the predictive power and accuracy of individual score pipelines relative to subsequent returns.
         </p>
       </div>
+
+      <LabWorkflowGuide
+        title="Engine Score Validation"
+        description="Audit predictive rank correlation (IC, Rank IC) and score distribution histograms for Technical, Fundamental, and Composite scores."
+        icon="🧪"
+        steps={[
+          { title: '1. Choose Horizon', desc: 'Select forward return window (1M).' },
+          { title: '2. Execute Validation', desc: 'Click Validate Engine Predictive Power to run scoring audit.' },
+          { title: '3. Review Deciles', desc: 'Inspect score decile return monotonicity and Information Coefficient.' },
+          { title: '4. Check Score Distributions', desc: 'Review histograms across Technical, Fundamental, ML, and Composite scores.' }
+        ]}
+      />
 
       <div style={{
         display: 'grid',

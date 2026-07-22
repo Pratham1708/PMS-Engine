@@ -3,6 +3,8 @@ import { getMarketBreadth } from '../../api/labApi';
 import ChartPanel from './shared/ChartPanel';
 import MetricsGrid from './shared/MetricsGrid';
 
+import LabWorkflowGuide from '../../components/common/LabWorkflowGuide';
+
 export default function MarketBreadthLab() {
   const [period, setPeriod] = useState('6M');
 
@@ -43,7 +45,7 @@ export default function MarketBreadthLab() {
         data: data.timeline,
         xKey: 'date',
         yKeys: ['ad_ratio'],
-        colors: ['#6366f1'],
+        colors: ['#3b82f6'],
       },
       {
         key: 'highs_lows',
@@ -59,12 +61,24 @@ export default function MarketBreadthLab() {
 
   return (
     <div style={{ padding: '24px', maxWidth: '1400px', margin: '0 auto' }}>
-      <div style={{ marginBottom: '24px' }}>
+      <div style={{ marginBottom: '20px' }}>
         <h1 style={{ fontSize: '24px', fontWeight: '800' }}>📈 Market Breadth & Participation Lab</h1>
-        <p style={{ color: 'var(--text-secondary)' }}>
+        <p style={{ color: 'var(--text-secondary)', marginTop: '4px' }}>
           Analyze overall market health, Advance-Decline timeline, and the participation index (% of stocks above 50 SMA).
         </p>
       </div>
+
+      <LabWorkflowGuide
+        title="Market Breadth Lab"
+        description="Monitor market participation dynamics using Advance/Decline ratios, net advances, and stocks above moving averages."
+        icon="📈"
+        steps={[
+          { title: '1. Select Lookback Window', desc: 'Choose analysis window (3M, 6M, or 1Y).' },
+          { title: '2. Compute Breadth', desc: 'Click Calculate Market Breadth to analyze constituent stock trends.' },
+          { title: '3. Inspect A/D Line', desc: 'View the Advance/Decline trend timeline to identify market divergence.' },
+          { title: '4. Analyze Participation', desc: 'Check whether market rallies are broad-based or driven by a narrow subset of stocks.' }
+        ]}
+      />
 
       <div style={{
         display: 'grid',

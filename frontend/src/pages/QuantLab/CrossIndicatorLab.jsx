@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { runCrossIndicator } from '../../api/labApi';
 import ChartPanel from './shared/ChartPanel';
 
+import LabWorkflowGuide from '../../components/common/LabWorkflowGuide';
+
 export default function CrossIndicatorLab() {
   const [symbol, setSymbol] = useState('RELIANCE');
   const [period, setPeriod] = useState('3Y');
@@ -40,12 +42,24 @@ export default function CrossIndicatorLab() {
 
   return (
     <div style={{ padding: '24px', maxWidth: '1400px', margin: '0 auto' }}>
-      <div style={{ marginBottom: '24px' }}>
+      <div style={{ marginBottom: '20px' }}>
         <h1 style={{ fontSize: '24px', fontWeight: '800' }}>📊 Cross-Indicator Combination Research</h1>
-        <p style={{ color: 'var(--text-secondary)' }}>
-          Evaluate joint-indicator strategy logic (Logical Intersections) across single, dual, and triple signal rules.
+        <p style={{ color: 'var(--text-secondary)', marginTop: '4px' }}>
+          Evaluate joint alpha signals from dual and triple indicator interaction rules.
         </p>
       </div>
+
+      <LabWorkflowGuide
+        title="Cross-Indicator Lab"
+        description="Test and rank logical dual/triple indicator rules (e.g. RSI Oversold AND MACD Golden Cross)."
+        icon="⚡"
+        steps={[
+          { title: '1. Select Ticker & Timeframe', desc: 'Enter stock symbol (e.g. RELIANCE.NS) and evaluation period (3Y).' },
+          { title: '2. Select Metric', desc: 'Choose target optimization metric (e.g. Sharpe Ratio).' },
+          { title: '3. Run Search', desc: 'Click Run Combination Backtest to evaluate all dual/triple rules.' },
+          { title: '4. Compare Signals', desc: 'Browse ranked combinations and compare joint performance vs single indicators.' }
+        ]}
+      />
 
       <div style={{
         display: 'grid',

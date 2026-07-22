@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { listLabReports, generateLabReport, listExperiments, getLabReportPreviewUrl, getLabReportHtmlUrl, getLabReportPdfUrl } from '../../api/labApi';
+import LabWorkflowGuide from '../../components/common/LabWorkflowGuide';
 
 const REPORT_TYPES = [
   { value: 'indicator', label: 'Indicator Backtest & Optimize' },
@@ -43,26 +44,15 @@ export default function LabReports() {
   const fetchExperimentsForType = async (type) => {
     try {
       let moduleFilter = '';
-      if (type === 'indicator') moduleFilter = 'indicator_backtest,indicator_optimize';
-      else if (type === 'model') moduleFilter = 'model_compare';
-      else if (type === 'portfolio') moduleFilter = 'portfolio_backtest';
-      else if (type === 'engine') moduleFilter = 'pms_score_validation';
-      
-      if (!moduleFilter) {
-        setExperiments([]);
-        setSelectedExpId('');
-        return;
-      }
+      if (type === 'indicator') moduleFilter = 'indicator_backtest';
+      if (type === 'model') moduleFilter = 'model_compare';
+      if (type === 'portfolio') moduleFilter = 'portfolio_backtest';
+      if (type === 'validation') moduleFilter = 'recommendation_validation';
+      if (type === 'engine') moduleFilter = 'pms_score_validation';
 
-      // Check if we have multiple comma modules, call separately or list all
-      const modules = moduleFilter.split(',');
-      let allExps = [];
-      for (const mod of modules) {
-        const res = await listExperiments({ module: mod });
-        allExps = [...allExps, ...(res.data || [])];
-      }
-      
-      const completed = allExps.filter((e) => e.status === 'complete');
+      const res = await listExperiments({ module: moduleFilter || undefined });
+      const exps = res.data?.experiments || res.data || [];
+      const completed = exps.filter((e) => e.status === 'complete');
       setExperiments(completed);
       if (completed.length > 0) {
         setSelectedExpId(completed[0].experiment_id);
@@ -70,7 +60,8 @@ export default function LabReports() {
         setSelectedExpId('');
       }
     } catch (err) {
-      console.error('Failed to load experiments for report type:', err);
+      console.error(err);
+      setExperiments([]);
     }
   };
 
@@ -83,19 +74,13 @@ export default function LabReports() {
   }, [selectedType]);
 
   const handleGenerate = async () => {
-    setError(null);
-    setGenMessage('');
-    
-    if (selectedType !== 'validation' && !selectedExpId) {
-      alert('This report type requires selecting a completed experiment.');
-      return;
-    }
-
     setGenerating(true);
+    setGenMessage('');
+    setError(null);
     try {
       const payload = {
         report_type: selectedType,
-        experiment_id: selectedType === 'validation' ? undefined : selectedExpId
+        experiment_id: selectedExpId || undefined,
       };
       const res = await generateLabReport(payload);
       setGenMessage(res.data?.message || 'Report compilation started in background...');
@@ -123,12 +108,24 @@ export default function LabReports() {
   return (
     <div style={{ padding: '24px', maxWidth: '1400px', margin: '0 auto' }}>
       {/* Header */}
-      <div style={{ marginBottom: '24px' }}>
+      <div style={{ marginBottom: '20px' }}>
         <h1 style={{ fontSize: '24px', fontWeight: '800' }}>📋 Jinja2 & PDF Research Report Compiler</h1>
-        <p style={{ color: 'var(--text-secondary)' }}>
+        <p style={{ color: 'var(--text-secondary)', marginTop: '4px' }}>
           Compile print-ready, high-fidelity quantitative analysis summaries in HTML and PDF formats.
         </p>
       </div>
+
+      <LabWorkflowGuide
+        title="Lab Reports Compiler"
+        description="Compile institutional print-ready HTML and PDF research logs combining metrics, chart plots, and parameter settings."
+        icon="📋"
+        steps={[
+          { title: '1. Select Report Type', desc: 'Choose target report domain (Indicator, Model, Portfolio, Validation).' },
+          { title: '2. Link Experiment', desc: 'Pick a completed experiment run ID from the historical registry.' },
+          { title: '3. Compile Report', desc: 'Click Generate Lab Report to compile HTML and PDF research artifacts.' },
+          { title: '4. Preview & Export', desc: 'Preview embedded report in browser or download print-ready PDF document.' }
+        ]}
+      />
 
       {error && (
         <div style={{ padding: '12px 16px', background: 'rgba(239,68,68,0.1)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.2)', borderRadius: '6px', marginBottom: '20px' }}>

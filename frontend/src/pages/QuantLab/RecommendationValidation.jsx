@@ -7,6 +7,7 @@ import {
   getValidationTrend
 } from '../../api/labApi';
 import ChartPanel from './shared/ChartPanel';
+import LabWorkflowGuide from '../../components/common/LabWorkflowGuide';
 
 const HORIZONS = ['1', '5', '10', '20', '30', '90', '180', '365'];
 const RATINGS = ['STRONG BUY', 'BUY', 'HOLD', 'SELL', 'STRONG SELL'];
@@ -48,65 +49,64 @@ export default function RecommendationValidation() {
     loadDashboardData();
   }, []);
 
-  const handlePopulate = async () => {
+  const handlePopulateQueue = async () => {
+    setProcessing(true);
     setActionMessage('');
-    setError(null);
     try {
       const res = await populateAuditQueue();
-      setActionMessage(`Queue populated! Added ${res.data?.added || 0} pending validations.`);
-      loadDashboardData();
+      setActionMessage(`Queue populated! Added ${res.data?.added || 0} snapshot audit records.`);
+      await loadDashboardData();
     } catch (err) {
       console.error(err);
-      setError('Failed to populate validation audit queue.');
+      setError('Failed to populate audit queue.');
+    } finally {
+      setProcessing(false);
     }
   };
 
-  const handleProcess = async () => {
-    setActionMessage('');
-    setError(null);
+  const handleProcessBatch = async () => {
     setProcessing(true);
+    setActionMessage('');
     try {
-      const res = await processValidations({ batch_size: batchSize });
-      setActionMessage(`Background processing started for ${batchSize} rows. Wait a few seconds and refresh.`);
-      setTimeout(() => {
-        setProcessing(false);
-        loadDashboardData();
-      }, 3000);
+      const res = await processValidations(batchSize);
+      setActionMessage(`Processed ${res.data?.processed || 0} recommendation validations.`);
+      await loadDashboardData();
     } catch (err) {
       console.error(err);
-      setError('Failed to start recommendation validation processing.');
+      setError('Failed to process validation batch.');
+    } finally {
       setProcessing(false);
     }
   };
 
   const handleSearchSymbol = async (e) => {
     e.preventDefault();
-    if (!searchSymbol) return;
+    if (!searchSymbol.trim()) return;
     setSymbolLoading(true);
-    setSymbolAudits([]);
     try {
-      const res = await getSymbolValidation(searchSymbol);
-      setSymbolAudits(res.data || []);
+      const res = await getSymbolValidation(searchSymbol.trim().toUpperCase());
+      setSymbolAudits(res.data?.audits || []);
     } catch (err) {
       console.error(err);
-      setError(`Failed to fetch audit data for symbol ${searchSymbol}`);
+      setSymbolAudits([]);
     } finally {
       setSymbolLoading(false);
     }
   };
 
-  // Convert trend data for ChartPanel
-  const getTrendChart = () => {
+  const getTrendCharts = () => {
     if (!trendData || trendData.length === 0) return [];
-    return [{
-      key: 'accuracy_trend',
-      title: 'Recommendation Accuracy Trend (%)',
-      type: 'line',
-      data: trendData,
-      xKey: 'month',
-      yKeys: ['accuracy_pct'],
-      colors: ['#10b981'],
-    }];
+    return [
+      {
+        key: 'accuracy_trend',
+        title: 'Validation Accuracy % Over Time (Rolling 30D Window)',
+        type: 'line',
+        data: trendData,
+        xKey: 'date',
+        yKeys: ['accuracy_pct'],
+        colors: ['#10b981'],
+      }
+    ];
   };
 
   // Cell color based on accuracy
@@ -120,12 +120,12 @@ export default function RecommendationValidation() {
 
   return (
     <div style={{ padding: '24px', maxWidth: '1400px', margin: '0 auto' }}>
-      {/* Header */}
-      <div style={{ marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      {/* Top Header */}
+      <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
-          <h1 style={{ fontSize: '24px', fontWeight: '800' }}>✅ Recommendation Validation & Audit Lab</h1>
-          <p style={{ color: 'var(--text-secondary)' }}>
-            Examine the accuracy and realized forward returns of historical BUY, SELL, and HOLD recommendations.
+          <h1 style={{ fontSize: '24px', fontWeight: '800' }}>✅ Recommendation Audit & Realized Accuracy Lab</h1>
+          <p style={{ color: 'var(--text-secondary)', marginTop: '4px' }}>
+            Audit engine BUY/HOLD/SELL recommendations against 1D to 365D forward stock price accuracy.
           </p>
         </div>
         <button
@@ -137,6 +137,18 @@ export default function RecommendationValidation() {
           🔄 Refresh Dashboard
         </button>
       </div>
+
+      <LabWorkflowGuide
+        title="Recommendation Audit"
+        description="Audit historical BUY, HOLD, and SELL recommendations against 1D, 5D, 10D, 20D, and 30D forward stock price accuracy."
+        icon="✅"
+        steps={[
+          { title: '1. Populate Audit Queue', desc: 'Click Populate Audit Queue to fetch historical rating snapshots.' },
+          { title: '2. Process Validations', desc: 'Click Process Validations to calculate forward price returns.' },
+          { title: '3. Review Accuracy Matrix', desc: 'Inspect recommendation hit rate % split by BUY, HOLD, and SELL ratings.' },
+          { title: '4. Symbol Deep-Dive', desc: 'Search specific ticker to view per-symbol rating horizon accuracy trends.' }
+        ]}
+      />
 
       {error && (
         <div style={{ padding: '12px 16px', background: 'rgba(239,68,68,0.1)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.2)', borderRadius: '6px', marginBottom: '20px' }}>

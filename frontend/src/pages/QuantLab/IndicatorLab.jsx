@@ -12,6 +12,8 @@ import ExperimentProgress from './shared/ExperimentProgress';
 import MetricsGrid from './shared/MetricsGrid';
 import ChartPanel from './shared/ChartPanel';
 
+import LabWorkflowGuide from '../../components/common/LabWorkflowGuide';
+
 export default function IndicatorLab() {
   const [indicators, setIndicators] = useState([]);
   const [selectedInd, setSelectedInd] = useState('');
@@ -65,11 +67,8 @@ export default function IndicatorLab() {
     initializeParams(ind);
   };
 
-  const handleParamChange = (pname, val) => {
-    setParams((prev) => ({
-      ...prev,
-      [pname]: parseFloat(val) || val,
-    }));
+  const handleParamChange = (name, value) => {
+    setParams((prev) => ({ ...prev, [name]: parseFloat(value) || value }));
   };
 
   const handleRunBacktest = () => {
@@ -122,7 +121,7 @@ export default function IndicatorLab() {
         data: charts.rolling_sharpe || [],
         xKey: 'date',
         yKeys: 'sharpe',
-        colors: ['#f59e0b'],
+        colors: ['#3b82f6'],
       },
       {
         key: 'return_dist',
@@ -138,12 +137,24 @@ export default function IndicatorLab() {
 
   return (
     <div style={{ padding: '24px', maxWidth: '1400px', margin: '0 auto' }}>
-      <div style={{ marginBottom: '24px' }}>
+      <div style={{ marginBottom: '20px' }}>
         <h1 style={{ fontSize: '24px', fontWeight: '800' }}>📊 Technical Indicator Lab</h1>
-        <p style={{ color: 'var(--text-secondary)' }}>
-          Backtest indicators, run walk-forward performance checks, and optimize parameters.
+        <p style={{ color: 'var(--text-secondary)', marginTop: '4px' }}>
+          Backtest single technical indicators, evaluate signal CAGR & Sharpe ratio, and optimize parameters.
         </p>
       </div>
+
+      <LabWorkflowGuide
+        title="Indicator Lab"
+        description="Simulate historical performance for RSI, MACD, Moving Averages, and Bollinger Bands to optimize trading signals."
+        icon="📊"
+        steps={[
+          { title: '1. Select Stock & Horizon', desc: 'Enter stock symbol (e.g. RELIANCE.NS) and lookback timeframe (e.g. 3Y).' },
+          { title: '2. Choose Indicator', desc: 'Select RSI, MACD, EMA, SMA, or Bollinger Bands from standard indicator registry.' },
+          { title: '3. Tune Parameters', desc: 'Configure period windows, overbought/oversold levels, or fast/slow moving averages.' },
+          { title: '4. Execute & Evaluate', desc: 'Click Run Indicator Backtest to inspect Sharpe ratio, Win rate, and Equity Curve.' }
+        ]}
+      />
 
       <div style={{
         display: 'grid',

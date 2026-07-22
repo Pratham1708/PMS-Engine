@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { getCompositeAnalysis, optimizeWeights, getWeightOptResult, getRegimeWeights } from '../../api/labApi';
 import useExperiment from './shared/useExperiment';
 import ExperimentProgress from './shared/ExperimentProgress';
+import LabWorkflowGuide from '../../components/common/LabWorkflowGuide';
 
 export default function CompositeValidationLab() {
   const [analysisData, setAnalysisData] = useState(null);
@@ -43,14 +44,25 @@ export default function CompositeValidationLab() {
 
   // Helper to color weights
   const getWeightColor = (weight) => {
-    if (weight >= 0.4) return '#6366f1';
-    if (weight >= 0.25) return '#3b82f6';
-    if (weight >= 0.1) return '#10b981';
-    return 'var(--text-secondary)';
+    if (weight > 0.4) return '#10b981';
+    if (weight > 0.2) return '#3b82f6';
+    return '#8b5cf6';
   };
 
   return (
     <div style={{ padding: '24px', maxWidth: '1400px', margin: '0 auto' }}>
+      <LabWorkflowGuide
+        title="Composite Weights Lab"
+        description="Analyze sub-score partial correlations and solve for optimal regime-dependent factor weightings."
+        icon="⚖️"
+        steps={[
+          { title: '1. Analyze Current Weights', desc: 'Inspect current Technical, Fundamental, ML, and Reliability sub-score weights.' },
+          { title: '2. Compute Partial Correlations', desc: 'Evaluate unique return contributions of individual factor sub-scores.' },
+          { title: '3. Optimize Regime Weights', desc: 'Click Compute Regime-Dependent Weights to solve optimal vectors for Bull/Bear markets.' },
+          { title: '4. Export Optimal Vectors', desc: 'Save optimal weight vectors for integration into production engine.' }
+        ]}
+      />
+
       {/* Warning Banner */}
       <div style={{
         background: 'rgba(245, 158, 11, 0.08)',

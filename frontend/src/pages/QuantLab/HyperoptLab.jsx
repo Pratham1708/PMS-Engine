@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { runHyperopt } from '../../api/labApi';
 
+import LabWorkflowGuide from '../../components/common/LabWorkflowGuide';
+
 export default function HyperoptLab() {
   const [target, setTarget] = useState('ml_model');
   const [symbol, setSymbol] = useState('^NSEI');
@@ -27,12 +29,24 @@ export default function HyperoptLab() {
 
   return (
     <div style={{ padding: '24px', maxWidth: '1400px', margin: '0 auto' }}>
-      <div style={{ marginBottom: '24px' }}>
+      <div style={{ marginBottom: '20px' }}>
         <h1 style={{ fontSize: '24px', fontWeight: '800' }}>⚡ Hyperparameter Optimization Laboratory</h1>
-        <p style={{ color: 'var(--text-secondary)' }}>
+        <p style={{ color: 'var(--text-secondary)', marginTop: '4px' }}>
           Optimize ML model classification thresholds, risk targets, or Kelly fraction sizing configurations.
         </p>
       </div>
+
+      <LabWorkflowGuide
+        title="Hyperparameter Lab"
+        description="Grid search optimization across ML threshold boundaries, stop-loss percentages, and trade entry/exit rules."
+        icon="🎛️"
+        steps={[
+          { title: '1. Select Optimization Target', desc: 'Choose target domain (ml_model, risk_thresholds, or position_sizing).' },
+          { title: '2. Select Metric', desc: 'Choose target optimization metric (e.g. sharpe_ratio).' },
+          { title: '3. Launch Grid Search', desc: 'Click Run Parameter Optimization to search boundary settings.' },
+          { title: '4. Review Optimal Grid', desc: 'Inspect top parameter settings and metric lift over default rules.' }
+        ]}
+      />
 
       <div style={{
         display: 'grid',

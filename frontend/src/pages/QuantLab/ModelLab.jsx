@@ -5,6 +5,8 @@ import ExperimentProgress from './shared/ExperimentProgress';
 import MetricsGrid from './shared/MetricsGrid';
 import ChartPanel from './shared/ChartPanel';
 
+import LabWorkflowGuide from '../../components/common/LabWorkflowGuide';
+
 export default function ModelLab() {
   const [horizonBars, setHorizonBars] = useState(21);
   const mHook = useExperiment(compareModels, getModelResult, getModelResult);
@@ -46,13 +48,12 @@ export default function ModelLab() {
       });
     });
 
-    const months = Array.from(monthsSet).sort();
-    months.forEach((month) => {
+    Array.from(monthsSet).sort().forEach((month) => {
       const row = { month };
       models.forEach((m) => {
         const trend = mHook.result.details[m].charts?.stability || [];
         const match = trend.find((t) => t.month === month);
-        row[m] = match ? match.ic : null;
+        row[m] = match ? match.ic : 0.0;
       });
       allTrends.push(row);
     });
@@ -60,12 +61,12 @@ export default function ModelLab() {
     return [
       {
         key: 'model_stability',
-        title: 'Rolling Monthly Information Coefficient (IC)',
+        title: 'Rolling Monthly Information Coefficient (IC) Stability',
         type: 'line',
         data: allTrends,
         xKey: 'month',
         yKeys: models,
-        colors: ['#6366f1', '#10b981', '#f59e0b', '#ef4444'],
+        colors: ['#3b82f6', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6'],
       }
     ];
   };
@@ -103,7 +104,7 @@ export default function ModelLab() {
         data: regimeData,
         xKey: 'regime',
         yKeys: models,
-        colors: ['#6366f1', '#10b981', '#f59e0b', '#ef4444'],
+        colors: ['#3b82f6', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6'],
       }
     ];
   };
@@ -125,12 +126,24 @@ export default function ModelLab() {
 
   return (
     <div style={{ padding: '24px', maxWidth: '1400px', margin: '0 auto' }}>
-      <div style={{ marginBottom: '24px' }}>
+      <div style={{ marginBottom: '20px' }}>
         <h1 style={{ fontSize: '24px', fontWeight: '800' }}>🤖 Model Comparison Lab</h1>
-        <p style={{ color: 'var(--text-secondary)' }}>
-          Conduct side-by-side evaluations of machine learning, deep learning, and rule-based scoring models.
+        <p style={{ color: 'var(--text-secondary)', marginTop: '4px' }}>
+          Evaluate XGBoost, LightGBM, Random Forest, and Ridge for calibration quality, IC stability, and SHAP importances.
         </p>
       </div>
+
+      <LabWorkflowGuide
+        title="Model Research Lab"
+        description="Compare ML model calibration, rolling IC stability, and feature importances across prediction horizons."
+        icon="🤖"
+        steps={[
+          { title: '1. Select Prediction Horizon', desc: 'Choose target horizon in trading bars (default 21 bars / 1 Month).' },
+          { title: '2. Run Model Comparison', desc: 'Click Run Side-by-Side Model Comparison to launch multi-model evaluation.' },
+          { title: '3. Compare Metrics', desc: 'Compare Information Coefficient (IC), Hit Rate, and T-Stats across models.' },
+          { title: '4. Inspect Calibration', desc: 'Verify model predicted probabilities match actual positive return frequencies.' }
+        ]}
+      />
 
       <div style={{
         display: 'grid',

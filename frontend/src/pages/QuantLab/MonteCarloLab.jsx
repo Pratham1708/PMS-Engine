@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { runMonteCarlo } from '../../api/labApi';
 import ChartPanel from './shared/ChartPanel';
 import MetricsGrid from './shared/MetricsGrid';
+import LabWorkflowGuide from '../../components/common/LabWorkflowGuide';
 
 export default function MonteCarloLab() {
   const [symbol, setSymbol] = useState('^NSEI');
@@ -46,7 +47,7 @@ export default function MonteCarloLab() {
       chartData.push(row);
     }
 
-    const yKeys = data.simulated_paths.map((_, idx) => `path_${idx}`);
+    const yKeys = data.simulated_paths.slice(0, 10).map((_, idx) => `path_${idx}`);
     const colors = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#3b82f6', '#ec4899', '#14b8a6', '#f43f5e', '#a855f7'];
 
     return [
@@ -82,12 +83,24 @@ export default function MonteCarloLab() {
 
   return (
     <div style={{ padding: '24px', maxWidth: '1400px', margin: '0 auto' }}>
-      <div style={{ marginBottom: '24px' }}>
+      <div style={{ marginBottom: '20px' }}>
         <h1 style={{ fontSize: '24px', fontWeight: '800' }}>🎲 Monte Carlo Simulation Sandbox</h1>
-        <p style={{ color: 'var(--text-secondary)' }}>
+        <p style={{ color: 'var(--text-secondary)', marginTop: '4px' }}>
           Run randomized bootstrap resamplings on historical returns to calculate confidence bounds and expected drawdowns.
         </p>
       </div>
+
+      <LabWorkflowGuide
+        title="Monte Carlo Sandbox"
+        description="Model forward equity trajectories and tail risk bounds using bootstrap return resampling."
+        icon="🎲"
+        steps={[
+          { title: '1. Configure Parameters', desc: 'Select symbol (^NSEI), simulation count (250), and horizon (252 days).' },
+          { title: '2. Run Resampling', desc: 'Click Run Monte Carlo Simulation to launch resampled trial runs.' },
+          { title: '3. Inspect Equity Trails', desc: 'View 5th percentile (bearish), 50th percentile (median), and 95th percentile paths.' },
+          { title: '4. Assess Risk Metrics', desc: 'Evaluate Value at Risk (VaR 95%) and Expected Shortfall bounds.' }
+        ]}
+      />
 
       <div style={{
         display: 'grid',

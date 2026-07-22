@@ -44,16 +44,15 @@ export default function ExperimentHistory() {
       const res = await listExperiments({
         module: moduleFilter || undefined,
         status: statusFilter || undefined,
-        symbol: symbolSearch || undefined,
-        limit: 50
+        symbol: symbolSearch || undefined
       });
-      setExperiments(res.data || []);
+      setExperiments(res.data?.experiments || res.data || []);
       
-      const sumRes = await getExperimentsSummary();
-      setSummary(sumRes.data || { total: 0 });
+      const resSummary = await getExperimentsSummary();
+      setSummary(resSummary.data || {});
     } catch (err) {
       console.error(err);
-      setError('Failed to fetch experiment log records.');
+      setError('Failed to fetch experiment history.');
     } finally {
       setLoading(false);
     }
@@ -109,12 +108,24 @@ export default function ExperimentHistory() {
   return (
     <div style={{ padding: '24px', maxWidth: '1400px', margin: '0 auto' }}>
       {/* Header */}
-      <div style={{ marginBottom: '24px' }}>
+      <div style={{ marginBottom: '20px' }}>
         <h1 style={{ fontSize: '24px', fontWeight: '800' }}>🗂 Experiment History & Run Log</h1>
-        <p style={{ color: 'var(--text-secondary)' }}>
+        <p style={{ color: 'var(--text-secondary)', marginTop: '4px' }}>
           Browse, analyze metrics, export configurations, or clean up past quantitative research experiments.
         </p>
       </div>
+
+      <LabWorkflowGuide
+        title="Experiment History Registry"
+        description="Central registry for browsing, inspecting parameters, and exporting JSON/CSV logs of completed quantitative laboratory runs."
+        icon="🗂"
+        steps={[
+          { title: '1. Filter History', desc: 'Filter completed runs by lab module, status, or search term.' },
+          { title: '2. Expand Experiment', desc: 'Click any experiment row to inspect execution parameters, runtime, and metrics.' },
+          { title: '3. Export Log', desc: 'Click Export JSON to download detailed trial logs for offline analysis.' },
+          { title: '4. Manage Registry', desc: 'Purge obsolete runs or cross-reference experiment IDs for reporting.' }
+        ]}
+      />
 
       {error && (
         <div style={{ padding: '12px 16px', background: 'rgba(239,68,68,0.1)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.2)', borderRadius: '6px', marginBottom: '20px' }}>

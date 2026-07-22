@@ -4,6 +4,8 @@ import useExperiment from './shared/useExperiment';
 import ExperimentProgress from './shared/ExperimentProgress';
 import ChartPanel from './shared/ChartPanel';
 
+import LabWorkflowGuide from '../../components/common/LabWorkflowGuide';
+
 export default function RegimeLab() {
   const [symbol, setSymbol] = useState('^NSEI');
   const [period, setPeriod] = useState('3Y');
@@ -34,12 +36,24 @@ export default function RegimeLab() {
   return (
     <div style={{ padding: '24px', maxWidth: '1400px', margin: '0 auto' }}>
       {/* Header */}
-      <div style={{ marginBottom: '24px' }}>
+      <div style={{ marginBottom: '20px' }}>
         <h1 style={{ fontSize: '24px', fontWeight: '800' }}>🌊 Market Regime Detection Lab</h1>
-        <p style={{ color: 'var(--text-secondary)' }}>
+        <p style={{ color: 'var(--text-secondary)', marginTop: '4px' }}>
           Identify structural market regimes (Bull, Bear, High Volatility, Flat) based on rolling volatility and return thresholds.
         </p>
       </div>
+
+      <LabWorkflowGuide
+        title="Market Regime Lab"
+        description="Classify market environments into Bull, Bear, and Sideways/High-Vol regimes using rolling benchmark trend and ATR metrics."
+        icon="🌊"
+        steps={[
+          { title: '1. Select Benchmark Index', desc: 'Choose benchmark ticker (default ^NSEI / NIFTY 50) and timeframe (3Y).' },
+          { title: '2. Detect Regimes', desc: 'Click Detect Market Regimes to execute regime classification algorithms.' },
+          { title: '3. Inspect Timeline', desc: 'Review the visual timeline showing regime shifts across historical years.' },
+          { title: '4. Analyze Stats', desc: 'Evaluate mean daily return, daily volatility, and time spent in each regime state.' }
+        ]}
+      />
 
       <div style={{
         display: 'grid',

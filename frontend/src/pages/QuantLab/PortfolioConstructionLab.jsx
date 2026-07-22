@@ -11,6 +11,8 @@ import {
   Legend
 } from 'recharts';
 
+import LabWorkflowGuide from '../../components/common/LabWorkflowGuide';
+
 export default function PortfolioConstructionLab() {
   const [symbolsText, setSymbolsText] = useState('RELIANCE, TCS, HDFCBANK, INFY');
   const [period, setPeriod] = useState('3Y');
@@ -73,12 +75,24 @@ export default function PortfolioConstructionLab() {
 
   return (
     <div style={{ padding: '24px', maxWidth: '1400px', margin: '0 auto' }}>
-      <div style={{ marginBottom: '24px' }}>
+      <div style={{ marginBottom: '20px' }}>
         <h1 style={{ fontSize: '24px', fontWeight: '800' }}>📐 Mean-Variance Portfolio Optimizer</h1>
-        <p style={{ color: 'var(--text-secondary)' }}>
+        <p style={{ color: 'var(--text-secondary)', marginTop: '4px' }}>
           Map the Efficient Frontier and calculate optimized weight models (Maximum Sharpe Ratio, Minimum Variance, Risk Parity, and Equal Weight).
         </p>
       </div>
+
+      <LabWorkflowGuide
+        title="Portfolio Optimizer"
+        description="Calculate Markowitz Efficient Frontier scatter plots and Tangency Portfolio optimal asset weights."
+        icon="💼"
+        steps={[
+          { title: '1. Input Stock Symbols', desc: 'Enter comma-separated stock tickers (e.g. RELIANCE, TCS, HDFCBANK, INFY).' },
+          { title: '2. Run Optimization', desc: 'Click Run Portfolio Optimization to calculate Efficient Frontier scatter plot.' },
+          { title: '3. Inspect Scatter Plot', desc: 'View risk-return trade-offs across simulated portfolio weight allocations.' },
+          { title: '4. Extract Optimal Weights', desc: 'Obtain exact percentage weight allocations for Maximum Sharpe & Minimum Volatility portfolios.' }
+        ]}
+      />
 
       <div style={{
         display: 'grid',
