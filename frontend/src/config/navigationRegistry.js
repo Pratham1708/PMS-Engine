@@ -84,7 +84,7 @@ export const NAVIGATION_REGISTRY = [
           { label: 'Monte Carlo Sandbox', route: '/lab/monte-carlo' },
           { label: 'Crisis Stress Tester', route: '/lab/stress' },
           { label: 'Position Sizing Lab', route: '/lab/sizing' },
-          { label: 'Score Drift Monitor', route: '/lab/drift' }
+          { label: 'Score Drift Monitor', route: '/lab/drift', isLocked: true, remark: 'Coming Soon' }
         ]
       },
       {
@@ -92,7 +92,7 @@ export const NAVIGATION_REGISTRY = [
         items: [
           { label: 'Portfolio Strategies', route: '/lab/portfolio', isLocked: true, remark: 'Coming Soon' },
           { label: 'Portfolio Construction', route: '/lab/construction' },
-          { label: 'Correlation Research', route: '/lab/correlation' },
+          { label: 'Correlation Research', route: '/lab/correlation', isLocked: true, remark: 'Coming Soon' },
           { label: 'Benchmark Comparison', route: '/lab/benchmark', isLocked: true, remark: 'Coming Soon' }
         ]
       },

@@ -29,10 +29,10 @@ const MODULES_SIMULATION = [
 
 const MODULES_AUDITS = [
   { path: '/lab/validation', name: 'Rec. Validation', desc: 'Audit BUY/SELL recommendation horizon accuracies.', icon: '✅' },
-  { path: '/lab/correlation', name: 'Correlation Lab', desc: 'Score collinearity matrices and redundancy alerts.', icon: '🔗' },
+  { path: '/lab/correlation', name: 'Correlation Lab', desc: 'Score collinearity matrices and redundancy alerts.', icon: '🔗', isLocked: true, remark: 'Coming Soon' },
   { path: '/lab/breadth', name: 'Market Breadth', desc: 'A/D timeline and participation indicators.', icon: '📈' },
   { path: '/lab/liquidity', name: 'Liquidity Auditor', desc: 'ADV, Amihud, and gap-frequency suitability filter.', icon: '💧' },
-  { path: '/lab/drift', name: 'Drift Monitor', desc: 'Divergence metrics alert manager.', icon: '🛡️' },
+  { path: '/lab/drift', name: 'Drift Monitor', desc: 'Divergence metrics alert manager.', icon: '🛡️', isLocked: true, remark: 'Coming Soon' },
   { path: '/lab/regime', name: 'Regime Lab', desc: 'Identify market regimes and regime score weights.', icon: '🌊' },
   { path: '/lab/benchmark', name: 'Benchmark Compare', desc: 'Alpha, Beta, Info Ratio vs standard indices.', icon: '📊', isLocked: true, remark: 'Coming Soon' },
   { path: '/lab/experiments', name: 'Experiment History', desc: 'Browse, filter, and review completed runs registry.', icon: '🗂' },

@@ -124,10 +124,10 @@ function AppContent() {
         <Route path="/lab/stress" element={<WorkspaceRoute title="Crisis Stress Tester"><StressTestLab /></WorkspaceRoute>} />
         <Route path="/lab/sizing" element={<WorkspaceRoute title="Position Sizing Lab"><PositionSizingLab /></WorkspaceRoute>} />
         <Route path="/lab/construction" element={<WorkspaceRoute title="Portfolio Construction Lab"><PortfolioConstructionLab /></WorkspaceRoute>} />
-        <Route path="/lab/correlation" element={<WorkspaceRoute title="Correlation Research Lab"><CorrelationLab /></WorkspaceRoute>} />
+        <Route path="/lab/correlation" element={<LockedLabView title="Correlation Research Lab" description="Correlation Research module is currently locked for rolling collinearity data calibration." />} />
         <Route path="/lab/breadth" element={<WorkspaceRoute title="Market Breadth Indices"><MarketBreadthLab /></WorkspaceRoute>} />
         <Route path="/lab/liquidity" element={<WorkspaceRoute title="Liquidity Audit Lab"><LiquidityLab /></WorkspaceRoute>} />
-        <Route path="/lab/drift" element={<WorkspaceRoute title="Score Drift Monitor"><DriftMonitorLab /></WorkspaceRoute>} />
+        <Route path="/lab/drift" element={<LockedLabView title="Score Drift Monitor" description="Score Drift Monitor module is currently locked for divergence baseline score calibration." />} />
       </Routes>
     </>
   );
