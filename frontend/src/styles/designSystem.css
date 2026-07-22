@@ -1,4 +1,5 @@
 /* ===== Institutional Design System — PMS Engine v2 ===== */
+@import './responsive.css';
 
 :root {
   /* HSL Base Color Palette (Dark Theme Default) */

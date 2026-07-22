@@ -1,5 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useBreakpoint } from '../config/breakpoints';
+import ResponsiveTable from '../components/common/ResponsiveTable';
+import { ChevronDown, ChevronUp } from 'lucide-react';
 import {
   fetchLatestSnapshotSummary,
   fetchSnapshotStatus,

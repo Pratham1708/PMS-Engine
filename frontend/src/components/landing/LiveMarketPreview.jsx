@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { fetchTopBuys } from '../../api/stocks';
 import { parseStockRecord } from '../../utils/stockUtils';
+import { ResponsiveGrid } from '../layout/ResponsiveLayoutEngine';
 
 export default function LiveMarketPreview() {
   const [topStocks, setTopStocks] = useState([]);
@@ -31,21 +32,21 @@ export default function LiveMarketPreview() {
   ];
 
   return (
-    <section style={{ padding: '60px 24px', background: 'var(--color-bg-base)', maxWidth: '1200px', margin: '0 auto' }}>
-      <div style={{ textAlign: 'center', marginBottom: '40px' }}>
-        <h2 style={{ fontSize: '2rem', fontWeight: '700', color: 'var(--color-text-primary)', marginBottom: '8px' }}>
+    <section style={{ padding: 'var(--spacing-xl) var(--page-padding-x)', background: 'var(--color-bg-base)', maxWidth: '1200px', margin: '0 auto' }}>
+      <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+        <h2 style={{ fontSize: 'var(--font-size-h2)', fontWeight: '700', color: 'var(--color-text-primary)', marginBottom: '8px' }}>
           Live Quantitative Market Preview
         </h2>
-        <p style={{ color: 'var(--color-text-secondary)', fontSize: '1rem' }}>
+        <p style={{ color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-body)' }}>
           Real-time signals generated from today's point-in-time snapshot dataset.
         </p>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '20px' }}>
+      <ResponsiveGrid cols={{ desktop: 4, tablet: 2, mobile: 1 }} gap="var(--spacing-md)">
         {previewList.map((item, idx) => {
           const parsed = parseStockRecord(item);
           return (
-            <div key={idx} className="glass-panel glass-panel-hover" style={{ padding: '20px' }}>
+            <div key={idx} className="glass-panel glass-panel-hover" style={{ padding: 'var(--card-padding)' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
                 <span style={{ fontSize: '1.1rem', fontWeight: '700', color: 'var(--color-text-primary)' }}>
                   {parsed.symbol}
@@ -64,7 +65,7 @@ export default function LiveMarketPreview() {
             </div>
           );
         })}
-      </div>
+      </ResponsiveGrid>
     </section>
   );
 }

@@ -28,7 +28,8 @@ def get_workspace_data() -> Dict[str, Any]:
         added_at = item["added_at"]
         
         # Get live market fields from cache df
-        match = df[df["Symbol"].str.upper() == symbol.upper()]
+        clean_sym = symbol.upper().replace(".NS", "").strip()
+        match = df[df["Symbol"].str.upper().str.replace(".NS", "") == clean_sym]
         current_price = None
         daily_change_pct = None
         sector = "—"
@@ -62,7 +63,8 @@ def get_workspace_data() -> Dict[str, Any]:
     recent_runs_enriched = []
     for run in recent_runs:
         symbol = run["symbol"]
-        match = df[df["Symbol"].str.upper() == symbol.upper()]
+        clean_sym = symbol.upper().replace(".NS", "").strip()
+        match = df[df["Symbol"].str.upper().str.replace(".NS", "") == clean_sym]
         sector = "—"
         price = None
         if not match.empty:

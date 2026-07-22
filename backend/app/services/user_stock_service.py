@@ -20,9 +20,10 @@ def is_valid_symbol(symbol: str) -> bool:
     Verify if a symbol is covered in the Nifty 50 universe (data_loader)
     OR exists in the broader security_master table.
     """
+    clean_sym = symbol.upper().replace(".NS", "").strip()
     # First check the pre-computed Nifty 50 DataFrame
     df = data_loader.get_df()
-    if not df.empty and symbol.upper() in df["Symbol"].str.upper().tolist():
+    if not df.empty and clean_sym in df["Symbol"].str.upper().str.replace(".NS", "").tolist():
         return True
     # Fall back to security_master (broader universe)
     return is_in_security_master(symbol)
@@ -56,7 +57,8 @@ def is_in_data_loader(symbol: str) -> bool:
     df = data_loader.get_df()
     if df.empty:
         return False
-    return symbol.upper() in df["Symbol"].str.upper().tolist()
+    clean_sym = symbol.upper().replace(".NS", "").strip()
+    return clean_sym in df["Symbol"].str.upper().str.replace(".NS", "").tolist()
 
 
 def get_my_stocks() -> List[Dict[str, Any]]:

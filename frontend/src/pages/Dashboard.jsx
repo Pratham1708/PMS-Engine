@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { fetchMyStocks, fetchRecentAnalysis, runAnalysis } from '../api/stocks';
 import RatingBadge from '../components/common/RatingBadge';
 import LoadingSpinner from '../components/common/LoadingSpinner';
+import { ResponsiveGrid } from '../components/layout/ResponsiveLayoutEngine';
 
 function statusColor(status) {
   switch (status) {
@@ -37,7 +38,6 @@ export default function Dashboard() {
   const handleReAnalyze = async (symbol, e) => {
     e.stopPropagation();
     
-    // Add to loading set
     setSpinningSymbols((prev) => {
       const next = new Set(prev);
       next.add(symbol.toUpperCase());
@@ -51,7 +51,6 @@ export default function Dashboard() {
       console.error('Re-analysis failed', err);
       alert(`Re-analysis failed for ${symbol}`);
     } finally {
-      // Remove from loading set
       setSpinningSymbols((prev) => {
         const next = new Set(prev);
         next.delete(symbol.toUpperCase());
@@ -64,18 +63,18 @@ export default function Dashboard() {
 
   return (
     <div className="fade-in">
-      <div className="reports-hero" style={{ marginBottom: '24px', padding: '24px', borderRadius: '12px' }}>
-        <h1 className="reports-hero-title" style={{ fontSize: '24px' }}>📊 Dashboard Signals Cache</h1>
-        <p className="reports-hero-subtitle" style={{ fontSize: '14px', marginTop: '4px' }}>
+      <div className="reports-hero" style={{ marginBottom: '24px', padding: 'var(--card-padding)', borderRadius: 'var(--radius-md)' }}>
+        <h1 className="reports-hero-title" style={{ fontSize: 'var(--font-size-h2)' }}>📊 Dashboard Signals Cache</h1>
+        <p className="reports-hero-subtitle" style={{ fontSize: 'var(--font-size-body)', marginTop: '4px' }}>
           Real-time cache viewer presenting the last known intelligence outputs from the PMS Engine.
         </p>
       </div>
 
-      <div className="two-col">
+      <ResponsiveGrid cols={{ desktop: 2, tablet: 1, mobile: 1 }} gap="var(--spacing-md)">
         {/* Tracked Stock Signals */}
-        <div className="card" style={{ padding: '20px' }}>
+        <div className="card" style={{ padding: 'var(--card-padding)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-            <h2 className="card-title" style={{ margin: 0 }}>⭐ My Stocks Last Signals</h2>
+            <h2 className="card-title" style={{ margin: 0, fontSize: '1.1rem' }}>⭐ My Stocks Last Signals</h2>
             <span className="text-muted text-sm">{myStocks.length} Tracked</span>
           </div>
 
@@ -83,7 +82,7 @@ export default function Dashboard() {
             <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text-muted)' }}>
               <p>No stocks currently in your research universe.</p>
               <button 
-                className="btn btn-primary" 
+                className="btn btn-primary touch-target-44" 
                 style={{ marginTop: '16px' }}
                 onClick={() => navigate('/search')}
               >
@@ -99,81 +98,34 @@ export default function Dashboard() {
                     key={stock.symbol} 
                     className="stock-list-item"
                     onClick={() => navigate(`/stock/${encodeURIComponent(stock.symbol)}`)}
-                    style={{ 
-                      display: 'flex', 
-                      justifyContent: 'space-between', 
+                    style={{
+                      display: 'flex',
+                      flexWrap: 'wrap',
+                      justifyContent: 'space-between',
                       alignItems: 'center',
                       padding: '12px',
-                      borderRadius: '8px',
+                      borderRadius: 'var(--radius-sm)',
                       background: 'rgba(255,255,255,0.03)',
                       cursor: 'pointer',
-                      transition: 'transform 0.2s'
+                      gap: '8px'
                     }}
-                    onMouseEnter={(e) => e.currentTarget.style.transform = 'translateX(4px)'}
-                    onMouseLeave={(e) => e.currentTarget.style.transform = 'none'}
                   >
                     <div>
-                      <div style={{ fontWeight: 700, fontSize: '16px', color: '#fff' }}>{stock.symbol}</div>
-                      <div className="text-sm text-muted">{stock.sector}</div>
+                      <div style={{ fontWeight: 700, fontSize: '15px', color: '#fff' }}>{stock.symbol}</div>
+                      {stock.current_price !== null && (
+                        <div className="text-sm text-muted">₹{stock.current_price.toFixed(2)}</div>
+                      )}
                     </div>
                     
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px', textAlign: 'right' }}>
-                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
-                        {stock.last_rating === 'Not Analyzed' ? (
-                          <span style={{ fontSize: '12px', color: 'var(--text-muted)', background: 'rgba(255,255,255,0.05)', padding: '2px 6px', borderRadius: '4px' }}>
-                            NOT ANALYZED
-                          </span>
-                        ) : (
-                          <>
-                            <RatingBadge rating={stock.last_rating} />
-                            {stock.last_confidence !== null && (
-                              <span className="text-xs text-muted" style={{ fontWeight: 600 }}>
-                                Conf: {stock.last_confidence.toFixed(1)}%
-                              </span>
-                            )}
-                          </>
-                        )}
-                      </div>
-
-                      {stock.analyzed_at ? (
-                        <div className="text-xs text-muted" style={{ minWidth: '100px', display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-                          <span className="badge-status" style={{ 
-                            background: `${statusColor(stock.last_status)}20`, 
-                            color: statusColor(stock.last_status),
-                            border: `1px solid ${statusColor(stock.last_status)}40`,
-                            padding: '2px 6px',
-                            borderRadius: '4px',
-                            fontWeight: 'bold',
-                            fontSize: '10px',
-                            marginBottom: '4px'
-                          }}>
-                            {stock.last_status.toUpperCase()}
-                          </span>
-                          <span style={{ fontSize: '10px' }}>{stock.analyzed_at.split(' ')[0]}</span>
-                        </div>
-                      ) : (
-                        <div className="text-xs text-muted" style={{ minWidth: '100px', textAlign: 'right' }}>
-                          <span className="badge-status" style={{ 
-                            background: 'rgba(239,68,68,0.1)', 
-                            color: '#ef4444',
-                            border: '1px solid rgba(239,68,68,0.2)',
-                            padding: '2px 6px',
-                            borderRadius: '4px',
-                            fontWeight: 'bold',
-                            fontSize: '10px'
-                          }}>
-                            STALE
-                          </span>
-                        </div>
-                      )}
-
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <RatingBadge rating={stock.rating} />
                       <button
-                        className="btn btn-secondary text-xs font-semibold"
-                        style={{ padding: '6px 10px', height: '32px', display: 'flex', alignItems: 'center', minWidth: '95px', justifyContent: 'center' }}
+                        className="btn btn-secondary text-xs font-semibold touch-target-44"
+                        style={{ padding: '4px 10px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                         disabled={isSpinning}
                         onClick={(e) => handleReAnalyze(stock.symbol, e)}
                       >
-                        {isSpinning ? '⏳ Running...' : '▶ Re-Analyze'}
+                        {isSpinning ? '⏳' : '▶ Re-Analyze'}
                       </button>
                     </div>
                   </div>
@@ -184,8 +136,8 @@ export default function Dashboard() {
         </div>
 
         {/* Recent Analysis Runs */}
-        <div className="card" style={{ padding: '20px' }}>
-          <h2 className="card-title" style={{ marginBottom: '16px' }}>⏱️ Recently Analyzed Stocks</h2>
+        <div className="card" style={{ padding: 'var(--card-padding)' }}>
+          <h2 className="card-title" style={{ marginBottom: '16px', fontSize: '1.1rem' }}>⏱️ Recently Analyzed Stocks</h2>
           
           {recentAnalysis.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text-muted)' }}>
@@ -203,16 +155,15 @@ export default function Dashboard() {
                     onClick={() => navigate(`/stock/${encodeURIComponent(run.symbol)}`)}
                     style={{
                       display: 'flex',
+                      flexWrap: 'wrap',
                       justifyContent: 'space-between',
                       alignItems: 'center',
                       padding: '12px',
-                      borderRadius: '8px',
+                      borderRadius: 'var(--radius-sm)',
                       background: 'rgba(255,255,255,0.03)',
                       cursor: 'pointer',
-                      transition: 'transform 0.2s'
+                      gap: '8px'
                     }}
-                    onMouseEnter={(e) => e.currentTarget.style.transform = 'translateX(4px)'}
-                    onMouseLeave={(e) => e.currentTarget.style.transform = 'none'}
                   >
                     <div>
                       <div style={{ fontWeight: 700, fontSize: '15px', color: '#fff' }}>{run.symbol}</div>
@@ -221,33 +172,11 @@ export default function Dashboard() {
                       )}
                     </div>
                     
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', textAlign: 'right' }}>
-                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
-                        <RatingBadge rating={run.rating} />
-                        <span className="text-xs text-muted" style={{ fontWeight: 500 }}>
-                          Comp: {run.composite_score.toFixed(2)}
-                        </span>
-                      </div>
-
-                      <div className="text-xs text-muted" style={{ minWidth: '100px', display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-                        <span className="badge-status" style={{ 
-                          background: `${statusColor(run.status)}20`, 
-                          color: statusColor(run.status),
-                          border: `1px solid ${statusColor(run.status)}40`,
-                          padding: '2px 6px',
-                          borderRadius: '4px',
-                          fontWeight: 'bold',
-                          fontSize: '10px',
-                          marginBottom: '4px'
-                        }}>
-                          {run.status.toUpperCase()}
-                        </span>
-                        <span style={{ fontSize: '10px' }}>{run.analyzed_at.split(' ')[0]}</span>
-                      </div>
-
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                      <RatingBadge rating={run.rating} />
                       <button
-                        className="btn btn-secondary text-xs font-semibold"
-                        style={{ padding: '6px 10px', height: '32px', display: 'flex', alignItems: 'center', minWidth: '95px', justifyContent: 'center' }}
+                        className="btn btn-secondary text-xs font-semibold touch-target-44"
+                        style={{ padding: '4px 10px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                         disabled={isSpinning}
                         onClick={(e) => handleReAnalyze(run.symbol, e)}
                       >
@@ -260,7 +189,7 @@ export default function Dashboard() {
             </div>
           )}
         </div>
-      </div>
+      </ResponsiveGrid>
     </div>
   );
 }

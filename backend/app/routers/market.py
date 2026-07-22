@@ -17,7 +17,8 @@ async def get_market_quote(symbol: str):
     if not quote:
         # Check if symbol exists in data loader, if it does but fetch failed, return from memory
         df = data_loader.get_df()
-        match = df[df["Symbol"].str.upper() == symbol.upper()]
+        clean_sym = symbol.upper().replace(".NS", "").strip()
+        match = df[df["Symbol"].str.upper().str.replace(".NS", "") == clean_sym]
         if not match.empty:
             row = match.iloc[0]
             return {
@@ -59,7 +60,8 @@ async def get_market_history(
     """Return historical stock prices for a symbol. Cached locally for 24h."""
     # Check if stock symbol exists in scanner first (validate)
     df = data_loader.get_df()
-    match = df[df["Symbol"].str.upper() == symbol.upper()]
+    clean_sym = symbol.upper().replace(".NS", "").strip()
+    match = df[df["Symbol"].str.upper().str.replace(".NS", "") == clean_sym]
     if match.empty:
         raise HTTPException(
             status_code=404, detail=f"Symbol {symbol} is not covered in Nifty 50 universe"

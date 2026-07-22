@@ -728,7 +728,8 @@ def is_valid_symbol(symbol: str) -> bool:
     df = data_loader.get_df()
     if df.empty:
         return False
-    return symbol.upper() in df["Symbol"].str.upper().tolist()
+    clean_sym = symbol.upper().replace(".NS", "").strip()
+    return clean_sym in df["Symbol"].str.upper().str.replace(".NS", "").tolist()
 
 
 def load_cached_company_profile(symbol: str) -> Optional[Dict[str, Any]]:

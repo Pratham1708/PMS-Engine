@@ -1,4 +1,5 @@
-import { ArrowRight, Cpu, ShieldCheck, Zap, Database, BarChart2 } from 'lucide-react';
+import { ArrowDown, ArrowRight } from 'lucide-react';
+import { useBreakpoint } from '../../config/breakpoints';
 
 const STAGES = [
   { step: '01', name: 'Market Data Ingestion', desc: 'OHLCV, Volume & Corporate Actions' },
@@ -10,46 +11,73 @@ const STAGES = [
 ];
 
 export default function PlatformWorkflow() {
+  const { isMobile } = useBreakpoint();
+
   return (
-    <section style={{ padding: '80px 24px', background: 'rgba(15, 23, 42, 0.5)' }}>
+    <section style={{ padding: 'var(--spacing-xl) var(--page-padding-x)', background: 'rgba(15, 23, 42, 0.5)' }}>
       <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-        <div style={{ textAlign: 'center', marginBottom: '56px' }}>
-          <h2 style={{ fontSize: '2.2rem', fontWeight: '800', color: 'var(--color-text-primary)', marginBottom: '12px' }}>
+        <div style={{ textAlign: 'center', marginBottom: '40px' }}>
+          <h2 style={{ fontSize: 'var(--font-size-h2)', fontWeight: '800', color: 'var(--color-text-primary)', marginBottom: '8px' }}>
             Institutional Quantitative Pipeline Flow
           </h2>
-          <p style={{ color: 'var(--color-text-secondary)', fontSize: '1rem' }}>
+          <p style={{ color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-body)' }}>
             An automated, zero-lookahead-bias execution pipeline powering every daily snapshot.
           </p>
         </div>
 
         <div
           style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-            gap: '16px'
+            display: 'flex',
+            flexDirection: isMobile ? 'column' : 'row',
+            alignItems: 'stretch',
+            gap: '12px'
           }}
         >
           {STAGES.map((stg, idx) => (
-            <div key={idx} className="glass-panel" style={{ padding: '20px', position: 'relative' }}>
+            <React.Fragment key={idx}>
               <div
+                className="glass-panel"
                 style={{
-                  fontSize: '0.75rem',
-                  fontWeight: '800',
-                  color: 'var(--color-accent-primary)',
-                  letterSpacing: '0.05em',
-                  marginBottom: '8px'
+                  flex: 1,
+                  padding: 'var(--card-padding)',
+                  position: 'relative'
                 }}
               >
-                STAGE {stg.step}
+                <div
+                  style={{
+                    fontSize: '0.75rem',
+                    fontWeight: '800',
+                    color: 'var(--color-accent-primary)',
+                    letterSpacing: '0.05em',
+                    marginBottom: '6px'
+                  }}
+                >
+                  STAGE {stg.step}
+                </div>
+                <h4 style={{ fontSize: '0.925rem', fontWeight: '700', color: 'var(--color-text-primary)', marginBottom: '4px' }}>
+                  {stg.name}
+                </h4>
+                <p style={{ fontSize: '0.78rem', color: 'var(--color-text-secondary)', margin: 0 }}>{stg.desc}</p>
               </div>
-              <h4 style={{ fontSize: '0.95rem', fontWeight: '700', color: 'var(--color-text-primary)', marginBottom: '6px' }}>
-                {stg.name}
-              </h4>
-              <p style={{ fontSize: '0.78rem', color: 'var(--color-text-secondary)', margin: 0 }}>{stg.desc}</p>
-            </div>
+
+              {idx < STAGES.length - 1 && (
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: 'var(--color-accent-primary)',
+                    padding: isMobile ? '4px 0' : '0 4px'
+                  }}
+                >
+                  {isMobile ? <ArrowDown size={16} /> : <ArrowRight size={16} />}
+                </div>
+              )}
+            </React.Fragment>
           ))}
         </div>
       </div>
     </section>
   );
 }
+import React from 'react';

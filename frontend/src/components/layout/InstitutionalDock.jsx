@@ -8,6 +8,7 @@ export default function InstitutionalDock() {
 
   return (
     <div
+      className="hide-mobile"
       style={{
         position: 'fixed',
         bottom: '20px',

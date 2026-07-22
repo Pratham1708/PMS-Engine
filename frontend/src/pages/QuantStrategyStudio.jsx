@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useBreakpoint } from '../config/breakpoints';
 import {
   fetchStrategies,
   createStrategy,
@@ -442,8 +443,19 @@ export default function QuantStrategyStudio() {
 
         {/* Right Side: Active Wizard Workspace */}
         <div className="card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          {/* Steps indicators */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '16px' }}>
+          {/* Steps indicators (Responsive Scroll / Wrap) */}
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              borderBottom: '1px solid rgba(255,255,255,0.08)',
+              paddingBottom: '12px',
+              overflowX: 'auto',
+              WebkitOverflowScrolling: 'touch',
+              gap: '8px'
+            }}
+          >
             {[
               { nr: 1, name: 'Details' },
               { nr: 2, name: 'Features' },
@@ -455,6 +467,7 @@ export default function QuantStrategyStudio() {
               <button
                 key={step.nr}
                 onClick={() => setActiveStep(step.nr)}
+                className="touch-target-44"
                 style={{
                   background: 'none',
                   border: 'none',
@@ -464,18 +477,20 @@ export default function QuantStrategyStudio() {
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '6px'
+                  gap: '6px',
+                  whiteSpace: 'nowrap'
                 }}
               >
                 <span style={{
                   display: 'inline-block',
-                  width: '20px',
-                  height: '20px',
+                  width: '24px',
+                  height: '24px',
                   borderRadius: '50%',
                   background: activeStep === step.nr ? 'rgba(59, 130, 246, 0.2)' : (activeStep > step.nr ? 'rgba(16, 185, 129, 0.2)' : 'rgba(255,255,255,0.05)'),
                   textAlign: 'center',
-                  lineHeight: '20px',
-                  fontSize: '11px'
+                  lineHeight: '24px',
+                  fontSize: '11px',
+                  flexShrink: 0
                 }}>
                   {activeStep > step.nr ? '✓' : step.nr}
                 </span>
