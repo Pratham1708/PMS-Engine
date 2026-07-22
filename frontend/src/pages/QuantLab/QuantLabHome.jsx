@@ -13,6 +13,7 @@ const MODULES_CORE = [
   { path: '/lab/cross-indicator', name: 'Cross-Indicator Lab', desc: 'Rank logical dual/triple joint indicator rules.', icon: '⚡' },
   { path: '/lab/engine', name: 'Engine Validation', desc: 'Verify predictive correlation of technical & ML scores.', icon: '🧪' },
   { path: '/lab/models', name: 'Model Lab', desc: 'Compare ML model calibration, pricing stability, and SHAP.', icon: '🤖' },
+  { path: '/lab/ensemble', name: 'Ensemble Strategy Lab', desc: 'Weighted, Majority, and Rank voting ensemble methods.', icon: '🧠', isLocked: true, remark: 'Coming Soon' },
   { path: '/lab/features', name: 'Feature Lab', desc: 'Examine feature correlation, VIF, and mutual info.', icon: '🧬' },
   { path: '/lab/composite', name: 'Composite Lab', desc: 'Research sub-score weights and partial correlations.', icon: '⚖️' },
 ];
@@ -23,7 +24,7 @@ const MODULES_SIMULATION = [
   { path: '/lab/hyperopt', name: 'Parameter Hyperopt', desc: 'Optimize boundaries, risk rules, and trade limits.', icon: '🎛️' },
   { path: '/lab/sizing', name: 'Position Sizing Lab', desc: 'Evaluate Compounding under Kelly, Volatility & Fixed rules.', icon: '📐' },
   { path: '/lab/construction', name: 'Portfolio Optimizer', desc: 'Efficient frontier and Sharpe weights solver.', icon: '💼' },
-  { path: '/lab/portfolio', name: 'Portfolio Lab', desc: 'Backtest diversified Top-N and Smart Beta strategies.', icon: '🏢' },
+  { path: '/lab/portfolio', name: 'Portfolio Lab', desc: 'Backtest diversified Top-N and Smart Beta strategies.', icon: '🏢', isLocked: true, remark: 'Coming Soon' },
 ];
 
 const MODULES_AUDITS = [
@@ -33,7 +34,7 @@ const MODULES_AUDITS = [
   { path: '/lab/liquidity', name: 'Liquidity Auditor', desc: 'ADV, Amihud, and gap-frequency suitability filter.', icon: '💧' },
   { path: '/lab/drift', name: 'Drift Monitor', desc: 'Divergence metrics alert manager.', icon: '🛡️' },
   { path: '/lab/regime', name: 'Regime Lab', desc: 'Identify market regimes and regime score weights.', icon: '🌊' },
-  { path: '/lab/benchmark', name: 'Benchmark Compare', desc: 'Alpha, Beta, Info Ratio vs standard indices.', icon: '📊' },
+  { path: '/lab/benchmark', name: 'Benchmark Compare', desc: 'Alpha, Beta, Info Ratio vs standard indices.', icon: '📊', isLocked: true, remark: 'Coming Soon' },
   { path: '/lab/experiments', name: 'Experiment History', desc: 'Browse, filter, and review completed runs registry.', icon: '🗂' },
   { path: '/lab/reports', name: 'Lab Reports', desc: 'Print-ready HTML/PDF research logs generator.', icon: '📋' }
 ];
@@ -184,7 +185,36 @@ export default function QuantLabHome() {
             </h3>
             <div className="lab-module-grid">
               {MODULES_CORE.map((mod) => (
-                <div key={mod.path} onClick={() => navigate(mod.path)} className="lab-module-card">
+                <div
+                  key={mod.path}
+                  onClick={() => navigate(mod.path)}
+                  className="lab-module-card"
+                  style={{
+                    position: 'relative',
+                    opacity: mod.isLocked ? 0.85 : 1,
+                    border: mod.isLocked ? '1px solid rgba(245, 158, 11, 0.25)' : undefined,
+                    background: mod.isLocked ? 'rgba(245, 158, 11, 0.02)' : undefined
+                  }}
+                >
+                  {mod.isLocked && (
+                    <div style={{
+                      position: 'absolute',
+                      top: '12px',
+                      right: '12px',
+                      fontSize: '10px',
+                      padding: '2px 8px',
+                      borderRadius: '12px',
+                      background: 'rgba(245, 158, 11, 0.15)',
+                      color: '#f59e0b',
+                      border: '1px solid rgba(245, 158, 11, 0.3)',
+                      fontWeight: '700',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px'
+                    }}>
+                      🔒 {mod.remark || 'Coming Soon'}
+                    </div>
+                  )}
                   <div style={{ fontSize: '26px', marginBottom: '8px' }}>{mod.icon}</div>
                   <div>
                     <h4 style={{ fontSize: '14.5px', fontWeight: '600', marginBottom: '4px', color: 'var(--text-primary)' }}>{mod.name}</h4>
@@ -202,7 +232,36 @@ export default function QuantLabHome() {
             </h3>
             <div className="lab-module-grid">
               {MODULES_SIMULATION.map((mod) => (
-                <div key={mod.path} onClick={() => navigate(mod.path)} className="lab-module-card">
+                <div
+                  key={mod.path}
+                  onClick={() => navigate(mod.path)}
+                  className="lab-module-card"
+                  style={{
+                    position: 'relative',
+                    opacity: mod.isLocked ? 0.85 : 1,
+                    border: mod.isLocked ? '1px solid rgba(245, 158, 11, 0.25)' : undefined,
+                    background: mod.isLocked ? 'rgba(245, 158, 11, 0.02)' : undefined
+                  }}
+                >
+                  {mod.isLocked && (
+                    <div style={{
+                      position: 'absolute',
+                      top: '12px',
+                      right: '12px',
+                      fontSize: '10px',
+                      padding: '2px 8px',
+                      borderRadius: '12px',
+                      background: 'rgba(245, 158, 11, 0.15)',
+                      color: '#f59e0b',
+                      border: '1px solid rgba(245, 158, 11, 0.3)',
+                      fontWeight: '700',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px'
+                    }}>
+                      🔒 {mod.remark || 'Coming Soon'}
+                    </div>
+                  )}
                   <div style={{ fontSize: '26px', marginBottom: '8px' }}>{mod.icon}</div>
                   <div>
                     <h4 style={{ fontSize: '14.5px', fontWeight: '600', marginBottom: '4px', color: 'var(--text-primary)' }}>{mod.name}</h4>
@@ -220,7 +279,36 @@ export default function QuantLabHome() {
             </h3>
             <div className="lab-module-grid">
               {MODULES_AUDITS.map((mod) => (
-                <div key={mod.path} onClick={() => navigate(mod.path)} className="lab-module-card">
+                <div
+                  key={mod.path}
+                  onClick={() => navigate(mod.path)}
+                  className="lab-module-card"
+                  style={{
+                    position: 'relative',
+                    opacity: mod.isLocked ? 0.85 : 1,
+                    border: mod.isLocked ? '1px solid rgba(245, 158, 11, 0.25)' : undefined,
+                    background: mod.isLocked ? 'rgba(245, 158, 11, 0.02)' : undefined
+                  }}
+                >
+                  {mod.isLocked && (
+                    <div style={{
+                      position: 'absolute',
+                      top: '12px',
+                      right: '12px',
+                      fontSize: '10px',
+                      padding: '2px 8px',
+                      borderRadius: '12px',
+                      background: 'rgba(245, 158, 11, 0.15)',
+                      color: '#f59e0b',
+                      border: '1px solid rgba(245, 158, 11, 0.3)',
+                      fontWeight: '700',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px'
+                    }}>
+                      🔒 {mod.remark || 'Coming Soon'}
+                    </div>
+                  )}
                   <div style={{ fontSize: '26px', marginBottom: '8px' }}>{mod.icon}</div>
                   <div>
                     <h4 style={{ fontSize: '14.5px', fontWeight: '600', marginBottom: '4px', color: 'var(--text-primary)' }}>{mod.name}</h4>

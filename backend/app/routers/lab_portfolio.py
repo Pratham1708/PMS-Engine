@@ -47,13 +47,22 @@ def _run_portfolio_backtest_sync(
     logger.info(f"Running portfolio backtest sync: strategy={strategy}, n={n}, period={period}, capital={initial_capital}")
     
     try:
-        if strategy == "top_n_monthly":
+        strat_map = {
+            "top-n equal weight": "top_n_monthly",
+            "top_n_monthly": "top_n_monthly",
+            "equal_weight": "equal_weight",
+            "smart_beta": "smart_beta",
+            "sector_momentum": "sector_momentum"
+        }
+        strat_key = strat_map.get(strategy.lower().strip(), strategy)
+
+        if strat_key == "top_n_monthly":
             res = strategy_top_n_monthly(n=n, period=period, initial_capital=initial_capital)
-        elif strategy == "equal_weight":
+        elif strat_key == "equal_weight":
             res = strategy_equal_weight(max_stocks=n, period=period, initial_capital=initial_capital)
-        elif strategy == "smart_beta":
+        elif strat_key == "smart_beta":
             res = strategy_smart_beta(max_stocks=n, period=period, initial_capital=initial_capital)
-        elif strategy == "sector_momentum":
+        elif strat_key == "sector_momentum":
             res = strategy_sector_momentum(period=period, top_sectors=2, initial_capital=initial_capital)
         else:
             raise ValueError(f"Unknown portfolio strategy: {strategy}")

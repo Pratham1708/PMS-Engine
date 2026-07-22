@@ -44,15 +44,36 @@ export default function MegaMenuDropdown({ menu }) {
                 to={item.route}
                 style={{
                   fontSize: '0.82rem',
-                  color: 'var(--color-text-secondary)',
+                  color: item.isLocked ? 'var(--color-text-muted)' : 'var(--color-text-secondary)',
                   padding: '4px 6px',
                   borderRadius: 'var(--radius-xs)',
                   transition: 'all var(--transition-fast)',
-                  display: 'block'
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: '6px',
+                  opacity: item.isLocked ? 0.75 : 1
                 }}
                 className="megamenu-item-hover"
               >
-                {item.label}
+                <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                  {item.isLocked && <span style={{ fontSize: '11px' }}>🔒</span>}
+                  {item.label}
+                </span>
+                {item.isLocked && (
+                  <span style={{
+                    fontSize: '9px',
+                    padding: '1px 5px',
+                    borderRadius: '4px',
+                    background: 'rgba(245, 158, 11, 0.15)',
+                    color: '#f59e0b',
+                    border: '1px solid rgba(245, 158, 11, 0.3)',
+                    fontWeight: '700',
+                    whiteSpace: 'nowrap'
+                  }}>
+                    Coming Soon
+                  </span>
+                )}
               </Link>
             ))}
           </div>

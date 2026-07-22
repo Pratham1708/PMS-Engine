@@ -74,7 +74,7 @@ export const NAVIGATION_REGISTRY = [
         category: 'Machine Learning',
         items: [
           { label: 'Model Research Lab', route: '/lab/models' },
-          { label: 'Ensemble Strategy Lab', route: '/lab/ensemble' },
+          { label: 'Ensemble Strategy Lab', route: '/lab/ensemble', isLocked: true, remark: 'Coming Soon' },
           { label: 'Hyperparameter Lab', route: '/lab/hyperopt' }
         ]
       },
@@ -90,10 +90,10 @@ export const NAVIGATION_REGISTRY = [
       {
         category: 'Portfolio Research',
         items: [
-          { label: 'Portfolio Strategies', route: '/lab/portfolio' },
+          { label: 'Portfolio Strategies', route: '/lab/portfolio', isLocked: true, remark: 'Coming Soon' },
           { label: 'Portfolio Construction', route: '/lab/construction' },
           { label: 'Correlation Research', route: '/lab/correlation' },
-          { label: 'Benchmark Comparison', route: '/lab/benchmark' }
+          { label: 'Benchmark Comparison', route: '/lab/benchmark', isLocked: true, remark: 'Coming Soon' }
         ]
       },
       {

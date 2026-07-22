@@ -120,8 +120,15 @@ def run_ensemble_backtest(
     
     # Scale indicators 0-100 to map them as scores
     s_tech = n_rsi
-    s_ml = (n_macd - n_macd.min()) / (n_macd.max() - n_macd.min()).replace(0, 1) * 100
-    s_gru = (n_ema_fast - n_ema_slow) / (n_ema_fast.max() - n_ema_slow.min()).replace(0, 1) * 100
+    ml_diff = float(n_macd.max() - n_macd.min())
+    if ml_diff == 0:
+        ml_diff = 1.0
+    s_ml = (n_macd - n_macd.min()) / ml_diff * 100
+
+    gru_diff = float(n_ema_fast.max() - n_ema_slow.min())
+    if gru_diff == 0:
+        gru_diff = 1.0
+    s_gru = (n_ema_fast - n_ema_slow) / gru_diff * 100
     
     sig_out = nifty_df.copy()
     sig_out["Signal"] = 0

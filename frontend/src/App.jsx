@@ -36,7 +36,7 @@ import DataQuality from './pages/DataQuality';
 import SnapshotDiagnostics from './pages/SnapshotDiagnostics';
 import SnapshotDashboard from './pages/SnapshotDashboard';
 
-// Quant Lab Page Imports
+import LockedLabView from './components/common/LockedLabView';
 import QuantLabHome from './pages/QuantLab/QuantLabHome';
 import IndicatorLab from './pages/QuantLab/IndicatorLab';
 import EngineValidationLab from './pages/QuantLab/EngineValidationLab';
@@ -111,14 +111,14 @@ function AppContent() {
         <Route path="/lab/features" element={<WorkspaceRoute title="Feature Selection Lab"><FeatureLab /></WorkspaceRoute>} />
         <Route path="/lab/composite" element={<WorkspaceRoute title="Composite Weights Validation"><CompositeValidationLab /></WorkspaceRoute>} />
         <Route path="/lab/validation" element={<WorkspaceRoute title="Recommendation Audit Lab"><RecommendationValidation /></WorkspaceRoute>} />
-        <Route path="/lab/portfolio" element={<WorkspaceRoute title="Portfolio Strategies Backtester"><PortfolioStrategies /></WorkspaceRoute>} />
+        <Route path="/lab/portfolio" element={<LockedLabView title="Portfolio Strategies Backtester" description="Portfolio Strategies module is currently locked for institutional multi-asset algorithm calibration." />} />
         <Route path="/lab/sector" element={<WorkspaceRoute title="Sector Analysis Lab"><SectorLab /></WorkspaceRoute>} />
         <Route path="/lab/regime" element={<WorkspaceRoute title="Market Regime Detection"><RegimeLab /></WorkspaceRoute>} />
-        <Route path="/lab/benchmark" element={<WorkspaceRoute title="Benchmark Comparison Lab"><BenchmarkComparison /></WorkspaceRoute>} />
+        <Route path="/lab/benchmark" element={<LockedLabView title="Benchmark Comparison Lab" description="Benchmark Comparison module is currently locked for multi-index tracking error model calibration." />} />
         <Route path="/lab/experiments" element={<WorkspaceRoute title="Experiment History Registry"><ExperimentHistory /></WorkspaceRoute>} />
         <Route path="/lab/reports" element={<WorkspaceRoute title="Quant Lab Reports Compiler"><LabReports /></WorkspaceRoute>} />
         <Route path="/lab/cross-indicator" element={<WorkspaceRoute title="Cross-Indicator Lab"><CrossIndicatorLab /></WorkspaceRoute>} />
-        <Route path="/lab/ensemble" element={<WorkspaceRoute title="Ensemble Strategy Lab"><EnsembleLab /></WorkspaceRoute>} />
+        <Route path="/lab/ensemble" element={<LockedLabView title="Ensemble Strategy Lab" description="Ensemble Strategy module is currently locked for voting weight and probability model calibration." />} />
         <Route path="/lab/hyperopt" element={<WorkspaceRoute title="Parameter Hyperopt Lab"><HyperoptLab /></WorkspaceRoute>} />
         <Route path="/lab/monte-carlo" element={<WorkspaceRoute title="Monte Carlo Sandbox"><MonteCarloLab /></WorkspaceRoute>} />
         <Route path="/lab/stress" element={<WorkspaceRoute title="Crisis Stress Tester"><StressTestLab /></WorkspaceRoute>} />
