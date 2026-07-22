@@ -31,9 +31,12 @@ def is_valid_symbol(symbol: str) -> bool:
 
 def get_canonical_symbol(symbol: str) -> str:
     """
-    Retrieve the exact capitalised case of the symbol without .NS suffix.
+    Retrieve the exact capitalised case of the symbol.
+    If the user typed .NS (e.g. ADANIENT.NS), preserve .NS.
+    If typed without .NS (e.g. ADANIENT), match canonical symbol.
     Checks data_loader first, then security_master.
     """
+    has_ns = symbol.upper().endswith(".NS")
     clean_sym = symbol.upper().replace(".NS", "").strip()
 
     # Check data_loader (Nifty 50)
@@ -41,14 +44,16 @@ def get_canonical_symbol(symbol: str) -> str:
     if not df.empty:
         matches = df[df["Symbol"].str.upper().str.replace(".NS", "") == clean_sym]
         if not matches.empty:
-            return str(matches.iloc[0]["Symbol"]).replace(".NS", "")
+            canon = str(matches.iloc[0]["Symbol"])
+            return canon if has_ns else canon.replace(".NS", "")
 
     # Check security_master for canonical casing
     entry = get_security_master_entry(clean_sym) or get_security_master_entry(f"{clean_sym}.NS")
     if entry:
-        return entry["symbol"].replace(".NS", "")
+        sym = entry["symbol"]
+        return sym if has_ns else sym.replace(".NS", "")
 
-    return clean_sym
+    return f"{clean_sym}.NS" if has_ns else clean_sym
 
 
 

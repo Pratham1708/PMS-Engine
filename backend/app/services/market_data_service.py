@@ -8,6 +8,14 @@ from app.services.market_data_validator import MarketDataValidator
 
 logger = logging.getLogger(__name__)
 
+def _normalize_market_symbol(symbol: str) -> str:
+    """Ensure symbol has exchange suffix (.NS) for Yahoo Finance / market feed calls if missing."""
+    s = symbol.upper().strip()
+    if s.endswith(".NS") or s.endswith(".BSE"):
+        return s
+    return f"{s}.NS"
+
+
 class MarketDataService:
     """
     Unified MarketDataService serves as the single gateway for all market data requests 
@@ -18,16 +26,20 @@ class MarketDataService:
     def get_live_quote(symbol: str) -> Optional[Dict[str, Any]]:
         """
         Fetch and validate live quote for a single symbol.
-        Returns validated quote, or None if download fails or validation rejects it.
+        Supports inputs both with and without .NS suffix.
         """
-        logger.info(f"[MarketDataService] Quote Request: {symbol}")
+        target_symbol = _normalize_market_symbol(symbol)
+        logger.info(f"[MarketDataService] Quote Request: {symbol} -> {target_symbol}")
         
-        quote = raw_fetch_quote(symbol)
+        quote = raw_fetch_quote(target_symbol)
+        if not quote and target_symbol != symbol.upper().strip():
+            quote = raw_fetch_quote(symbol.upper().strip())
+
         if not quote:
             logger.warning(f"[MarketDataService] Quote download failed or returned None for {symbol}")
             return None
 
-        is_valid, errors = MarketDataValidator.validate_quote(quote, symbol)
+        is_valid, errors = MarketDataValidator.validate_quote(quote, quote.get("Symbol", symbol))
         if not is_valid:
             logger.error(f"[MarketDataService] Quote validation failed for {symbol}: {errors}")
             return None
@@ -41,16 +53,17 @@ class MarketDataService:
         Fetch and validate quotes for a list of symbols.
         Returns a DataFrame of validated quotes.
         """
+        normalized_symbols = [_normalize_market_symbol(s) for s in symbols]
         logger.info(f"[MarketDataService] Batch Quotes Request: {len(symbols)} symbols")
         
-        raw_df = raw_fetch_batch(symbols)
+        raw_df = raw_fetch_batch(normalized_symbols)
         if raw_df.empty:
             return pd.DataFrame()
 
         validated_quotes = []
         for _, row in raw_df.iterrows():
             quote_dict = row.to_dict()
-            is_valid, _ = MarketDataValidator.validate_quote(quote_dict, quote_dict["Symbol"])
+            is_valid, _ = MarketDataValidator.validate_quote(quote_dict, quote_dict.get("Symbol", ""))
             if is_valid:
                 validated_quotes.append(quote_dict)
             else:
@@ -65,16 +78,20 @@ class MarketDataService:
     def get_historical_data(symbol: str, period: str) -> Optional[pd.DataFrame]:
         """
         Fetch and validate historical price series DataFrame.
-        Returns validated DataFrame, or None if validation fails.
+        Supports inputs both with and without .NS suffix.
         """
-        logger.info(f"[MarketDataService] History Request: {symbol} ({period})")
+        target_symbol = _normalize_market_symbol(symbol)
+        logger.info(f"[MarketDataService] History Request: {symbol} ({period}) -> {target_symbol}")
         
-        df = historical_data_service.get_stock_history(symbol, period)
+        df = historical_data_service.get_stock_history(target_symbol, period)
+        if (df is None or df.empty) and target_symbol != symbol.upper().strip():
+            df = historical_data_service.get_stock_history(symbol.upper().strip(), period)
+
         if df is None or df.empty:
             logger.warning(f"[MarketDataService] History download returned empty or None for {symbol} ({period})")
             return None
 
-        is_valid, errors = MarketDataValidator.validate_historical_df(df, symbol, period)
+        is_valid, errors = MarketDataValidator.validate_historical_df(df, target_symbol, period)
         if not is_valid:
             logger.error(f"[MarketDataService] History validation failed for {symbol}: {errors}")
             return None

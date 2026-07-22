@@ -56,18 +56,31 @@ class HistoricalDataService:
     def refresh_stock_history(self, symbol: str, period: str) -> Optional[pd.DataFrame]:
         """
         Download history from Yahoo Finance via yfinance and overwrite cache.
+        Supports inputs both with and without .NS.
         """
-        logger.info(f"Downloading historical data for {symbol} ({period}) from yfinance...")
+        target_symbol = symbol.strip().upper()
+        if not (target_symbol.endswith(".NS") or target_symbol.endswith(".BSE")):
+            target_symbol = f"{target_symbol}.NS"
+
+        logger.info(f"Downloading historical data for {symbol} ({target_symbol}, {period}) from yfinance...")
         try:
             yf_period = PERIOD_MAP.get(period, "1y")
             
             df = yf.download(
-                tickers=symbol,
+                tickers=target_symbol,
                 period=yf_period,
                 interval="1d",
                 progress=False,
             )
             
+            if (df is None or df.empty) and target_symbol != symbol.strip().upper():
+                df = yf.download(
+                    tickers=symbol.strip().upper(),
+                    period=yf_period,
+                    interval="1d",
+                    progress=False,
+                )
+
             if df is None or df.empty:
                 logger.warning(f"yfinance download returned empty data for {symbol} ({period})")
                 return None
