@@ -137,6 +137,20 @@ export default function ChartPanel({ charts }) {
           </button>
         ))}
       </div>
+      {currentChart.description && (
+        <div style={{
+          padding: '10px 14px',
+          marginBottom: '14px',
+          background: 'rgba(99, 102, 241, 0.08)',
+          borderLeft: '3px solid var(--accent-primary)',
+          borderRadius: '4px',
+          fontSize: '12.5px',
+          color: 'var(--text-secondary)',
+          lineHeight: '1.4'
+        }}>
+          💡 <strong style={{ color: 'var(--text-primary)' }}>What this signifies:</strong> {currentChart.description}
+        </div>
+      )}
       <div style={{ padding: '10px 0' }}>
         {renderChart(currentChart)}
       </div>

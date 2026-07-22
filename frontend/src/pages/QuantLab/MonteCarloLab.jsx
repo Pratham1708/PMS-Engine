@@ -36,46 +36,71 @@ export default function MonteCarloLab() {
   const getMonteCarloCharts = () => {
     if (!data?.simulated_paths || data.simulated_paths.length === 0) return [];
     
-    // Transform paths: [{step: 0, path_0: val, path_1: val, ...}]
+    // Create synthetic date steps starting from today so FinancialChart can map dates
+    const today = new Date();
     const steps = data.simulated_paths[0].length;
     const chartData = [];
     for (let step = 0; step < steps; step++) {
-      const row = { step };
+      const stepDate = new Date(today);
+      stepDate.setDate(today.getDate() + step * 10);
+      const timeStr = stepDate.toISOString().split('T')[0];
+
+      const row = {
+        date: timeStr,
+        step: `Day ${step * 10}`,
+      };
       data.simulated_paths.forEach((path, idx) => {
-        row[`path_${idx}`] = Math.round(path[step]);
+        row[`Path ${idx + 1}`] = Math.round(path[step]);
       });
       chartData.push(row);
     }
 
-    const yKeys = data.simulated_paths.slice(0, 10).map((_, idx) => `path_${idx}`);
-    const colors = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#3b82f6', '#ec4899', '#14b8a6', '#f43f5e', '#a855f7'];
+    const yKeys = data.simulated_paths.slice(0, 10).map((_, idx) => `Path ${idx + 1}`);
+    const colors = [
+      '#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6',
+      '#3b82f6', '#ec4899', '#14b8a6', '#f43f5e', '#a855f7'
+    ];
+
+    // Enhance distribution data for histogram bar charts to make "Path Count" crystal clear
+    const cagrData = (data.cagr_distribution || []).map((item) => ({
+      ...item,
+      'Path Count': item.count,
+    }));
+
+    const mddData = (data.mdd_distribution || []).map((item) => ({
+      ...item,
+      'Path Count': item.count,
+    }));
 
     return [
       {
         key: 'mc_paths',
         title: 'Bootstrap Resampled Equity Paths (INR)',
+        description: `Visualizes 10 sample simulated asset growth trajectories over ${data.horizon_days || days} trading days starting from ₹100,000 initial capital. Each colored line represents one distinct resampled path.`,
         type: 'line',
         data: chartData,
-        xKey: 'step',
+        xKey: 'date',
         yKeys: yKeys,
         colors: colors,
       },
       {
         key: 'cagr_dist',
         title: 'Probability Distribution of Expected CAGR (%)',
+        description: `Signifies annual growth likelihood. The X-Axis shows return percentage ranges (e.g. 10.5% to 15.2%), and the Y-Axis (Path Count) shows the exact number of resampled simulation trails (out of ${data.n_simulations || 250} total runs) that achieved a final CAGR inside that return bin.`,
         type: 'bar',
-        data: data.cagr_distribution || [],
+        data: cagrData,
         xKey: 'label',
-        yKeys: ['count'],
+        yKeys: ['Path Count'],
         colors: ['#10b981'],
       },
       {
         key: 'mdd_dist',
         title: 'Probability Distribution of Worst Drawdowns (%)',
+        description: `Signifies severe downside loss probability. The X-Axis shows peak-to-trough maximum drawdown percentage ranges (e.g. -25.0% to -20.0%), and the Y-Axis (Path Count) shows the exact number of resampled simulation trails (out of ${data.n_simulations || 250} total runs) that experienced a max drawdown inside that risk bin.`,
         type: 'bar',
-        data: data.mdd_distribution || [],
+        data: mddData,
         xKey: 'label',
-        yKeys: ['count'],
+        yKeys: ['Path Count'],
         colors: ['#ef4444'],
       }
     ];
@@ -196,12 +221,32 @@ export default function MonteCarloLab() {
                 }}
               />
 
+              {/* Informative Explanation Banner */}
+              <div style={{
+                background: 'rgba(59, 130, 246, 0.08)',
+                border: '1px solid rgba(59, 130, 246, 0.2)',
+                borderRadius: '8px',
+                padding: '14px 18px',
+                fontSize: '13px',
+                color: 'var(--text-secondary)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px'
+              }}>
+                <span style={{ fontSize: '18px' }}>ℹ️</span>
+                <div>
+                  <strong style={{ color: '#60a5fa' }}>Monte Carlo Guide: </strong>
+                  <strong>Tab 1 (Equity Paths)</strong> visualizes 10 sample simulated asset growth paths starting from ₹100,000 capital.
+                  <strong> Tabs 2 & 3 (Histograms)</strong> plot the frequency distribution — where <strong>"Path Count"</strong> on the Y-axis explicitly shows the number of resampled simulation trails (out of <strong>{data.n_simulations || 250} total simulations</strong>) that landed inside each return or drawdown percentage range.
+                </div>
+              </div>
+
               {/* Chart curves */}
               <ChartPanel charts={getMonteCarloCharts()} />
             </div>
           ) : (
             <div className="card" style={{ padding: '40px', textAlign: 'center', border: '1px dashed var(--border-primary)', borderRadius: 'var(--radius-lg)' }}>
-              <p style={{ color: 'var(--text-secondary)' }}>Click "Run Simulations" to start Monte Carlo simulation checks.</p>
+              <p style={{ color: 'var(--text-secondary)' }}>Click "Run Simulations" to generate Monte Carlo bootstrap paths and probability distributions.</p>
             </div>
           )}
         </div>
