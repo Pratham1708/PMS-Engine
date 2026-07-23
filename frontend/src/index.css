@@ -4633,6 +4633,19 @@ p, span, h1, h2, h3, h4, h5, h6, a, div, td, th {
   -webkit-overflow-scrolling: touch;
 }
 
+/* ===== Global Anti-Character-Squishing & DPI Scaling Rules ===== */
+.badge,
+.btn,
+.btn-sm,
+.btn-primary,
+.btn-secondary,
+.chip,
+.dq-status-pill,
+.reports-type-chip {
+  white-space: nowrap !important;
+  flex-shrink: 0;
+}
+
 @media (max-width: 768px) {
   .responsive-grid-400 {
     grid-template-columns: 1fr !important;

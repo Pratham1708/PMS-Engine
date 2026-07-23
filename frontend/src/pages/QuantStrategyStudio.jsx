@@ -14,6 +14,7 @@ import {
 import RatingBadge from '../components/common/RatingBadge';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import ExplainModal from '../components/common/ExplainModal';
+import StockAnalysisDrawer from '../components/common/StockAnalysisDrawer';
 
 export default function QuantStrategyStudio() {
   const [strategies, setStrategies] = useState([]);
@@ -55,7 +56,13 @@ export default function QuantStrategyStudio() {
   
   // Modal for Explainability
   const [explainStockSymbol, setExplainStockSymbol] = useState(null);
-  
+
+  // Stock Analysis Drawer state
+  const [drawerStock, setDrawerStock] = useState(null); // { symbol, company_name }
+
+  const openDrawer = (stock) => setDrawerStock(stock);
+  const closeDrawer = () => setDrawerStock(null);
+
   const navigate = useNavigate();
 
   // Load initial data
@@ -385,9 +392,9 @@ export default function QuantStrategyStudio() {
         </div>
       </div>
 
-      <div className="studio-main-grid responsive-split-grid two-col" style={{ display: 'grid', gridTemplateColumns: isEditing || selectedFeatureIds.size > 0 ? '1fr 2.5fr' : '1fr 1fr', gap: '20px' }}>
+      <div className="studio-main-grid responsive-split-grid two-col" style={{ display: 'grid', gridTemplateColumns: isEditing || selectedFeatureIds.size > 0 ? 'minmax(280px, 340px) minmax(0, 1fr)' : 'minmax(280px, 360px) minmax(0, 1fr)', gap: '20px' }}>
         {/* Left Side: Saved Library & Creator Panel */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', minWidth: 0 }}>
           {/* Strategy Library */}
           <div className="card" style={{ padding: '20px' }}>
             <h2 className="card-title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -402,36 +409,36 @@ export default function QuantStrategyStudio() {
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '16px' }}>
                 {/* Default built-in */}
-                <div style={{ padding: '12px', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '8px', background: 'rgba(255,255,255,0.02)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ padding: '12px', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '8px', background: 'rgba(255,255,255,0.02)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
                   <div>
                     <div style={{ fontWeight: 'bold', fontSize: '14px', color: '#3b82f6' }}>PMS Default Model</div>
                     <div className="text-muted text-sm">Pre-seeded core engine config</div>
                   </div>
-                  <span className="badge badge-success" style={{ background: 'rgba(16, 185, 129, 0.1)', color: '#10b981' }}>System</span>
+                  <span className="badge badge-success" style={{ background: 'rgba(16, 185, 129, 0.1)', color: '#10b981', whiteSpace: 'nowrap', flexShrink: 0 }}>System</span>
                 </div>
 
                 {strategies.map((strat) => (
                   <div key={strat.strategy_id} style={{ padding: '12px', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '8px', background: selectedStrategyId === strat.strategy_id ? 'rgba(59, 130, 246, 0.1)' : 'rgba(255,255,255,0.02)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
                       <div style={{ fontWeight: 'bold', fontSize: '14px' }}>{strat.strategy_name}</div>
-                      <div style={{ display: 'flex', gap: '4px' }}>
-                        <span className={`badge ${strat.status === 'Published' ? 'badge-success' : 'badge-warning'}`} style={{ fontSize: '10px' }}>
+                      <div style={{ display: 'flex', gap: '4px', flexShrink: 0 }}>
+                        <span className={`badge ${strat.status === 'Published' ? 'badge-success' : 'badge-warning'}`} style={{ fontSize: '10px', whiteSpace: 'nowrap' }}>
                           {strat.status}
                         </span>
-                        <span className="badge badge-secondary" style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
+                        <span className="badge badge-secondary" style={{ fontSize: '10px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
                           v{strat.version}
                         </span>
                       </div>
                     </div>
                     {strat.description && <div className="text-muted text-sm" style={{ fontSize: '12px' }}>{strat.description}</div>}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '4px', borderTop: '1px solid rgba(255,255,255,0.03)', paddingTop: '8px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '4px', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '8px' }}>
                       <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{strat.strategy_type} • {strat.visibility}</span>
-                      <div style={{ display: 'flex', gap: '8px' }}>
-                        <button className="btn btn-primary btn-sm" style={{ padding: '2px 6px', fontSize: '11px', background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', border: 'none' }} onClick={() => navigate(`/strategy/${strat.strategy_id}/validate`, { state: { definition: strat.strategy_definition, strategyName: strat.strategy_name } })}>Validate</button>
-                        <button className="btn btn-secondary btn-sm" style={{ padding: '2px 6px', fontSize: '11px' }} onClick={() => handleEdit(strat)}>Edit</button>
-                        <button className="btn btn-secondary btn-sm" style={{ padding: '2px 6px', fontSize: '11px' }} onClick={() => handleDuplicate(strat.strategy_id, strat.strategy_name)}>Clone</button>
-                        <button className="btn btn-secondary btn-sm" style={{ padding: '2px 6px', fontSize: '11px' }} onClick={() => handleExportJSON(strat)}>Export</button>
-                        <button className="btn btn-secondary btn-sm" style={{ padding: '2px 6px', fontSize: '11px', color: '#ef4444' }} onClick={() => handleDelete(strat.strategy_id)}>Del</button>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                        <button className="btn btn-primary btn-sm" style={{ padding: '4px 8px', fontSize: '11px', whiteSpace: 'nowrap', background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', border: 'none' }} onClick={() => navigate(`/strategy/${strat.strategy_id}/validate`, { state: { definition: strat.strategy_definition, strategyName: strat.strategy_name } })}>Validate</button>
+                        <button className="btn btn-secondary btn-sm" style={{ padding: '4px 8px', fontSize: '11px', whiteSpace: 'nowrap' }} onClick={() => handleEdit(strat)}>Edit</button>
+                        <button className="btn btn-secondary btn-sm" style={{ padding: '4px 8px', fontSize: '11px', whiteSpace: 'nowrap' }} onClick={() => handleDuplicate(strat.strategy_id, strat.strategy_name)}>Clone</button>
+                        <button className="btn btn-secondary btn-sm" style={{ padding: '4px 8px', fontSize: '11px', whiteSpace: 'nowrap' }} onClick={() => handleExportJSON(strat)}>Export</button>
+                        <button className="btn btn-secondary btn-sm" style={{ padding: '4px 8px', fontSize: '11px', whiteSpace: 'nowrap', color: '#ef4444' }} onClick={() => handleDelete(strat.strategy_id)}>Del</button>
                       </div>
                     </div>
                   </div>
@@ -914,13 +921,21 @@ export default function QuantStrategyStudio() {
                           <th>Custom Rank</th>
                           <th>PMS Rank</th>
                           <th>Rank Shift</th>
-                          <th>XAI Preview</th>
+                          <th style={{ textAlign: 'center' }}>Actions</th>
                         </tr>
                       </thead>
                       <tbody>
                         {previewStocks.slice(0, 10).map((stock) => (
-                          <tr key={stock.symbol}>
-                            <td style={{ fontWeight: 'bold' }}>{stock.symbol}</td>
+                          <tr
+                            key={stock.symbol}
+                            onClick={() => openDrawer({ symbol: stock.symbol, company_name: stock.company_name || stock.symbol, custom_rank: stock.custom_rank, total: previewStocks.length })}
+                            style={{ cursor: 'pointer', transition: 'background 0.15s' }}
+                            onMouseEnter={e => e.currentTarget.style.background = 'rgba(59,130,246,0.06)'}
+                            onMouseLeave={e => e.currentTarget.style.background = ''}
+                          >
+                            <td style={{ fontWeight: 'bold' }}>{stock.symbol}
+                              <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 'normal', marginTop: '1px' }}>{stock.company_name}</div>
+                            </td>
                             <td style={{ textAlign: 'center', fontWeight: 'bold', color: '#60a5fa' }}>{stock.custom_score}</td>
                             <td style={{ textAlign: 'center', color: 'var(--text-muted)' }}>{stock.default_score}</td>
                             <td style={{ textAlign: 'center', color: stock.score_diff > 0 ? '#10b981' : (stock.score_diff < 0 ? '#ef4444' : 'inherit') }}>
@@ -937,14 +952,23 @@ export default function QuantStrategyStudio() {
                             <td style={{ textAlign: 'center', color: stock.rank_diff > 0 ? '#10b981' : (stock.rank_diff < 0 ? '#ef4444' : 'inherit') }}>
                               {stock.rank_diff > 0 ? `↑ ${stock.rank_diff}` : (stock.rank_diff < 0 ? `↓ ${Math.abs(stock.rank_diff)}` : '—')}
                             </td>
-                            <td style={{ textAlign: 'center' }}>
-                              <button
-                                className="btn btn-secondary btn-sm"
-                                style={{ padding: '2px 6px', fontSize: '10px' }}
-                                onClick={() => setExplainStockSymbol(stock.symbol)}
-                              >
-                                🔎 Explain
-                              </button>
+                            <td style={{ textAlign: 'center' }} onClick={e => e.stopPropagation()}>
+                              <div style={{ display: 'flex', gap: '4px', justifyContent: 'center' }}>
+                                <button
+                                  className="btn btn-primary btn-sm"
+                                  style={{ padding: '3px 8px', fontSize: '10px', background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)', border: 'none', whiteSpace: 'nowrap' }}
+                                  onClick={() => openDrawer({ symbol: stock.symbol, company_name: stock.company_name || stock.symbol, custom_rank: stock.custom_rank, total: previewStocks.length })}
+                                >
+                                  ▶ Analyze
+                                </button>
+                                <button
+                                  className="btn btn-secondary btn-sm"
+                                  style={{ padding: '3px 6px', fontSize: '10px' }}
+                                  onClick={() => setExplainStockSymbol(stock.symbol)}
+                                >
+                                  🔎
+                                </button>
+                              </div>
                             </td>
                           </tr>
                         ))}
@@ -1023,6 +1047,19 @@ export default function QuantStrategyStudio() {
           symbol={explainStockSymbol}
           strategyId={buildTransientDefinition()} // Passes dynamic transient definition for real-time calculations!
           onClose={() => setExplainStockSymbol(null)}
+        />
+      )}
+
+      {/* Stock Analysis Drawer — per-stock strategy testing */}
+      {drawerStock && (
+        <StockAnalysisDrawer
+          symbol={drawerStock.symbol}
+          companyName={drawerStock.company_name}
+          currentDefinition={buildTransientDefinition()}
+          strategies={strategies}
+          cachedRank={drawerStock.custom_rank ?? null}
+          cachedTotal={(drawerStock.total ?? previewStocks.length) || null}
+          onClose={closeDrawer}
         />
       )}
     </div>

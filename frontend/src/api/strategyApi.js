@@ -24,3 +24,16 @@ export const executeStrategyScoring = (definition, snapshotId = null) => {
   if (snapshotId) params.snapshot_id = snapshotId;
   return client.post('/strategies/execute', definition, { params });
 };
+
+/**
+ * Test a strategy against a single stock.
+ * Returns: { symbol, strategy_score, recommendation, confidence, rank, total_stocks, feature_breakdown, ... }
+ */
+export const testStockStrategy = (strategy, symbol, snapshotId = null) =>
+  client.post('/strategies/test-stock', { strategy, symbol, snapshot_id: snapshotId });
+
+/**
+ * Fetch available historical snapshot IDs and dates for the Historical tab.
+ */
+export const fetchSnapshotsList = (limit = 10) =>
+  client.get('/strategies/snapshots/list', { params: { limit } });

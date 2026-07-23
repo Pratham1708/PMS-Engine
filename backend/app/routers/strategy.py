@@ -261,3 +261,147 @@ async def execute_transient_scoring(
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Dynamic strategy scoring execution failed: {e}")
+
+
+
+@router.post("/test-stock")
+async def test_stock_strategy(
+    body: dict = Body(..., example={"strategy": {}, "symbol": "RELIANCE", "snapshot_id": None})
+):
+    """
+    Test the current strategy against a single stock.
+    Returns full score, recommendation, confidence, and feature-level breakdown.
+    Used by the Stock Analysis Drawer for per-stock explainability.
+    """
+    try:
+        definition = body.get("strategy", {})
+        symbol = body.get("symbol", "").strip().upper()
+        snapshot_id = body.get("snapshot_id", None)
+
+        if not symbol:
+            raise HTTPException(status_code=422, detail="symbol is required")
+        if not definition:
+            raise HTTPException(status_code=422, detail="strategy definition is required")
+
+        # Normalize the definition
+        definition = normalize_strategy_definition(definition)
+
+        # Execute explainability for this single stock
+        explain_result = strategy_service.explain_custom_strategy_score(
+            definition, symbol, snapshot_id
+        )
+
+        # Also get rank if a full-universe cached run is available
+        rank = None
+        total = None
+        try:
+            all_stocks = strategy_service.execute_scoring_on_snapshot(definition, snapshot_id)
+            total = len(all_stocks)
+            for idx, s in enumerate(all_stocks, 1):
+                if s["symbol"].upper() == symbol:
+                    rank = idx
+                    break
+        except Exception:
+            pass  # rank is optional
+
+        # Derive sub-scores from contributions if available
+        contribs = explain_result.current_contributions or []
+        technical_score = None
+        ml_score = None
+        gru_score = None
+        risk_score = None
+
+        # Pull from current_values if present
+        cv = explain_result.current_values or {}
+        if "technical_score" in cv:
+            technical_score = round(float(cv["technical_score"]), 2)
+        if "ml_score" in cv:
+            ml_score = round(float(cv["ml_score"]), 2)
+        if "gru_score" in cv:
+            gru_score = round(float(cv["gru_score"]), 2)
+        if "risk_score" in cv:
+            risk_score = round(float(cv["risk_score"]), 2)
+
+        strategy_score = round(explain_result.current_value or 0.0, 2)
+        recommendation = explain_result.interpretation[0].meaning if explain_result.interpretation else "HOLD"
+
+        # Determine actual recommendation from score vs thresholds
+        from app.services.strategy_runtime import build_runtime_config
+        runtime = build_runtime_config(definition)
+        t_buy = runtime["threshold_buy"]
+        t_sell = runtime["threshold_sell"]
+        if strategy_score >= t_buy:
+            recommendation = "STRONG BUY" if strategy_score >= t_buy + 20.0 else "BUY"
+        elif strategy_score <= t_sell:
+            recommendation = "STRONG SELL" if strategy_score <= t_sell - 20.0 else "SELL"
+        else:
+            recommendation = "HOLD"
+
+        # Confidence: map score → 0-100 confidence
+        confidence = min(100.0, max(0.0, abs(strategy_score)))
+
+        # Feature breakdown: one item per contribution
+        feature_breakdown = []
+        for c in contribs:
+            feature_breakdown.append({
+                "name": c.name,
+                "raw_value": c.value,
+                "weight": c.weight,
+                "contribution": c.contribution,
+                "direction": c.direction,
+                "description": c.description,
+            })
+
+        return {
+            "symbol": symbol,
+            "strategy_score": strategy_score,
+            "recommendation": recommendation,
+            "confidence": round(confidence, 2),
+            "rank": rank,
+            "total_stocks": total,
+            "feature_breakdown": feature_breakdown,
+            "technical_score": technical_score,
+            "ml_score": ml_score,
+            "gru_score": gru_score,
+            "risk_score": risk_score,
+            "explanation": {
+                "dynamic_explanation": explain_result.dynamic_explanation,
+                "why_not": explain_result.why_not,
+                "feature_attributions": [
+                    {
+                        "category": fa.category,
+                        "subtotal": fa.subtotal,
+                        "features": fa.features,
+                    }
+                    for fa in (explain_result.feature_attributions or [])
+                ],
+                "current_values": cv,
+            }
+        }
+    except HTTPException:
+        raise
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Stock strategy test failed: {e}")
+
+
+@router.get("/snapshots/list")
+async def list_available_snapshots(limit: int = Query(10, description="Max snapshots to return")):
+    """
+    Return available snapshot IDs and dates for the Historical Snapshots tab.
+    """
+    try:
+        snapshots = db.list_snapshot_dates(official_only=True, limit=limit)
+        return [
+            {
+                "snapshot_id": s["snapshot_id"],
+                "snapshot_date": s["snapshot_date"],
+                "market_date": s.get("market_date", s["snapshot_date"]),
+                "generated_at": s.get("generated_at", ""),
+                "stocks_processed": s.get("stocks_processed", 0),
+            }
+            for s in snapshots
+        ]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to list snapshots: {e}")
