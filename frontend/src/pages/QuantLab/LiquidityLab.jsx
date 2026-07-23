@@ -46,12 +46,7 @@ export default function LiquidityLab() {
         ]}
       />
 
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: '300px 1fr',
-        gap: '24px',
-        alignItems: 'start'
-      }}>
+      <div className="quant-lab-split-grid">
         {/* Settings */}
         <div className="card" style={{ padding: '20px', background: 'var(--bg-card)', border: '1px solid var(--border-primary)', borderRadius: 'var(--radius-lg)' }}>
           <h2 style={{ fontSize: '16px', fontWeight: '700', marginBottom: '16px', borderBottom: '1px solid var(--border-primary)', paddingBottom: '8px' }}>

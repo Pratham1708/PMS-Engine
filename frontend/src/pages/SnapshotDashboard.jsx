@@ -378,22 +378,24 @@ export default function SnapshotDashboard() {
             <button className="sd-link-btn" onClick={() => navigate('/search')}>View All →</button>
           </div>
           {topStocks.length > 0 ? (
-            <table className="sd-table">
-              <thead>
-                <tr>
-                  <th>Symbol</th>
-                  <th>Rating</th>
-                  <th>Composite</th>
-                  <th>Confidence</th>
-                  <th>Change</th>
-                </tr>
-              </thead>
-              <tbody>
-                {topStocks.slice(0, 8).map(s => (
-                  <StockRow key={s.symbol} stock={s} onNavigate={navigate} />
-                ))}
-              </tbody>
-            </table>
+            <div className="table-scroll-container">
+              <table className="sd-table">
+                <thead>
+                  <tr>
+                    <th>Symbol</th>
+                    <th>Rating</th>
+                    <th>Composite</th>
+                    <th>Confidence</th>
+                    <th>Change</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {topStocks.slice(0, 8).map(s => (
+                    <StockRow key={s.symbol} stock={s} onNavigate={navigate} />
+                  ))}
+                </tbody>
+              </table>
+            </div>
           ) : (
             <div className="sd-empty-cell">No strong buy/buy stocks in this snapshot</div>
           )}
@@ -441,35 +443,37 @@ export default function SnapshotDashboard() {
           <button className="sd-link-btn" onClick={() => navigate('/sectors')}>View All →</button>
         </div>
         {sectors.length > 0 ? (
-          <table className="sd-table">
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>Sector</th>
-                <th>Stocks</th>
-                <th>Avg Composite</th>
-                <th>Bullish %</th>
-                <th>Top Stock</th>
-              </tr>
-            </thead>
-            <tbody>
-              {sectors.map((s, i) => (
-                <tr key={s.sector}>
-                  <td className="sd-num">{i + 1}</td>
-                  <td><strong>{s.sector}</strong></td>
-                  <td className="sd-num">{s.stock_count}</td>
-                  <td className="sd-num">{s.avg_composite != null ? s.avg_composite.toFixed(1) : '—'}</td>
-                  <td>
-                    <div className="sd-sector-bar">
-                      <div className="sd-sector-fill" style={{ width: `${s.bullish_pct || 0}%` }} />
-                      <span>{s.bullish_pct != null ? `${s.bullish_pct.toFixed(0)}%` : '—'}</span>
-                    </div>
-                  </td>
-                  <td className="sd-stock-sym-small">{s.top_stock?.replace('.NS', '') || '—'}</td>
+          <div className="table-scroll-container">
+            <table className="sd-table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Sector</th>
+                  <th>Stocks</th>
+                  <th>Avg Composite</th>
+                  <th>Bullish %</th>
+                  <th>Top Stock</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {sectors.map((s, i) => (
+                  <tr key={s.sector}>
+                    <td className="sd-num">{i + 1}</td>
+                    <td><strong>{s.sector}</strong></td>
+                    <td className="sd-num">{s.stock_count}</td>
+                    <td className="sd-num">{s.avg_composite != null ? s.avg_composite.toFixed(1) : '—'}</td>
+                    <td>
+                      <div className="sd-sector-bar">
+                        <div className="sd-sector-fill" style={{ width: `${s.bullish_pct || 0}%` }} />
+                        <span>{s.bullish_pct != null ? `${s.bullish_pct.toFixed(0)}%` : '—'}</span>
+                      </div>
+                    </td>
+                    <td className="sd-stock-sym-small">{s.top_stock?.replace('.NS', '') || '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         ) : (
           <div className="sd-empty-cell">Sector data not available</div>
         )}

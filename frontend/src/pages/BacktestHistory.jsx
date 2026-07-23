@@ -75,7 +75,7 @@ export default function BacktestHistory() {
           </button>
         </div>
       ) : (
-        <div className="bth-list-wrap">
+        <div className="bth-list-wrap table-scroll-container">
           <table className="bth-table">
             <thead>
               <tr>

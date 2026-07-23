@@ -138,7 +138,7 @@ export default function WhatsChanged() {
       </div>
 
       {/* Portfolio highlights grid */}
-      <div className="comparison-metrics-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '16px', marginBottom: '32px' }}>
+      <div className="comparison-metrics-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 180px), 1fr))', gap: '16px', marginBottom: '32px' }}>
         <div className="comp-metric-card" style={{ background: 'rgba(17, 24, 39, 0.7)', border: '1px solid rgba(55, 65, 81, 0.5)', padding: '20px', borderRadius: '12px', display: 'flex', flexDirection: 'column' }}>
           <span style={{ fontSize: '12px', color: '#9ca3af', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Upgrades</span>
           <span style={{ fontSize: '32px', fontWeight: '800', color: '#10b981', marginTop: '8px' }}>
@@ -171,86 +171,21 @@ export default function WhatsChanged() {
         </div>
       </div>
 
-      {/* Visual Analytics Row 1 */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '24px', marginBottom: '32px' }}>
-        
-        {/* Waterfall Chart */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))', gap: '24px', marginBottom: '32px' }}>
         <div className="chart-card" style={{ background: 'rgba(17, 24, 39, 0.6)', border: '1px solid rgba(55, 65, 81, 0.4)', borderRadius: '16px', padding: '20px' }}>
           <h3 style={{ fontSize: '16px', fontWeight: '700', marginBottom: '16px' }}>📉 Composite Score Waterfall contribution</h3>
           <div style={{ width: '100%', height: '300px' }}>
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={visualizations.waterfall} margin={{ top: 20, right: 20, left: -20, bottom: 5 }}>
+              <BarChart data={visualizations.waterfall}>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(55, 65, 81, 0.3)" />
                 <XAxis dataKey="name" tick={{ fill: '#9ca3af', fontSize: '11px' }} />
                 <YAxis tick={{ fill: '#9ca3af', fontSize: '11px' }} />
-                <Tooltip 
-                  contentStyle={{ background: '#111827', border: '1px solid rgba(55, 65, 81, 0.7)', color: '#f9fafb' }} 
-                  formatter={(value) => [`${value} pts`, 'Score Delta']}
-                />
-                <ReferenceLine y={0} stroke="#9ca3af" strokeWidth={1} />
+                <Tooltip />
+                <ReferenceLine y={0} stroke="#9ca3af" />
                 <Bar dataKey="value">
-                  {visualizations.waterfall.map((entry, index) => {
-                    const isPositive = entry.value >= 0;
-                    const isTotal = entry.name.includes("Sum") || entry.name.includes("Baseline");
-                    let color = isPositive ? '#10b981' : '#ef4444';
-                    if (isTotal) color = '#6366f1';
-                    return <Cell key={`cell-${index}`} fill={color} />;
-                  })}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        {/* Score Distribution Histogram */}
-        <div className="chart-card" style={{ background: 'rgba(17, 24, 39, 0.6)', border: '1px solid rgba(55, 65, 81, 0.4)', borderRadius: '16px', padding: '20px' }}>
-          <h3 style={{ fontSize: '16px', fontWeight: '700', marginBottom: '16px' }}>📊 Score Change Distribution (Histogram)</h3>
-          <div style={{ width: '100%', height: '300px' }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={visualizations.histogram} margin={{ top: 20, right: 20, left: -20, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(55, 65, 81, 0.3)" />
-                <XAxis dataKey="bucket" tick={{ fill: '#9ca3af', fontSize: '10px' }} />
-                <YAxis tick={{ fill: '#9ca3af', fontSize: '11px' }} />
-                <Tooltip 
-                  contentStyle={{ background: '#111827', border: '1px solid rgba(55, 65, 81, 0.7)', color: '#f9fafb' }}
-                  formatter={(value) => [value, 'Stocks Count']}
-                />
-                <Bar dataKey="count" fill="#4f46e5">
-                  {visualizations.histogram.map((entry, index) => {
-                    let color = '#4f46e5';
-                    if (entry.bucket.includes("Improvement")) color = 'rgba(16, 185, 129, 0.85)';
-                    if (entry.bucket.includes("Decline")) color = 'rgba(239, 68, 68, 0.85)';
-                    if (entry.bucket.includes("No Change")) color = 'rgba(156, 163, 175, 0.6)';
-                    return <Cell key={`cell-${index}`} fill={color} />;
-                  })}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-      </div>
-
-      {/* Visual Analytics Row 2 */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '24px', marginBottom: '32px' }}>
-        
-        {/* Sector Heatmap / BarChart */}
-        <div className="chart-card" style={{ background: 'rgba(17, 24, 39, 0.6)', border: '1px solid rgba(55, 65, 81, 0.4)', borderRadius: '16px', padding: '20px' }}>
-          <h3 style={{ fontSize: '16px', fontWeight: '700', marginBottom: '16px' }}>🏢 Sector Composite delta</h3>
-          <div style={{ width: '100%', height: '300px' }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={visualizations.sector_heatmap} layout="vertical" margin={{ top: 10, right: 30, left: 20, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(55, 65, 81, 0.3)" />
-                <XAxis type="number" tick={{ fill: '#9ca3af', fontSize: '11px' }} />
-                <YAxis dataKey="sector" type="category" tick={{ fill: '#9ca3af', fontSize: '11px' }} width={120} />
-                <Tooltip 
-                  contentStyle={{ background: '#111827', border: '1px solid rgba(55, 65, 81, 0.7)', color: '#f9fafb' }}
-                  formatter={(value) => [`${value} pts`, 'Avg Composite Change']}
-                />
-                <Bar dataKey="avg_composite_change">
-                  {visualizations.sector_heatmap.map((entry, index) => {
-                    const fill = entry.avg_composite_change >= 0 ? '#10b981' : '#ef4444';
-                    return <Cell key={`cell-${index}`} fill={fill} />;
-                  })}
+                  {visualizations.waterfall.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.value >= 0 ? '#10b981' : '#ef4444'} />
+                  ))}
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
@@ -260,7 +195,7 @@ export default function WhatsChanged() {
         {/* Transition Matrix Grid */}
         <div className="chart-card" style={{ background: 'rgba(17, 24, 39, 0.6)', border: '1px solid rgba(55, 65, 81, 0.4)', borderRadius: '16px', padding: '20px', display: 'flex', flexDirection: 'column' }}>
           <h3 style={{ fontSize: '16px', fontWeight: '700', marginBottom: '16px' }}>🔀 Recommendation Transition Matrix</h3>
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+          <div className="table-scroll-container" style={{ flex: 1 }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', textAlign: 'center' }}>
               <thead>
                 <tr>

@@ -385,7 +385,7 @@ export default function QuantStrategyStudio() {
         </div>
       </div>
 
-      <div className="two-col" style={{ gridTemplateColumns: isEditing || selectedFeatureIds.size > 0 ? '1fr 2.5fr' : '1fr 1fr' }}>
+      <div className="studio-main-grid">
         {/* Left Side: Saved Library & Creator Panel */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           {/* Strategy Library */}

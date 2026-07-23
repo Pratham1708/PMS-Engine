@@ -404,7 +404,7 @@ export default function HistoricalSnapshots() {
       <div className="archive-section">
         <h2 style={{ fontSize: '20px', fontWeight: '800', marginBottom: '16px' }}>📁 Snapshot Registry Archive</h2>
         {dates.length > 0 ? (
-          <div className="archive-card" style={{ background: 'rgba(17, 24, 39, 0.6)', border: '1px solid rgba(55, 65, 81, 0.4)', borderRadius: '16px', padding: '20px' }}>
+          <div className="archive-card table-scroll-container" style={{ background: 'rgba(17, 24, 39, 0.6)', border: '1px solid rgba(55, 65, 81, 0.4)', borderRadius: '16px', padding: '20px' }}>
             <table className="archive-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', textAlign: 'left' }}>
               <thead>
                 <tr style={{ borderBottom: '2px solid rgba(55, 65, 81, 0.5)' }}>

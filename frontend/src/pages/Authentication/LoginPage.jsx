@@ -17,21 +17,9 @@ export default function LoginPage() {
   };
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', background: 'var(--color-bg-base)', color: 'var(--color-text-primary)' }}>
+    <div className="login-page-container">
       {/* Left Visual Panel */}
-      <div
-        style={{
-          flex: 1,
-          background: 'radial-gradient(circle at 30% 30%, rgba(99, 102, 241, 0.25) 0%, rgba(9, 13, 22, 1) 70%)',
-          borderRight: '1px solid var(--color-border-subtle)',
-          padding: '60px',
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'space-between',
-          position: 'relative',
-          overflow: 'hidden'
-        }}
-      >
+      <div className="login-visual-panel">
         <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none' }}>
           <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: 'linear-gradient(135deg, #6366f1 0%, #06b6d4 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
             <Cpu size={20} />
@@ -58,16 +46,7 @@ export default function LoginPage() {
       </div>
 
       {/* Right Form Panel */}
-      <div
-        style={{
-          width: '520px',
-          padding: '60px',
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'center',
-          background: 'var(--color-bg-surface)'
-        }}
-      >
+      <div className="login-form-panel">
         <div style={{ marginBottom: '32px' }}>
           <h3 style={{ fontSize: '1.8rem', fontWeight: '800', marginBottom: '8px' }}>
             {isRegister ? 'Create Workspace Account' : 'Sign in to Platform'}

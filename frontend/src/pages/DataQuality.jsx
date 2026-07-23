@@ -115,37 +115,37 @@ export default function DataQuality() {
       {/* Validation Checks Table */}
       <div className="dq-checks-card">
         <h3>📋 12 Institutional Pre-Publish Validation Checks</h3>
-        <table className="dq-checks-table">
-          <thead>
-            <tr>
-              <th>Check Name</th>
-              <th>Status</th>
-              <th>Result Detail</th>
-              <th className="num-col">Threshold</th>
-              <th className="num-col">Actual Value</th>
-            </tr>
-          </thead>
-          <tbody>
-            {dq.validation_checks?.map((check) => {
-              const statusCfg = CHECK_SEVERITY_COLORS[check.status] || { label: check.status, color: '#6b7280', bg: 'rgba(0,0,0,0.05)' };
-              return (
-                <tr key={check.check_name}>
-                  <td><strong>{check.check_name?.replace(/_/g, ' ').toUpperCase()}</strong></td>
-                  <td>
-                    <span className="dq-status-pill" style={{ color: statusCfg.color, backgroundColor: statusCfg.bg }}>
-                      {statusCfg.label}
-                    </span>
-                  </td>
-                  <td>{check.detail || '—'}</td>
-                  <td className="num-col">{check.threshold != null ? check.threshold : '—'}</td>
-                  <td className="num-col">
-                    <strong>{check.actual_value != null ? check.actual_value.toFixed(1) : '—'}</strong>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+        <div className="table-scroll-container">
+          <table className="dq-checks-table">
+            <thead>
+              <tr>
+                <th>Check Name</th>
+                <th>Status</th>
+                <th>Result Detail</th>
+                <th className="num-col">Threshold</th>
+                <th className="num-col">Actual Value</th>
+              </tr>
+            </thead>
+            <tbody>
+              {dq.validation_checks?.map((check) => {
+                const statusCfg = CHECK_SEVERITY_COLORS[check.status] || { label: check.status, color: '#6b7280', bg: 'rgba(0,0,0,0.05)' };
+                return (
+                  <tr key={check.check_name}>
+                    <td><strong>{check.check_name?.replace(/_/g, ' ').toUpperCase()}</strong></td>
+                    <td>
+                      <span className="dq-status-pill" style={{ color: statusCfg.color, backgroundColor: statusCfg.bg }}>
+                        {statusCfg.label}
+                      </span>
+                    </td>
+                    <td>{check.detail || '—'}</td>
+                    <td className="num-col">{check.threshold != null ? check.threshold : '—'}</td>
+                    <td className="num-col">{check.value != null ? check.value : '—'}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

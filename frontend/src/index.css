@@ -2646,15 +2646,20 @@ p, span, h1, h2, h3, h4, h5, h6, a, div, td, th {
   }
 }
 
+.reports-history-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
 .reports-history-table {
-  min-width: 700px;
+  width: 100%;
+  min-width: 640px;
 }
 
 .reports-history-table td,
 .reports-history-table th {
-  white-space: normal !important;
-  word-break: break-word !important;
-  overflow-wrap: break-word !important;
+  white-space: nowrap !important;
 }
 
 /* ===== QUANT LABORATORY CSS STYLES ===== */
@@ -4561,6 +4566,91 @@ p, span, h1, h2, h3, h4, h5, h6, a, div, td, th {
   }
   .qrl-main-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+/* ===== Responsive Mobile Pre-Login & Table Scroll Fixes ===== */
+.login-page-container {
+  min-height: 100vh;
+  display: flex;
+  background: var(--color-bg-base);
+  color: var(--color-text-primary);
+}
+
+.login-visual-panel {
+  flex: 1;
+  background: radial-gradient(circle at 30% 30%, rgba(99, 102, 241, 0.25) 0%, rgba(9, 13, 22, 1) 70%);
+  border-right: 1px solid var(--color-border-subtle);
+  padding: 60px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: relative;
+  overflow: hidden;
+}
+
+.login-form-panel {
+  width: 520px;
+  padding: 60px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  background: var(--color-bg-surface);
+}
+
+@media (max-width: 900px) {
+  .login-page-container {
+    flex-direction: column;
+  }
+  .login-visual-panel {
+    display: none;
+  }
+  .login-form-panel {
+    width: 100%;
+    max-width: 480px;
+    padding: 32px 20px;
+    box-sizing: border-box;
+    margin: 0 auto;
+  }
+}
+
+/* ===== QuantLab Responsive Split Grid ===== */
+.quant-lab-split-grid,
+.studio-main-grid {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+@media (max-width: 1024px) {
+  .quant-lab-split-grid,
+  .studio-main-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.bt-table-wrap,
+.table-responsive-wrapper,
+.table-scroll-container {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (max-width: 768px) {
+  table.data-table,
+  table.sd-table,
+  table.changes-table,
+  table.bth-table,
+  table.bt-trade-table,
+  table.dq-checks-table,
+  table.reports-history-table,
+  table.drivers-table,
+  table.diagnostics-table,
+  table.archive-table {
+    min-width: 580px;
   }
 }
 
