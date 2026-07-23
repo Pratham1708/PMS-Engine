@@ -94,7 +94,7 @@ export default function CompositeValidationLab() {
         </p>
       </div>
 
-      <div className="quant-lab-split-grid">
+      <div className="quant-lab-split-grid responsive-split-grid" style={{ display: 'grid', gridTemplateColumns: '250px 1fr', gap: '24px', alignItems: 'start' }}>
         {/* Navigation Sidebar */}
         <div className="card" style={{ padding: '16px', background: 'var(--bg-card)', border: '1px solid var(--border-primary)', borderRadius: 'var(--radius-lg)' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>

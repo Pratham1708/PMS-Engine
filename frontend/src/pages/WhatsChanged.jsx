@@ -171,7 +171,7 @@ export default function WhatsChanged() {
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))', gap: '24px', marginBottom: '32px' }}>
+      <div className="responsive-grid-400" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '24px', marginBottom: '32px' }}>
         <div className="chart-card" style={{ background: 'rgba(17, 24, 39, 0.6)', border: '1px solid rgba(55, 65, 81, 0.4)', borderRadius: '16px', padding: '20px' }}>
           <h3 style={{ fontSize: '16px', fontWeight: '700', marginBottom: '16px' }}>📉 Composite Score Waterfall contribution</h3>
           <div style={{ width: '100%', height: '300px' }}>

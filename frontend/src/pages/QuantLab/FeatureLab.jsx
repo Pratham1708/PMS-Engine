@@ -179,7 +179,7 @@ export default function FeatureLab() {
           <p style={{ color: 'var(--text-secondary)' }}>Computing VIF, Drift, SHAP, MI, and Permutation Importance values...</p>
         </div>
       ) : data ? (
-        <div className="quant-lab-split-grid">
+        <div className="quant-lab-split-grid responsive-split-grid" style={{ display: 'grid', gridTemplateColumns: '250px 1fr', gap: '24px', alignItems: 'start' }}>
           {/* Menu */}
           <div className="card" style={{ padding: '16px', background: 'var(--bg-card)', border: '1px solid var(--border-primary)', borderRadius: 'var(--radius-lg)' }}>
             <h2 style={{ fontSize: '14px', fontWeight: '700', color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: '12px', letterSpacing: '0.5px' }}>

@@ -4614,19 +4614,13 @@ p, span, h1, h2, h3, h4, h5, h6, a, div, td, th {
   }
 }
 
-/* ===== QuantLab Responsive Split Grid ===== */
-.quant-lab-split-grid,
-.studio-main-grid {
-  display: grid;
-  grid-template-columns: 320px 1fr;
-  gap: 24px;
-  align-items: start;
-}
-
+/* ===== Responsive Split Grid Utility ===== */
+/* Preserves original PC Desktop grid columns (e.g., 250px 1fr, 350px 1fr, 1fr 2.5fr) and only stacks on tablet/mobile viewports */
 @media (max-width: 1024px) {
+  .responsive-split-grid,
   .quant-lab-split-grid,
   .studio-main-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr !important;
   }
 }
 
@@ -4640,6 +4634,9 @@ p, span, h1, h2, h3, h4, h5, h6, a, div, td, th {
 }
 
 @media (max-width: 768px) {
+  .responsive-grid-400 {
+    grid-template-columns: 1fr !important;
+  }
   table.data-table,
   table.sd-table,
   table.changes-table,
