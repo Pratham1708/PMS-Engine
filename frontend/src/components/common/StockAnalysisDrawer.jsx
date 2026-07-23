@@ -3,7 +3,7 @@ import {
   BarChart, Bar, Cell, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, PieChart, Pie, Legend, ReferenceLine
 } from 'recharts';
-import { testStockStrategy, fetchSnapshotsList, previewStrategyExplain } from '../../api/strategyApi';
+import { fetchSnapshotsList, previewStrategyExplain } from '../../api/strategyApi';
 import LoadingSpinner from './LoadingSpinner';
 import RatingBadge from './RatingBadge';
 
@@ -24,6 +24,60 @@ const PIE_PALETTE = [
   '#3b82f6', '#8b5cf6', '#10b981', '#f59e0b', '#ef4444',
   '#06b6d4', '#ec4899', '#a78bfa', '#34d399', '#fb923c',
 ];
+
+// ── Transform ExplainScoreResponse → drawer result format ─────────────────────
+
+function transformExplainToResult(explainData, definition) {
+  if (!explainData) return null;
+
+  const sc = definition?.scoring_config || {};
+  const tBuy = sc.threshold_buy ?? 35;
+  const tSell = sc.threshold_sell ?? -15;
+  const score = explainData.current_value ?? 0;
+
+  let recommendation = 'HOLD';
+  if (score >= tBuy) recommendation = score >= tBuy + 20 ? 'STRONG BUY' : 'BUY';
+  else if (score <= tSell) recommendation = score <= tSell - 20 ? 'STRONG SELL' : 'SELL';
+
+  const confidence = Math.min(100, Math.max(0, Math.abs(score)));
+
+  // Feature breakdown from current_contributions
+  const feature_breakdown = (explainData.current_contributions || []).map(c => ({
+    name: c.name,
+    raw_value: c.value,
+    weight: c.weight,
+    contribution: c.contribution,
+    direction: c.direction,
+    description: c.description,
+  }));
+
+  // Sub-scores from current_values if present
+  const cv = explainData.current_values || {};
+
+  return {
+    symbol: explainData.symbol,
+    strategy_score: Math.round(score * 100) / 100,
+    recommendation,
+    confidence: Math.round(confidence * 100) / 100,
+    rank: null,
+    total_stocks: null,
+    feature_breakdown,
+    technical_score: cv.technical_score != null ? Math.round(cv.technical_score * 100) / 100 : null,
+    ml_score: cv.ml_score != null ? Math.round(cv.ml_score * 100) / 100 : null,
+    gru_score: cv.gru_score != null ? Math.round(cv.gru_score * 100) / 100 : null,
+    risk_score: cv.risk_score != null ? Math.round(cv.risk_score * 100) / 100 : null,
+    explanation: {
+      dynamic_explanation: explainData.dynamic_explanation,
+      why_not: explainData.why_not,
+      feature_attributions: (explainData.feature_attributions || []).map(fa => ({
+        category: fa.category,
+        subtotal: fa.subtotal,
+        features: fa.features,
+      })),
+      current_values: cv,
+    },
+  };
+}
 
 // ── SVG Arc Gauge ──────────────────────────────────────────────────────────────
 
@@ -130,22 +184,30 @@ export default function StockAnalysisDrawer({
 
   useEffect(() => {
     if (!symbol || !currentDefinition) return;
+    // Guard: need at least one feature to score
+    if (!currentDefinition.features || currentDefinition.features.length === 0) {
+      setError('No features selected. Configure features in Steps 2–4 first.');
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     setError(null);
-    testStockStrategy(currentDefinition, symbol)
+    previewStrategyExplain(currentDefinition, symbol)
       .then(res => {
-        setResult(res.data);
-        // Seed what-if weights from the current definition
+        const transformed = transformExplainToResult(res.data, currentDefinition);
+        setResult(transformed);
+        // Seed what-if weights from current definition
         const seedWeights = {};
         (currentDefinition.weights || []).forEach(w => {
           seedWeights[w.feature_id] = w.weight;
         });
         setWhatIfWeights(seedWeights);
-        setWhatIfResult(res.data);
+        setWhatIfResult(transformed);
       })
       .catch(err => {
-        console.error('[StockAnalysisDrawer] test-stock failed', err);
-        setError('Could not load strategy analysis. Ensure the backend is running.');
+        const detail = err?.response?.data?.detail || err?.message || 'Unknown error';
+        console.error('[StockAnalysisDrawer] preview failed', err);
+        setError(`Analysis failed: ${detail}`);
       })
       .finally(() => setLoading(false));
   }, [symbol, currentDefinition]);
@@ -186,8 +248,8 @@ export default function StockAnalysisDrawer({
     if (!snapId || !symbol || !currentDefinition) return;
     setHistLoading(true);
     setHistResult(null);
-    testStockStrategy(currentDefinition, symbol, snapId)
-      .then(r => setHistResult(r.data))
+    previewStrategyExplain(currentDefinition, symbol, snapId)
+      .then(r => setHistResult(transformExplainToResult(r.data, currentDefinition)))
       .catch(() => setHistResult(null))
       .finally(() => setHistLoading(false));
   }, [symbol, currentDefinition]);
@@ -208,8 +270,8 @@ export default function StockAnalysisDrawer({
         ),
       };
       setWhatIfLoading(true);
-      testStockStrategy(patchedDef, symbol)
-        .then(r => setWhatIfResult(r.data))
+      previewStrategyExplain(patchedDef, symbol)
+        .then(r => setWhatIfResult(transformExplainToResult(r.data, patchedDef)))
         .catch(() => {})
         .finally(() => setWhatIfLoading(false));
     }, 500);

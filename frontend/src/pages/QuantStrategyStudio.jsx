@@ -903,14 +903,21 @@ export default function QuantStrategyStudio() {
 
               {/* Side-by-side stocks comparison preview */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <h4 style={{ margin: 0, fontSize: '14px', color: '#60a5fa' }}>Live Scored Universe Preview (Dynamic Nifty 50)</h4>
-                
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <h4 style={{ margin: 0, fontSize: '14px', color: '#60a5fa' }}>Live Scored Universe Preview (Dynamic Nifty 50)</h4>
+                  {previewStocks.length > 0 && (
+                    <span style={{ fontSize: '11px', color: 'var(--text-muted)', background: 'rgba(255,255,255,0.06)', padding: '2px 8px', borderRadius: 4 }}>
+                      {previewStocks.length} stocks
+                    </span>
+                  )}
+                </div>
+
                 {previewLoading ? (
                   <div style={{ textAlign: 'center', padding: '30px' }}><LoadingSpinner /> Loading Live Calculations...</div>
                 ) : (
-                  <div style={{ overflowX: 'auto', maxHeight: '200px' }}>
+                  <div style={{ overflowX: 'auto', maxHeight: '420px', overflowY: 'auto' }}>
                     <table className="table" style={{ width: '100%', fontSize: '12px' }}>
-                      <thead>
+                      <thead style={{ position: 'sticky', top: 0, background: '#0a1628', zIndex: 1 }}>
                         <tr>
                           <th style={{ textAlign: 'left' }}>Symbol</th>
                           <th>Custom Score</th>
@@ -925,7 +932,7 @@ export default function QuantStrategyStudio() {
                         </tr>
                       </thead>
                       <tbody>
-                        {previewStocks.slice(0, 10).map((stock) => (
+                        {previewStocks.map((stock) => (
                           <tr
                             key={stock.symbol}
                             onClick={() => openDrawer({ symbol: stock.symbol, company_name: stock.company_name || stock.symbol, custom_rank: stock.custom_rank, total: previewStocks.length })}
