@@ -77,7 +77,7 @@ export default function QuantLabHome() {
   return (
     <div style={{ padding: '24px', maxWidth: '1400px', margin: '0 auto' }}>
       {/* Header */}
-      <div style={{ marginBottom: '32px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+      <div style={{ marginBottom: '32px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px' }}>
         <div>
           <h1 style={{ fontSize: '28px', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '12px' }}>
             🔬 Quant Research Laboratory
@@ -86,7 +86,7 @@ export default function QuantLabHome() {
             Institutional Portfolio Validation Platform & Backtesting Environment · PMS Engine v2
           </p>
         </div>
-        <div style={{ display: 'flex', gap: '8px' }}>
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
           <button
             onClick={() => navigate('/lab/experiments')}
             className="btn-secondary"
@@ -138,7 +138,7 @@ export default function QuantLabHome() {
       {/* Research Pipeline Promotion Stage Stepper */}
       <div className="card" style={{ padding: '24px', background: 'var(--bg-card)', border: '1px solid var(--border-primary)', borderRadius: 'var(--radius-lg)', marginBottom: '32px' }}>
         <h3 style={{ fontSize: '15px', fontWeight: '700', marginBottom: '16px' }}>Research Pipeline Promotion Workflow</h3>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '20px' }}>
+        <div className="quant-workflow-grid">
           {[
             { stage: '1. Idea Formulation', desc: 'Technical & joint rule backtests.', icon: '💡', active: true, color: '#6366f1' },
             { stage: '2. Multi-Model Tuning', desc: 'ML models calibration and hyperopt.', icon: '🎛️', active: true, color: '#8b5cf6' },
@@ -155,13 +155,14 @@ export default function QuantLabHome() {
                 borderRadius: 'var(--radius-md)',
                 display: 'flex',
                 alignItems: 'flex-start',
-                gap: '12px'
+                gap: '12px',
+                minWidth: 0
               }}
             >
-              <span style={{ fontSize: '20px' }}>{step.icon}</span>
-              <div>
-                <h4 style={{ fontSize: '13.5px', fontWeight: '700', margin: 0 }}>{step.stage}</h4>
-                <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '4px', margin: 0 }}>{step.desc}</p>
+              <span style={{ fontSize: '20px', flexShrink: 0 }}>{step.icon}</span>
+              <div style={{ minWidth: 0 }}>
+                <h4 style={{ fontSize: '13.5px', fontWeight: '700', margin: 0, wordBreak: 'break-word' }}>{step.stage}</h4>
+                <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '4px', margin: 0, wordBreak: 'break-word' }}>{step.desc}</p>
               </div>
             </div>
           ))}
@@ -169,12 +170,7 @@ export default function QuantLabHome() {
       </div>
 
       {/* Split Layout: Modules on Left, Live Alert Feed & Metrics on Right */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: '1fr 380px',
-        gap: '24px',
-        alignItems: 'start'
-      }}>
+      <div className="quant-home-split-grid">
         {/* Left Side: Modular Categories */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
           

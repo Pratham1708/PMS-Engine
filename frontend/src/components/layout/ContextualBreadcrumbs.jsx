@@ -24,17 +24,21 @@ export default function ContextualBreadcrumbs() {
         gap: '6px',
         fontSize: '0.8rem',
         color: 'var(--color-text-secondary)',
-        padding: '12px 24px 0 24px'
+        padding: '8px 0 0 0',
+        maxWidth: '100%',
+        overflowX: 'auto',
+        whiteSpace: 'nowrap',
+        WebkitOverflowScrolling: 'touch'
       }}
     >
-      <Link to="/workspace" style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--color-text-muted)' }}>
+      <Link to="/workspace" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: 'var(--color-text-muted)', whiteSpace: 'nowrap', flexShrink: 0 }}>
         <Home size={13} />
         <span>Workspace</span>
       </Link>
-      <ChevronRight size={12} style={{ color: 'var(--color-text-muted)' }} />
-      <span style={{ color: 'var(--color-text-muted)' }}>{category}</span>
-      <ChevronRight size={12} style={{ color: 'var(--color-text-muted)' }} />
-      <span style={{ fontWeight: '600', color: 'var(--color-text-primary)' }}>{pageName}</span>
+      <ChevronRight size={12} style={{ color: 'var(--color-text-muted)', flexShrink: 0 }} />
+      <span style={{ color: 'var(--color-text-muted)', whiteSpace: 'nowrap', flexShrink: 0 }}>{category}</span>
+      <ChevronRight size={12} style={{ color: 'var(--color-text-muted)', flexShrink: 0 }} />
+      <span style={{ fontWeight: '600', color: 'var(--color-text-primary)', whiteSpace: 'nowrap', flexShrink: 0 }}>{pageName}</span>
     </div>
   );
 }

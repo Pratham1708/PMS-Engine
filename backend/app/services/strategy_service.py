@@ -492,11 +492,104 @@ def explain_custom_strategy_score(definition: Dict[str, Any], symbol: str, snaps
         conn.close()
 
 
-# ── SQLAlchemy CRUD Service Methods ──
+def seed_default_strategies_if_empty(db_session: Session):
+    """Seed standard default strategies into database if empty."""
+    try:
+        count = db_session.query(StrategyMaster).count()
+        if count > 0:
+            return
+
+        now_str = datetime.now().isoformat()
+
+        default_strats = [
+            {
+                "id": "strat_balanced_default",
+                "name": "Institutional Balanced Alpha Strategy",
+                "description": "Multi-factor strategy balancing technical indicators, machine learning signals, and reliability scores.",
+                "type": "Stock",
+                "definition": {
+                    "features": [
+                        {"feature_id": "rsi", "feature_group": "Technical", "enabled": True},
+                        {"feature_id": "macd", "feature_group": "Technical", "enabled": True},
+                        {"feature_id": "ml_score", "feature_group": "Machine Learning", "enabled": True},
+                        {"feature_id": "reliability_score", "feature_group": "Quality", "enabled": True}
+                    ],
+                    "weights": [
+                        {"feature_id": "rsi", "weight": 25.0, "normalization_method": "Percentile Rank"},
+                        {"feature_id": "macd", "weight": 25.0, "normalization_method": "Z-Score"},
+                        {"feature_id": "ml_score", "weight": 30.0, "normalization_method": "Default"},
+                        {"feature_id": "reliability_score", "weight": 20.0, "normalization_method": "Default"}
+                    ],
+                    "scoring_config": {
+                        "scoring_method": "Weighted Average",
+                        "threshold_buy": 35.0,
+                        "threshold_hold": -15.0,
+                        "threshold_sell": -15.0
+                    }
+                }
+            },
+            {
+                "id": "strat_momentum_default",
+                "name": "Momentum & Breakout Strategy",
+                "description": "Trend-following strategy prioritizing technical momentum, RSI, ADX, and breakout signals.",
+                "type": "Stock",
+                "definition": {
+                    "features": [
+                        {"feature_id": "rsi", "feature_group": "Technical", "enabled": True},
+                        {"feature_id": "adx", "feature_group": "Technical", "enabled": True},
+                        {"feature_id": "ema20", "feature_group": "Technical", "enabled": True},
+                        {"feature_id": "stoch_k", "feature_group": "Technical", "enabled": True}
+                    ],
+                    "weights": [
+                        {"feature_id": "rsi", "weight": 35.0, "normalization_method": "Percentile Rank"},
+                        {"feature_id": "adx", "weight": 25.0, "normalization_method": "Default"},
+                        {"feature_id": "ema20", "weight": 20.0, "normalization_method": "Default"},
+                        {"feature_id": "stoch_k", "weight": 20.0, "normalization_method": "Percentile Rank"}
+                    ],
+                    "scoring_config": {
+                        "scoring_method": "Weighted Average",
+                        "threshold_buy": 40.0,
+                        "threshold_hold": -10.0,
+                        "threshold_sell": -20.0
+                    }
+                }
+            }
+        ]
+
+        for s in default_strats:
+            strat_obj = StrategyMaster(
+                strategy_id=s["id"],
+                strategy_name=s["name"],
+                description=s["description"],
+                strategy_type=s["type"],
+                strategy_prompt="",
+                strategy_definition=json.dumps(s["definition"]),
+                visibility="Public",
+                version="1.0.0",
+                status="Published",
+                created_at=now_str,
+                updated_at=now_str
+            )
+            ver_obj = StrategyVersion(
+                strategy_id=s["id"],
+                version="1.0.0",
+                timestamp=now_str,
+                change_summary="System default seed strategy.",
+                created_by="system"
+            )
+            db_session.add(strat_obj)
+            db_session.add(ver_obj)
+
+        db_session.commit()
+    except Exception as e:
+        logger.error(f"Failed to seed default strategies: {e}")
+        db_session.rollback()
+
 
 def get_strategies(db_session: Session) -> List[StrategyMaster]:
-    """Retrieve all strategy master records."""
-    return db_session.query(StrategyMaster).order_by(StrategyMaster.created_at.desc()).all() if hasattr(StrategyMaster, "created_at") else db_session.query(StrategyMaster).all()
+    """Retrieve all strategy master records, seeding defaults if empty."""
+    seed_default_strategies_if_empty(db_session)
+    return db_session.query(StrategyMaster).order_by(StrategyMaster.created_at.desc()).all()
 
 
 def get_strategy_by_id(db_session: Session, strategy_id: str) -> Optional[StrategyMaster]:

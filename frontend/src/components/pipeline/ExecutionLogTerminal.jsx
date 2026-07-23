@@ -26,7 +26,7 @@ export default function ExecutionLogTerminal({ logs = [] }) {
           if (lg.type === 'progress') logColor = '#cbd5e1';
 
           return (
-            <div key={idx} style={{ fontSize: '11px', color: logColor, lineHeight: '1.5' }}>
+            <div key={idx} style={{ fontSize: '11px', color: logColor, lineHeight: '1.5', wordBreak: 'break-word', overflowWrap: 'break-word', whiteSpace: 'pre-wrap' }}>
               <span style={{ color: '#475569', marginRight: '6px' }}>[{lg.time}]</span>
               {lg.text}
             </div>

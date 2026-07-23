@@ -192,27 +192,63 @@ export default function MobileDrawer({ isOpen, onClose }) {
                 </button>
 
                 {/* Sub-Items */}
-                {isExpanded && menu.items && (
-                  <div style={{ paddingLeft: '12px', marginTop: '2px', borderLeft: '2px solid var(--color-border-subtle)' }}>
-                    {menu.items.map((item, idx) => (
-                      <Link
-                        key={idx}
-                        to={item.path || '#'}
-                        onClick={onClose}
-                        style={{
-                          display: 'block',
-                          minHeight: '40px',
-                          padding: '8px 12px',
-                          color: 'var(--color-text-secondary)',
-                          fontSize: '0.825rem',
-                          textDecoration: 'none',
-                          borderRadius: 'var(--radius-xs)',
-                          lineHeight: '24px'
-                        }}
-                      >
-                        {item.title}
-                      </Link>
-                    ))}
+                {isExpanded && (
+                  <div style={{ paddingLeft: '12px', marginTop: '4px', borderLeft: '2px solid var(--color-accent-primary)' }}>
+                    {menu.isGrouped && menu.groups ? (
+                      menu.groups.map((group, gIdx) => (
+                        <div key={gIdx} style={{ marginBottom: '8px' }}>
+                          <div style={{ fontSize: '0.7rem', fontWeight: '700', textTransform: 'uppercase', color: 'var(--color-text-muted)', padding: '4px 12px 2px 12px', letterSpacing: '0.5px' }}>
+                            {group.category}
+                          </div>
+                          {group.items.map((item, iIdx) => (
+                            <Link
+                              key={iIdx}
+                              to={item.route || item.path || '#'}
+                              onClick={onClose}
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                minHeight: '36px',
+                                padding: '6px 12px',
+                                color: item.isLocked ? 'var(--color-text-muted)' : 'var(--color-text-secondary)',
+                                fontSize: '0.825rem',
+                                textDecoration: 'none',
+                                borderRadius: 'var(--radius-xs)',
+                                lineHeight: '20px'
+                              }}
+                            >
+                              <span>{item.label || item.title}</span>
+                              {item.isLocked && (
+                                <span style={{ fontSize: '0.65rem', background: 'rgba(245, 158, 11, 0.15)', color: '#f59e0b', padding: '1px 6px', borderRadius: '10px', fontWeight: '600' }}>
+                                  {item.remark || 'Soon'}
+                                </span>
+                              )}
+                            </Link>
+                          ))}
+                        </div>
+                      ))
+                    ) : (
+                      (menu.children || menu.items || []).map((item, idx) => (
+                        <Link
+                          key={idx}
+                          to={item.route || item.path || '#'}
+                          onClick={onClose}
+                          style={{
+                            display: 'block',
+                            minHeight: '36px',
+                            padding: '6px 12px',
+                            color: 'var(--color-text-secondary)',
+                            fontSize: '0.825rem',
+                            textDecoration: 'none',
+                            borderRadius: 'var(--radius-xs)',
+                            lineHeight: '20px'
+                          }}
+                        >
+                          {item.label || item.title}
+                        </Link>
+                      ))
+                    )}
                   </div>
                 )}
               </div>

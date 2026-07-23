@@ -33,6 +33,61 @@ def get_db_session_dep():
         session.close()
 
 
+def normalize_strategy_definition(defn: dict) -> dict:
+    if not isinstance(defn, dict):
+        defn = {}
+
+    raw_feats = defn.get("features", [])
+    norm_feats = []
+    if isinstance(raw_feats, list):
+        for f in raw_feats:
+            if isinstance(f, str):
+                norm_feats.append({"feature_id": f, "feature_group": "General", "enabled": True})
+            elif isinstance(f, dict) and "feature_id" in f:
+                norm_feats.append({
+                    "feature_id": f["feature_id"],
+                    "feature_group": f.get("feature_group", "General"),
+                    "enabled": bool(f.get("enabled", True))
+                })
+    defn["features"] = norm_feats
+
+    raw_wts = defn.get("weights", [])
+    norm_wts = []
+    if isinstance(raw_wts, dict):
+        for fid, wt in raw_wts.items():
+            norm_wts.append({
+                "feature_id": fid,
+                "weight": float(wt),
+                "normalization_method": "Default",
+                "contribution_method": "Additive"
+            })
+    elif isinstance(raw_wts, list):
+        for w in raw_wts:
+            if isinstance(w, dict) and "feature_id" in w:
+                norm_wts.append({
+                    "feature_id": w["feature_id"],
+                    "weight": float(w.get("weight", 0.0)),
+                    "normalization_method": w.get("normalization_method", "Default"),
+                    "contribution_method": w.get("contribution_method", "Additive")
+                })
+    defn["weights"] = norm_wts
+
+    sc = defn.get("scoring_config", {})
+    if not isinstance(sc, dict):
+        sc = {}
+    defn["scoring_config"] = {
+        "scoring_method": sc.get("scoring_method", "Weighted Average"),
+        "aggregation_method": sc.get("aggregation_method", "Additive"),
+        "threshold_buy": float(sc.get("threshold_buy", 35.0)),
+        "threshold_hold": float(sc.get("threshold_hold", -15.0)),
+        "threshold_sell": float(sc.get("threshold_sell", -15.0)),
+        "normalization": sc.get("normalization", "Default"),
+        "recommendation_method": sc.get("recommendation_method", "Standard")
+    }
+
+    return defn
+
+
 def orm_to_pydantic_response(orm_model) -> StrategyResponse:
     """Helper to convert ORM StrategyMaster into Pydantic StrategyResponse."""
     try:
@@ -40,6 +95,8 @@ def orm_to_pydantic_response(orm_model) -> StrategyResponse:
     except Exception:
         defn_dict = {}
         
+    defn_dict = normalize_strategy_definition(defn_dict)
+
     versions_list = []
     for v in orm_model.versions:
         versions_list.append({

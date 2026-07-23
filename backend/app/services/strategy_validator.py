@@ -46,13 +46,16 @@ def validate_strategy_config(definition: Dict[str, Any]) -> Dict[str, Any]:
         if fid in enabled_feature_ids:
             total_weight += wt
             
-        # Enforce weight > 0
-        if wt <= 0:
-            errors.append(f"Feature '{fid}' has invalid weight {wt}%. Weights must be positive.")
+        # Enforce weight >= 0
+        if wt < 0:
+            errors.append(f"Feature '{fid}' has invalid weight {wt}%. Weights cannot be negative.")
 
-    # Enforce total weight equals exactly 100% (within 0.1% tolerance)
-    if enabled_features and abs(total_weight - 100.0) > 0.1:
-        errors.append(f"Total weight allocation must equal exactly 100%. Current: {total_weight:.2f}%.")
+    # Require non-zero total weight allocation across enabled features
+    if enabled_features and total_weight <= 0:
+        errors.append("Total weight allocation across enabled features must be greater than 0%.")
+
+    if enabled_features and abs(total_weight - 100.0) > 0.5:
+        warnings.append(f"Total weight is {total_weight:.1f}%. Weights will be normalized to 100% during scoring.")
 
     # 3. Thresholds validation
     t_buy = scoring_config.get("threshold_buy", 35.0)

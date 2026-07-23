@@ -36,15 +36,15 @@ export default function QuantResearchLabModal({ isOpen, onClose, replaySnapshotI
         background: 'rgba(2, 6, 23, 0.96)',
         backdropFilter: 'blur(12px)',
         zIndex: 9999,
-        padding: '24px',
+        padding: 'clamp(12px, 3vw, 24px)',
         overflowY: 'auto',
         color: '#f8fafc',
       }}
     >
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', borderBottom: '1px solid #1e293b', paddingBottom: '16px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', borderBottom: '1px solid #1e293b', paddingBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div style={{ background: '#38bdf8', color: '#0f172a', padding: '6px 12px', borderRadius: '8px', fontWeight: '800', fontSize: '14px' }}>
+          <div style={{ background: '#38bdf8', color: '#0f172a', padding: '6px 12px', borderRadius: '8px', fontWeight: '800', fontSize: '14px', flexShrink: 0 }}>
             QRL
           </div>
           <div>
@@ -58,7 +58,7 @@ export default function QuantResearchLabModal({ isOpen, onClose, replaySnapshotI
         </div>
 
         {/* Right Header Stats & Close */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
           <div style={{ textAlign: 'right' }}>
             <div style={{ fontSize: '11px', color: '#94a3b8' }}>PIPELINE PROGRESS</div>
             <div style={{ fontSize: '16px', fontWeight: '800', color: '#38bdf8' }}>{ctx.pctComplete.toFixed(0)}%</div>
@@ -86,7 +86,7 @@ export default function QuantResearchLabModal({ isOpen, onClose, replaySnapshotI
       <LabStageNodes currentStage={ctx.currentStage} completedStages={ctx.completedStages} />
 
       {/* Main Grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: '320px 1fr', gap: '16px', marginBottom: '16px' }}>
+      <div className="qrl-main-grid">
         {/* Left: Stock Queue Panel */}
         <StockQueuePanel
           activeStock={ctx.activeStock}

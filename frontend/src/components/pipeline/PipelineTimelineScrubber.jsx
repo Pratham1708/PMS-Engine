@@ -13,10 +13,10 @@ export default function PipelineTimelineScrubber({
 }) {
   return (
     <div style={{ background: '#0f172a', padding: '12px 16px', borderRadius: '12px', border: '1px solid #1e293b', marginTop: '16px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
         {/* Left: Replay Controls if in Replay mode */}
         {mode === 'replay' ? (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
             <button
               onClick={onTogglePlayPause}
               style={{
@@ -32,7 +32,7 @@ export default function PipelineTimelineScrubber({
             >
               {isPlayingReplay ? '⏸ Pause' : '▶ Play Replay'}
             </button>
-            <span style={{ fontSize: '11px', color: '#94a3b8' }}>
+            <span style={{ fontSize: '11px', color: '#94a3b8', whiteSpace: 'nowrap' }}>
               Event {replayIndex + 1} of {totalReplayEvents}
             </span>
             <select
@@ -47,15 +47,15 @@ export default function PipelineTimelineScrubber({
             </select>
           </div>
         ) : (
-          <div style={{ fontSize: '12px', color: '#38bdf8', fontWeight: '700' }}>
+          <div style={{ fontSize: '12px', color: '#38bdf8', fontWeight: '700', whiteSpace: 'nowrap', flexShrink: 0 }}>
             ⏱ Live Research Engine Stream
           </div>
         )}
 
         {/* Right: Milestone checkpoints */}
-        <div style={{ display: 'flex', gap: '8px', overflowX: 'auto' }}>
+        <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', maxWidth: '100%', WebkitOverflowScrolling: 'touch', paddingBottom: '4px' }}>
           {timelineEvents.slice(-6).map((evt, idx) => (
-            <div key={idx} style={{ background: '#1e293b', padding: '4px 8px', borderRadius: '4px', fontSize: '10px', color: '#94a3b8' }}>
+            <div key={idx} style={{ background: '#1e293b', padding: '4px 8px', borderRadius: '4px', fontSize: '10px', color: '#94a3b8', whiteSpace: 'nowrap', flexShrink: 0 }}>
               <span style={{ color: '#3b82f6', fontWeight: '700' }}>{evt.time}</span> · {evt.label}
             </div>
           ))}

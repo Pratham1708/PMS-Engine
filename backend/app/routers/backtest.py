@@ -50,6 +50,58 @@ def launch_backtest(request: BacktestRunRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+# ── GET /api/backtest/history ─────────────────────────────────────────────────
+
+@router.get("/history")
+def list_backtest_history(strategy_id: Optional[str] = Query(None)):
+    """List all backtest runs, optionally filtered by strategy_id."""
+    session = db.get_db_session()
+    try:
+        from app.models.orm import StrategyBacktestRun, StrategyMaster
+        query = session.query(StrategyBacktestRun)
+        if strategy_id:
+            query = query.filter(StrategyBacktestRun.strategy_id == strategy_id)
+        runs = query.order_by(StrategyBacktestRun.created_at.desc()).limit(100).all()
+
+        result = []
+        for rec in runs:
+            summary = {}
+            if rec.summary_json:
+                try:
+                    summary = json.loads(rec.summary_json)
+                except Exception:
+                    pass
+
+            strat_name = "Custom Strategy"
+            if rec.strategy_id:
+                strat = session.query(StrategyMaster).filter(
+                    StrategyMaster.strategy_id == rec.strategy_id
+                ).first()
+                if strat:
+                    strat_name = strat.strategy_name
+
+            result.append({
+                "run_id": rec.run_id,
+                "strategy_id": rec.strategy_id,
+                "strategy_name": strat_name,
+                "strategy_version": rec.strategy_version,
+                "status": rec.status,
+                "start_date": rec.start_date,
+                "end_date": rec.end_date,
+                "benchmark": rec.benchmark,
+                "rebalance_freq": rec.rebalance_freq,
+                "weighting_scheme": rec.weighting_scheme,
+                "initial_capital": rec.initial_capital,
+                "execution_time_sec": rec.execution_time_sec,
+                "created_at": rec.created_at,
+                "summary": summary,
+            })
+
+        return JSONResponse(content=result)
+    finally:
+        session.close()
+
+
 # ── GET /api/backtest/{run_id} ────────────────────────────────────────────────
 
 @router.get("/{run_id}")
@@ -107,52 +159,6 @@ def get_backtest_result(run_id: str):
                 response["execution_log"] = []
 
         return JSONResponse(content=response)
-    finally:
-        session.close()
-
-
-# ── GET /api/backtest/history ─────────────────────────────────────────────────
-
-@router.get("/history")
-def list_backtest_history(strategy_id: Optional[str] = Query(None)):
-    """List all backtest runs, optionally filtered by strategy_id."""
-    session = db.get_db_session()
-    try:
-        from app.models.orm import StrategyBacktestRun, StrategyMaster
-        query = session.query(StrategyBacktestRun)
-        if strategy_id:
-            query = query.filter(StrategyBacktestRun.strategy_id == strategy_id)
-        runs = query.order_by(StrategyBacktestRun.created_at.desc()).limit(100).all()
-
-        result = []
-        for rec in runs:
-            summary = {}
-            if rec.summary_json:
-                try:
-                    summary = json.loads(rec.summary_json)
-                except Exception:
-                    pass
-
-            # Fetch strategy name
-            strat = session.query(StrategyMaster).filter(
-                StrategyMaster.strategy_id == rec.strategy_id
-            ).first()
-
-            result.append({
-                "run_id": rec.run_id,
-                "strategy_id": rec.strategy_id,
-                "strategy_name": strat.strategy_name if strat else "Unknown",
-                "status": rec.status,
-                "start_date": rec.start_date,
-                "end_date": rec.end_date,
-                "benchmark": rec.benchmark,
-                "rebalance_freq": rec.rebalance_freq,
-                "weighting_scheme": rec.weighting_scheme,
-                "created_at": rec.created_at,
-                "execution_time_sec": rec.execution_time_sec,
-                "summary": summary,
-            })
-        return result
     finally:
         session.close()
 

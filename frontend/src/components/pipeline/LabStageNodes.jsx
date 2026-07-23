@@ -4,11 +4,11 @@ import { LAB_STAGES } from '../../hooks/usePipelineExecutionContext';
 export default function LabStageNodes({ currentStage, completedStages }) {
   return (
     <div className="lab-stage-nodes-container" style={{ background: '#0f172a', padding: '16px', borderRadius: '12px', border: '1px solid #1e293b', marginBottom: '16px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap', gap: '8px' }}>
         <h4 style={{ margin: 0, color: '#38bdf8', fontSize: '14px', fontWeight: '700', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
           ⚙️ Quantitative Research Stage Pipeline
         </h4>
-        <span style={{ fontSize: '11px', color: '#94a3b8', background: 'rgba(56,189,248,0.1)', padding: '2px 8px', borderRadius: '4px', border: '1px solid rgba(56,189,248,0.2)' }}>
+        <span style={{ fontSize: '11px', color: '#94a3b8', background: 'rgba(56,189,248,0.1)', padding: '2px 8px', borderRadius: '4px', border: '1px solid rgba(56,189,248,0.2)', whiteSpace: 'nowrap', flexShrink: 0 }}>
           10 Active Stages · Parallel Worker Execution
         </span>
       </div>

@@ -3141,29 +3141,27 @@ p, span, h1, h2, h3, h4, h5, h6, a, div, td, th {
   margin-top: 4px;
 }
 
-/* Dashboard Layout */
 .sd-actions-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 16px;
 }
 
-.sd-title {
-  font-size: 28px;
-  font-weight: 800;
-  margin: 0 0 4px 0;
-  letter-spacing: -0.5px;
-}
-
-.sd-subtitle {
-  color: var(--text-secondary);
-  font-weight: 500;
-  font-size: 14px;
-}
-
-.sd-actions-right {
-  display: flex;
-  gap: 12px;
+@media (max-width: 768px) {
+  .sd-actions-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .sd-actions-right {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+  .sd-actions-right button {
+    flex: 1;
+    white-space: nowrap;
+    justify-content: center;
+  }
 }
 
 .sd-pulse-row {
@@ -4525,5 +4523,44 @@ p, span, h1, h2, h3, h4, h5, h6, a, div, td, th {
   border-radius: 4px;
   font-size: 11px;
   font-weight: 700;
+}
+
+/* ===== Responsive Mobile Deflection Classes ===== */
+.quant-workflow-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+}
+
+.quant-home-split-grid {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: 24px;
+  align-items: start;
+}
+
+.qrl-main-grid {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+@media (max-width: 1024px) {
+  .quant-home-split-grid {
+    grid-template-columns: 1fr;
+  }
+  .quant-workflow-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .quant-workflow-grid {
+    grid-template-columns: 1fr;
+  }
+  .qrl-main-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
