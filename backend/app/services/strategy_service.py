@@ -5,6 +5,8 @@ strategy_service.py — Strategy orchestration service for CRUD, validation, exe
 import uuid
 import json
 import time
+import re
+import math
 from typing import Dict, Any, List, Optional
 from datetime import datetime
 import pandas as pd
@@ -128,116 +130,275 @@ def get_features_registry() -> List[Dict[str, Any]]:
 
 # ── Feature Value Resolver and Normalizer ──
 
+def _build_feature_alias_map() -> Dict[str, str]:
+    alias_map = {}
+    for fid, meta in METADATA_REGISTRY.items():
+        clean_key = re.sub(r'[^a-zA-Z0-9]', '', fid).lower()
+        alias_map[clean_key] = fid
+        display_name = meta.get("display_name", "")
+        if display_name:
+            clean_display = re.sub(r'[^a-zA-Z0-9]', '', display_name).lower()
+            alias_map[clean_display] = fid
+            words = [re.sub(r'[^a-zA-Z0-9]', '', w) for w in display_name.split()]
+            for i in range(1, len(words) + 1):
+                comb = "".join(words[:i]).lower()
+                if comb and comb not in alias_map:
+                    alias_map[comb] = fid
+
+    manual_overrides = {
+        "ensemblemlscore": "ml_score",
+        "mlscore": "ml_score",
+        "modelreliability": "reliability_score",
+        "resistancebreakout": "resistance_break",
+        "regimesimilarityindex": "similarity",
+        "regimesimilarity": "similarity",
+        "grudeepcomponent": "gru_score",
+        "maximumhistoricaldrawdown": "drawdown",
+        "maxdrawdown": "drawdown",
+        "volumemovingaverageratio": "volume_ma",
+        "sharperatio": "sharpe",
+    }
+    alias_map.update(manual_overrides)
+    return alias_map
+
+FEATURE_ALIAS_MAP = _build_feature_alias_map()
+
+def get_canonical_feature_id(feature_id: str) -> str:
+    clean = re.sub(r'[^a-zA-Z0-9]', '', feature_id).lower()
+    return FEATURE_ALIAS_MAP.get(clean, feature_id)
+
+
 def resolve_raw_feature_value(feature_id: str, indicators: dict, scores: dict, stock_row: dict) -> float:
-    """Resolve raw feature value from loaded database dictionaries."""
-    # 1. Match in indicators (case-insensitive keys)
-    val = indicators.get(feature_id)
-    if val is not None:
-        return float(val)
+    """
+    Resolve raw feature value dynamically from database dictionaries using logical derivations
+    from available OHLCV, indicators, and score components.
+    """
+    cid = get_canonical_feature_id(feature_id)
+    
+    # 1. Direct DB column checks
+    if cid in indicators and indicators[cid] is not None:
+        return float(indicators[cid])
+    if cid in scores and scores[cid] is not None:
+        return float(scores[cid])
+    if cid in stock_row and stock_row[cid] is not None:
+        return float(stock_row[cid])
         
-    alt_keys_ind = {
-        "rsi": "rsi_14",
-        "atr": "atr_14",
-        "adx": "adx_14",
-        "ema20": "above_ema20",
-        "ema50": "above_ema50",
-        "ema200": "above_ema200",
+    # Case-insensitive direct column checks
+    ind_lower = {k.lower(): v for k, v in indicators.items()}
+    if cid in ind_lower and ind_lower[cid] is not None:
+        return float(ind_lower[cid])
+    scores_lower = {k.lower(): v for k, v in scores.items()}
+    if cid in scores_lower and scores_lower[cid] is not None:
+        return float(scores_lower[cid])
+    stock_lower = {k.lower(): v for k, v in stock_row.items()}
+    if cid in stock_lower and stock_lower[cid] is not None:
+        return float(stock_lower[cid])
+
+    # Standard column mapping aliases
+    col_map = {
+        "rsi": indicators.get("rsi_14"),
+        "atr": indicators.get("atr_14"),
+        "adx": indicators.get("adx_14"),
+        "ema20": indicators.get("above_ema20"),
+        "ema50": indicators.get("above_ema50"),
+        "ema200": indicators.get("above_ema200"),
+        "rf": scores.get("rf_signal"),
+        "xgb": scores.get("xgb_signal"),
+        "lgb": scores.get("lgbm_signal"),
+        "p_long": scores.get("gru_long"),
+        "p_hold": scores.get("gru_hold"),
+        "p_short": scores.get("gru_short"),
     }
-    alt_key = alt_keys_ind.get(feature_id)
-    if alt_key and indicators.get(alt_key) is not None:
-        return float(indicators[alt_key])
-        
-    # 2. Match in scores
-    val = scores.get(feature_id)
-    if val is not None:
-        return float(val)
-        
-    alt_keys_score = {
-        "rf": "rf_signal",
-        "xgb": "xgb_signal",
-        "lgb": "lgbm_signal",
-        "p_long": "gru_long",
-        "p_hold": "gru_hold",
-        "p_short": "gru_short",
-        "technical_score": "technical_score",
-        "ml_score": "ensemble_score",
-        "gru_score": "gru_score",
-        "reliability_score": "reliability_score",
-        "confidence_score": "confidence",
-        "risk_score": "risk_score",
-        "momentum_score": "momentum_score",
-        "trend_score": "trend_score",
-        "composite_score": "composite_score",
-    }
-    alt_key = alt_keys_score.get(feature_id)
-    if alt_key and scores.get(alt_key) is not None:
-        return float(scores[alt_key])
-        
-    # 3. Match in stock_row
-    val = stock_row.get(feature_id)
-    if val is not None:
-        return float(val)
-        
-    defaults = {
-        "rsi": 50.0,
-        "adx": 20.0,
-        "stoch_k": 50.0,
-        "cci": 0.0,
-        "roc": 0.0,
-        "williams_r": -50.0,
-        "cmf": 0.0,
-        "atr_percentile": 50.0,
-        "reliability_score": 70.0,
-        "confidence": 50.0,
-        "confidence_score": 50.0,
-    }
-    return float(defaults.get(feature_id, 0.0))
+    if cid in col_map and col_map[cid] is not None:
+        return float(col_map[cid])
+
+    # 2. Quantitative logical derivations from available OHLCV + Indicators + Scores
+    close = float(stock_row.get("close") or 0.0)
+    high = float(stock_row.get("high") or close)
+    low = float(stock_row.get("low") or close)
+    prev_close = float(stock_row.get("prev_close") or close)
+    volume = float(stock_row.get("volume") or 0.0)
+    w52_high = float(stock_row.get("week52_high") or high)
+    w52_low = float(stock_row.get("week52_low") or low)
+    chg_pct = float(stock_row.get("daily_chg_pct") or 0.0)
+
+    rsi_14 = float(indicators.get("rsi_14") or 50.0)
+    macd = float(indicators.get("macd") or 0.0)
+    macd_sig = float(indicators.get("macd_signal") or 0.0)
+    bb_upper = float(indicators.get("bb_upper") or close * 1.05)
+    bb_lower = float(indicators.get("bb_lower") or close * 0.95)
+    atr_14 = float(indicators.get("atr_14") or max(high - low, 0.01))
+    stoch_k = float(indicators.get("stoch_k") or 50.0)
+    adx_14 = float(indicators.get("adx_14") or 25.0)
+    vwap = float(indicators.get("vwap") or close)
+    above_ema20 = bool(indicators.get("above_ema20"))
+    above_ema50 = bool(indicators.get("above_ema50"))
+    above_ema200 = bool(indicators.get("above_ema200"))
+    near_high = bool(indicators.get("near_52w_high"))
+    near_low = bool(indicators.get("near_52w_low"))
+
+    tech_score = float(stock_row.get("technical_score") or 50.0)
+    ml_score = float(stock_row.get("ml_score") or 50.0)
+    gru_score = float(stock_row.get("gru_score") or 50.0)
+    risk_score = float(stock_row.get("risk_score") or 15.0)
+    mom_score = float(stock_row.get("momentum_score") or 50.0)
+    trend_score = float(stock_row.get("trend_score") or 50.0)
+    comp_score = float(stock_row.get("composite_score") or 50.0)
+    rel_score = float(stock_row.get("reliability_score") or 70.0)
+    conf = float(stock_row.get("confidence") or 60.0)
+
+    vol_comp = float(scores.get("volatility_component") or risk_score)
+    volu_comp = float(scores.get("volume_component") or 10.0)
+
+    if cid == "stoch_k":
+        return stoch_k if stoch_k != 50.0 else max(0.0, min(100.0, (close - low) / (high - low + 1e-5) * 100.0))
+    elif cid == "cci":
+        return max(-100.0, min(100.0, (close - vwap) / (atr_14 + 1e-5) * 50.0))
+    elif cid == "roc":
+        return chg_pct
+    elif cid == "williams_r":
+        return max(-100.0, min(0.0, (high - close) / (high - low + 1e-5) * -100.0))
+    elif cid == "obv":
+        return float(indicators.get("obv") or (volume * (1.0 if chg_pct >= 0 else -1.0)))
+    elif cid == "mfi":
+        return max(0.0, min(100.0, rsi_14 * 0.7 + (30.0 if chg_pct > 0 else 0.0)))
+    elif cid == "volume_ma":
+        return max(0.1, volu_comp / 10.0)
+    elif cid == "cmf":
+        return max(-1.0, min(1.0, ((close - low) - (high - close)) / (high - low + 1e-5)))
+    elif cid == "volume_breakout":
+        return 1.0 if (volu_comp > 15.0 or (chg_pct > 1.5 and volume > 0)) else 0.0
+    elif cid == "hist_vol":
+        return abs(chg_pct) * math.sqrt(252.0)
+    elif cid == "bb_width":
+        return max(0.1, (bb_upper - bb_lower) / (vwap + 1e-5) * 100.0)
+    elif cid == "atr_percentile":
+        return max(0.0, min(100.0, (atr_14 / (close + 1e-5)) * 2000.0))
+    elif cid == "resistance_break":
+        return 1.0 if (near_high or close >= w52_high * 0.97) else 0.0
+    elif cid == "support_holding":
+        return 1.0 if (not near_low and close >= w52_low * 1.05) else 0.0
+    elif cid == "donchian_breakout":
+        return max(0.0, min(100.0, (close - w52_low) / (w52_high - w52_low + 1e-5) * 100.0))
+    elif cid == "volume_confirmation":
+        return 1.0 if (chg_pct > 0 and volu_comp > 10.0) else 0.0
+    elif cid == "higher_highs":
+        return 1.0 if (above_ema20 and chg_pct > 0) else 0.0
+    elif cid == "higher_lows":
+        return 1.0 if (above_ema50 and close > prev_close) else 0.0
+    elif cid == "volume_expansion":
+        return 1.0 if (chg_pct > 0 and volu_comp > 12.0) else 0.0
+    elif cid == "volatility_compression":
+        return 1.0 if (atr_14 / (close + 1e-5) < 0.015) else 0.0
+    elif cid == "trend_persistence":
+        return float(int(above_ema200) + int(above_ema50) + int(above_ema20))
+    elif cid == "beta":
+        return max(0.2, min(3.0, 1.0 + (vol_comp - 15.0) / 20.0))
+    elif cid == "sharpe":
+        return max(-2.0, min(4.0, (comp_score - 10.0) / (max(risk_score, 10.0))))
+    elif cid == "volatility":
+        return risk_score
+    elif cid == "drawdown":
+        return max(-80.0, min(0.0, (close - w52_high) / (w52_high + 1e-5) * 100.0))
+    elif cid == "downside_dev":
+        return max(0.0, abs(min(0.0, chg_pct)) * 15.8)
+    elif cid == "var":
+        return max(-10.0, -(chg_pct - 1.645 * max(risk_score / 10.0, 1.0)))
+    elif cid == "cvar":
+        return max(-15.0, -(chg_pct - 2.06 * max(risk_score / 10.0, 1.0)))
+    elif cid == "confidence_inverse":
+        return 100.0 - conf
+    elif cid == "accuracy":
+        return rel_score
+    elif cid == "agreement":
+        return max(0.0, 100.0 - abs(tech_score - ml_score))
+    elif cid == "completeness":
+        return 100.0 if stock_row.get("download_status") == "success" else 80.0
+    elif cid == "similarity":
+        return rel_score
+    elif cid == "baseline":
+        return conf
+    elif cid == "consensus_boost":
+        return 15.0 if (tech_score > 20 and ml_score > 20) else (-10.0 if (tech_score < -20 and ml_score < -20) else 0.0)
+    elif cid == "supertrend":
+        return 100.0 if (above_ema20 and rsi_14 > 45) else 0.0
+
+    return comp_score
 
 
 def normalize_feature_value(feature_id: str, raw_val: float, indicators: dict = None) -> float:
-    """Normalize raw value to standard -100 to +100 range."""
-    # Rollups are already normalized
-    if feature_id in ["technical_score", "ml_score", "gru_score", "reliability_score", "risk_score", "momentum_score", "trend_score", "composite_score"]:
-        return raw_val
+    """Normalize raw value to standard -100 to +100 range logically based on feature domain."""
+    cid = get_canonical_feature_id(feature_id)
+    
+    # 1. Rollups and pre-normalized scores (-100 to +100)
+    if cid in ["technical_score", "ml_score", "gru_score", "reliability_score", "risk_score", "momentum_score", "trend_score", "composite_score"]:
+        return max(-100.0, min(100.0, raw_val))
         
-    if feature_id in ["ema20", "ema50", "ema200"]:
-        return 100.0 if raw_val == 1 or raw_val > 0 else -100.0
-    elif feature_id == "adx":
-        return 100.0 if raw_val > 25 else -100.0
-    elif feature_id == "supertrend":
-        return 100.0 if raw_val == 1 or raw_val > 0 else -100.0
-    elif feature_id in ["rsi", "mfi"]:
-        return (raw_val - 50.0) * 2.0
-    elif feature_id in ["macd", "macd_signal"]:
+    # 2. Binary / Flag features (0 or 1 -> -100 or +100)
+    if cid in ["ema20", "ema50", "ema200", "resistance_break", "support_holding", "volume_breakout", "volume_confirmation", "higher_highs", "higher_lows", "volume_expansion", "volatility_compression"]:
+        return 100.0 if (raw_val == 1 or raw_val > 0.5) else -100.0
+        
+    # 3. Oscillators centered around 50 (0 to 100 -> -100 to +100)
+    if cid in ["rsi", "mfi", "stoch_k", "atr_percentile", "donchian_breakout", "accuracy", "agreement", "completeness", "similarity", "baseline"]:
+        return max(-100.0, min(100.0, (raw_val - 50.0) * 2.0))
+        
+    # 4. Oscillators centered around 0 (williams_r: -100 to 0 -> -100 to +100)
+    if cid == "williams_r":
+        return max(-100.0, min(100.0, (raw_val + 50.0) * 2.0))
+        
+    # 5. Trend strength / ADX (0 to 100 -> thresholded or centered)
+    if cid == "adx":
+        return max(-100.0, min(100.0, (raw_val - 25.0) * 4.0))
+        
+    # 6. Supertrend (-100 or +100)
+    if cid == "supertrend":
+        return 100.0 if raw_val > 0 else -100.0
+        
+    # 7. MACD divergence
+    if cid in ["macd", "macd_signal"]:
         if indicators:
             macd_val = float(indicators.get("macd") or 0.0)
             sig_val = float(indicators.get("macd_signal") or 0.0)
             return 100.0 if macd_val > sig_val else -100.0
         return 100.0 if raw_val > 0 else -100.0
-    elif feature_id in ["stoch_k", "williams_r"]:
-        if feature_id == "williams_r":
-            return (raw_val + 50.0) * 2.0
-        return (raw_val - 50.0) * 2.0
-    elif feature_id == "cci":
-        return max(min(raw_val, 100.0), -100.0)
-    elif feature_id == "roc":
-        return max(min(raw_val * 5.0, 100.0), -100.0)
-    elif feature_id == "obv":
-        return 100.0 if raw_val > 0 else -100.0
-    elif feature_id == "cmf":
-        return max(min(raw_val * 100.0, 100.0), -100.0)
-    elif feature_id == "volume_ma":
-        return max(min((raw_val - 1.0) * 100.0, 100.0), -100.0)
-    elif feature_id == "volume_breakout":
-        return 100.0 if raw_val == 1 or raw_val > 0 else -100.0
-    elif feature_id in ["atr", "atr_percentile", "hist_vol"]:
-        return (raw_val - 50.0) * 2.0
-    elif feature_id in ["rf", "xgb", "lgb"]:
-        return raw_val * 2.0 if abs(raw_val) <= 50.0 else raw_val
-    elif feature_id in ["p_long", "p_short", "p_hold"]:
-        return (raw_val - 0.5) * 200.0
         
-    return raw_val
+    # 8. Unbounded indicators with scaling (CCI, ROC, CMF, Volume MA, Hist Vol, BB Width)
+    if cid == "cci":
+        return max(-100.0, min(100.0, raw_val))
+    elif cid == "roc":
+        return max(-100.0, min(100.0, raw_val * 5.0))
+    elif cid == "obv":
+        return 100.0 if raw_val > 0 else -100.0
+    elif cid == "cmf":
+        return max(-100.0, min(100.0, raw_val * 100.0))
+    elif cid == "volume_ma":
+        return max(-100.0, min(100.0, (raw_val - 1.0) * 100.0))
+    elif cid in ["atr", "hist_vol", "bb_width"]:
+        return max(-100.0, min(100.0, (raw_val - 10.0) * 5.0))
+        
+    # 9. Model probabilities (0 to 1 -> -100 to +100)
+    if cid in ["rf", "xgb", "lgb", "p_long", "p_short", "p_hold"]:
+        if abs(raw_val) <= 1.0:
+            return max(-100.0, min(100.0, (raw_val - 0.5) * 200.0))
+        return max(-100.0, min(100.0, raw_val * 2.0 if abs(raw_val) <= 50.0 else raw_val))
+        
+    # 10. Risk & Ratio metrics (Beta, Sharpe, Volatility, Drawdown, VaR, CVaR, Downside Dev)
+    if cid == "beta":
+        return max(-100.0, min(100.0, (raw_val - 1.0) * 100.0))
+    elif cid == "sharpe":
+        return max(-100.0, min(100.0, raw_val * 50.0))
+    elif cid == "volatility":
+        return max(-100.0, min(100.0, (raw_val - 15.0) * 5.0))
+    elif cid == "drawdown":
+        return max(-100.0, min(100.0, raw_val * 2.0))
+    elif cid in ["downside_dev", "var", "cvar"]:
+        return max(-100.0, min(100.0, raw_val * 10.0))
+    elif cid == "trend_persistence":
+        return max(-100.0, min(100.0, (raw_val - 1.5) * 66.6))
+    elif cid in ["confidence_inverse", "consensus_boost"]:
+        return max(-100.0, min(100.0, raw_val))
+
+    return max(-100.0, min(100.0, raw_val))
 
 
 # ── Strategy Execution & Scoring Engine ──
