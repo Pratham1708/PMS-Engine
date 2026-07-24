@@ -729,7 +729,7 @@ from typing import Dict, Any
 
 class FeatureSelectionModel(BaseModel):
     feature_id: str
-    feature_group: str
+    feature_group: Optional[str] = "General"
     enabled: bool = True
 
 class WeightAllocationModel(BaseModel):

@@ -26,6 +26,8 @@ from app.models.schemas import (
     ScoreInterpretation,
     FeatureAttribution,
     CategoryContribution,
+    FeatureMetadata,
+    NormalizationExplain,
     StrategyCreateRequest,
     StrategyUpdateRequest
 )
@@ -345,15 +347,22 @@ def explain_custom_strategy_score(definition: Dict[str, Any], symbol: str, snaps
         
     conn = db.get_db_connection()
     try:
-        symbol = symbol.strip().upper()
-        # Fetch data for symbol
-        ind_row = conn.execute("SELECT * FROM snapshot_indicator WHERE snapshot_id = ? AND UPPER(symbol) = ?", (snapshot_id, symbol)).fetchone()
-        score_row = conn.execute("SELECT * FROM snapshot_score WHERE snapshot_id = ? AND UPPER(symbol) = ?", (snapshot_id, symbol)).fetchone()
-        stock_row = conn.execute("SELECT * FROM snapshot_stock WHERE snapshot_id = ? AND UPPER(symbol) = ?", (snapshot_id, symbol)).fetchone()
+        sym_clean = symbol.strip().upper()
+        sym_no_ns = sym_clean.replace(".NS", "")
+        
+        # Fetch data for symbol with flexible matching for .NS suffix
+        stock_row = conn.execute(
+            "SELECT * FROM snapshot_stock WHERE snapshot_id = ? AND (UPPER(symbol) = ? OR UPPER(symbol) = ? OR REPLACE(UPPER(symbol), '.NS', '') = ?)",
+            (snapshot_id, sym_clean, f"{sym_no_ns}.NS", sym_no_ns)
+        ).fetchone()
         
         if not stock_row:
             raise ValueError(f"Stock '{symbol}' not found in active snapshot.")
             
+        real_symbol = stock_row["symbol"]
+        ind_row = conn.execute("SELECT * FROM snapshot_indicator WHERE snapshot_id = ? AND UPPER(symbol) = UPPER(?)", (snapshot_id, real_symbol)).fetchone()
+        score_row = conn.execute("SELECT * FROM snapshot_score WHERE snapshot_id = ? AND UPPER(symbol) = UPPER(?)", (snapshot_id, real_symbol)).fetchone()
+        
         indicators = dict(ind_row) if ind_row else {}
         scores = dict(score_row) if score_row else {}
         
@@ -374,7 +383,7 @@ def explain_custom_strategy_score(definition: Dict[str, Any], symbol: str, snaps
         custom_score = 0.0
         contributions: List[Contribution] = []
         category_contribs: Dict[str, float] = {}
-        category_features: Dict[str, List[Dict[str, Any]]] = {}
+        category_features: Dict[str, List[FeatureAttribution]] = {}
         current_values = {}
         
         for fid in features:
@@ -391,15 +400,39 @@ def explain_custom_strategy_score(definition: Dict[str, Any], symbol: str, snaps
             current_values[fid] = raw_val
             category_contribs[cat] = category_contribs.get(cat, 0.0) + contrib_amt
             
-            feat_item = {
-                "feature_key": fid,
-                "current_value": f"{raw_val:+.2f}" if isinstance(raw_val, float) else str(raw_val),
-                "normalized_value": round(norm_val, 2),
-                "weight": weight,
-                "contribution": round(contrib_amt, 2),
-                "effect": "positive" if contrib_amt > 0 else ("negative" if contrib_amt < 0 else "neutral"),
-                "confidence": "High"
-            }
+            ref_dict = REFERENCE_REGISTRY.get(fid, {})
+            ref_obj = ResearchReference(
+                paper=ref_dict.get("paper", "PMS Quant Research"),
+                author=ref_dict.get("author", "PMS Engine"),
+                year=ref_dict.get("year", 2024),
+                link=ref_dict.get("link"),
+                description=ref_dict.get("description", "Factor evaluation rule.")
+            )
+            norm_obj = NormalizationExplain(
+                method="Default",
+                range="-100 to +100",
+                logic="Standardized strategy scoring"
+            )
+            meta_obj = FeatureMetadata(
+                data_source="Snapshot Market Data",
+                plain_formula=f"raw({fid}) * weight",
+                latex_formula=r"\text{Raw} \times \text{Weight}",
+                normalization=norm_obj,
+                reference=ref_obj
+            )
+            
+            feat_item = FeatureAttribution(
+                feature_key=fid,
+                name=display_name,
+                current_value=f"{raw_val:+.2f}" if isinstance(raw_val, float) else str(raw_val),
+                normalized_value=round(norm_val, 2),
+                weight=weight,
+                contribution=round(contrib_amt, 2),
+                effect="positive" if contrib_amt > 0 else ("negative" if contrib_amt < 0 else "neutral"),
+                explanation=f"{display_name} contributes {contrib_amt:+.2f} points to custom score.",
+                confidence="High",
+                metadata=meta_obj
+            )
             if cat not in category_features:
                 category_features[cat] = []
             category_features[cat].append(feat_item)
@@ -451,9 +484,9 @@ def explain_custom_strategy_score(definition: Dict[str, Any], symbol: str, snaps
                 ))
                 
         # Build category rollups for visualizations
-        feature_attributions: List[FeatureAttribution] = []
+        feature_attributions: List[CategoryContribution] = []
         for cat, subtotal in category_contribs.items():
-            feature_attributions.append(FeatureAttribution(
+            feature_attributions.append(CategoryContribution(
                 category=f"{cat} ({round(subtotal, 1)}%)",
                 subtotal=round(subtotal, 2),
                 features=category_features.get(cat, [])
