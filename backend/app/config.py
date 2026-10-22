@@ -25,7 +25,7 @@ class Settings(BaseSettings):
     app_version: str = "1.0.0"
 
     # Future: Database connection
-    database_url: str = ""
+    database_url: str = os.getenv("DATABASE_URL", "")
 
     # Future: Authentication
     jwt_secret: str = ""
