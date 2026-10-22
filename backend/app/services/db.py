@@ -22,6 +22,7 @@ logger = logging.getLogger(__name__)
 
 # Determine active database configuration
 DATABASE_URL = getattr(settings, "database_url", "")
+logger.info(f"DATABASE_URL => {DATABASE_URL}")
 IS_POSTGRES = DATABASE_URL.startswith("postgresql")
 
 # Connection Pool settings
