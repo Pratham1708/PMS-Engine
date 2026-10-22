@@ -232,21 +232,37 @@ async def get_pipeline_timeline(snapshot_id: str):
 
 # ── System Status ─────────────────────────────────────────────────────────────
 
-@router.get("/snapshot/status", response_model=SnapshotStatusResponse)
+@router.get("/snapshot/status")
 async def get_snapshot_status():
-    """Return system-level snapshot status (latest date, count, freshness, pipeline state)."""
-    summary = db.get_snapshot_status_summary()
-    latest_row = summary.get("latest_snapshot")
-    latest_meta = _meta_from_db(latest_row) if latest_row else None
-    freshness = _compute_freshness(latest_meta.snapshot_date) if latest_meta else "no_data"
-    monitor = get_monitor()
-    return SnapshotStatusResponse(
-        latest_snapshot=latest_meta,
-        total_snapshots=summary.get("total_snapshots", 0),
-        in_progress=summary.get("in_progress", 0),
-        data_freshness=freshness,
-        pipeline_available=(monitor.status != "running"),
-    )
+    try:
+        summary = db.get_snapshot_status_summary()
+
+        latest_row = summary.get("latest_snapshot")
+        latest_meta = _meta_from_db(latest_row) if latest_row else None
+
+        freshness = (
+            _compute_freshness(latest_meta.snapshot_date)
+            if latest_meta
+            else "no_data"
+        )
+
+        monitor = get_monitor()
+
+        return {
+            "latest_snapshot": latest_meta.model_dump() if latest_meta else None,
+            "total_snapshots": summary.get("total_snapshots", 0),
+            "in_progress": summary.get("in_progress", 0),
+            "data_freshness": freshness,
+            "pipeline_available": (monitor.status != "running"),
+        }
+
+    except Exception as e:
+        import traceback
+
+        return {
+            "error": str(e),
+            "trace": traceback.format_exc()
+        }
 
 
 @router.get("/snapshot/freshness")
