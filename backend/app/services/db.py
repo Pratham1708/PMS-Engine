@@ -41,6 +41,7 @@ if IS_POSTGRES:
         max_overflow=20,
         pool_recycle=1800,
         pool_pre_ping=True,  # Automatic reconnect / check if connection is alive
+        connect_args={"sslmode": "require"}
     )
     SessionLocal = scoped_session(sessionmaker(autocommit=False, autoflush=False, bind=engine))
 else:
