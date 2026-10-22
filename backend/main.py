@@ -48,8 +48,11 @@ app = FastAPI(
 # CORS — allow all origins in development
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=False,
+    allow_origins=[
+        "https://pms-engine.vercel.app",
+        "http://localhost:5173"
+    ],
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
