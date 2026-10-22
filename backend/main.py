@@ -108,7 +108,10 @@ async def startup_event():
     from app.services.company_service import CACHE_DIR
 
     # Initialize SQLite database
-    init_db()
+    try:
+        init_db()
+    except Exception as e:
+        print(f"DB INIT FAILED: {e}")
 
     # Ensure company profile cache folder exists
     os.makedirs(CACHE_DIR, exist_ok=True)
